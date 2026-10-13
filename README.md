@@ -4,153 +4,174 @@ Platform **Explainable Decision Support System (EDSS)** berbasis web untuk selek
 
 ---
 
-## Dokumentasi Branch: `feat/m5-pdf-reporting` (Fase 5 / Task 5 — PDF Berita Acara Generator with QR & TMS Appendix & Thesis Evaluation Metrics)
+## Dokumentasi Branch: `feat/m4a-frontend-appshell` (Fase 6 / Task 6 — Frontend Scaffolding, Civic Precision Theme, & 3-Tier Responsive AppShell - Milestone 4A)
 
 ### Mengapa Fase Ini Dibutuhkan (*Context & Why*)
 
-Fase 5 merealisasikan lapisan pelaporan resmi (*Official Reporting Layer*) dan instrumen pengujian skripsi (*Academic Evaluation Instruments*) sesuai **PRD Bagian 1, 10, dan 11**, **[ADR-002](./docs/decisions/ADR-002-dual-layer-nik-crypto-and-zero-pii-xai.md)**, dan **[ADR-006](./docs/decisions/ADR-006-controlled-nik-decryption-pdf-and-thesis-metrics.md)**:
+Fase 6 merealisasikan fondasi antarmuka pengguna web (*User Interface Scaffolding & Responsive Shell*) sesuai amanat **[AGENTS.md Bagian 2](./AGENTS.md)**, **[ADR-005](./docs/decisions/ADR-005-responsive-ui-architecture-and-stitch-review-gate.md)**, dan **PRD Bagian 3 & Bagian 12**:
 
-1. **Pelaporan Hukum Administrasi Pemerintahan (Berita Acara Resmi):**
-   - Penetapan bantuan sosial membutuhkan berkas fisik berkekuatan hukum yang ditandatangani oleh **Lurah Jurangmangu Barat** dan **Kasi Kesejahteraan Sosial**.
-   - Berkas ini memuat Kop Surat resmi Pemerintah Kota Tangerang Selatan, tabel penetapan penerima yang lolos kuota, tanda tangan basah/stempel kelurahan, lampiran terpisah warga yang berstatus Tidak Memenuhi Syarat (TMS / `DISQUALIFIED`), serta **QR Code** untuk validasi integritas dan keaslian dokumen secara daring.
-2. **Dekripsi NIK Terkontrol Ketat (Kepatuhan UU PDP No. 27/2022):**
-   - Penyaluran bantuan sosial secara administratif mewajibkan 16-digit NIK asli pada lembar Berita Acara resmi kelurahan.
-   - Sistem menetapkan aturan ketat: **dekripsi `nik_encrypted` (AES-256-GCM) HANYA dan HANYA diizinkan pada saat pencetakan Berita Acara PDF ini**.
-   - Setiap operasi dekripsi dicatat secara permanen ke tabel `AuditLog` (`action=NIK_DECRYPT`) tanpa pernah membocorkan NIK plaintext ke dalam catatan audit.
-3. **Pemberitahuan Transparansi Warga (Zero-PII Public Document):**
-   - Warga yang memeriksa status bantuan di portal publik (`/cek-bansos`) dapat mengunduh surat pemberitahuan hasil seleksi mandiri.
-   - Dokumen publik ini menerapkan **penyamaran visual 100% (`nik_masked` dan `full_name_masked`)**, memuat penjelasan transparansi XAI Gemini, matriks perbandingan nilai terhadap rata-rata lolos, serta dilindungi token unduhan kriptografis yang hanya aktif jika batch telah berstatus resmi `Published`.
-4. **Instrumen Pengujian Skripsi Otomatis (Bab 4 & Bab 5):**
-   - **Fidelity Score (PRD Bagian 11.2):** Mengukur kesetiaan narasi LLM terhadap kriteria penentu dengan kesenjangan terbobot terbesar $\operatorname{argmax}_j (\Delta_{i,j} \cdot w_j)$ berbasis snapshot bobot beku `BatchCriteria.frozen_weight`. Sistem menangani kondisi batas $|K_{\text{TL}}| == 0$ (seluruh peserta lolos) dengan nilai `100.0%` secara aman tanpa `ZeroDivisionError`.
-   - **Hallucination Rate (PRD Bagian 11.2):** Mendeteksi kriteria fiktif (seperti `C99` atau `Daya Listrik 900 VA`) dan angka desimal palsu, dengan normalisasi cerdas terhadap format desimal koma Bahasa Indonesia (`0,684` $\rightarrow$ `0.684`) dan persentase (`60%` $\rightarrow$ `0.60`).
-   - **Instrumen Kuesioner SUS & Ekspor Dataset:** Menyediakan template 10 butir pertanyaan *System Usability Scale* (SUS) standar berbahasa Indonesia serta fungsi ekspor multi-sheet dataset pengujian ke lembar kerja Excel (`.xlsx`).
+1. **Penerapan Desain *Civic Precision*:**
+   - Membangun fondasi frontend modern menggunakan **React 18**, **Vite 6**, dan **Tailwind CSS v3.4** dengan palet resmi *Emerald Civic* (`#003426` Primary, `#0f4c3a` Primary Container, `#f8f9ff` Surface Canvas).
+   - Menerapkan tipografi dua pilar (*Dual-Typeface Rigor*): font **`Hanken Grotesk`** untuk teks naratif, judul otoritas institusional, dan navigasi; serta font monospace **`JetBrains Mono`** untuk data presisi teknis (NIK masked, ID KPM, skor desimal SAW, bobot kriteria beku, dan status kuota).
+2. **Kepatuhan Protokol Wajib Review Desain & Eliminasi Bug `.stitch`:**
+   - Mematuhi aturan ketat *Mandatory Design Review Gate*: prototipe mentah di `.stitch/designs/*.html` tidak disalin mentah-mentah (*no blind copy-paste*).
+   - Memperbaiki bug *clipping* pada Topbar: tombol aksi dan profil yang sebelumnya terpotong keluar layar pada prototipe `.stitch` diperbaiki menggunakan tata letak responsif bebas overflow.
+   - Menghapus fitur ilegal yang dilarang pada PRD Bagian 12, seperti tombol *"Sinkronisasi DTKS"* (sistem Bansos JUBAR beroperasi mandiri di tingkat kelurahan tanpa integrasi langsung API Kemensos).
+3. **Arsitektur Responsif 3-Tier (Mobile, Tablet, Desktop):**
+   - Menghadirkan komponen shell terpadu `<AppShell />` yang menjamin antarmuka dapat digunakan dengan nyaman oleh Ketua RT di lapangan menggunakan Handphone (`< 768px`) atau Tablet (`768px – 1023px`), maupun Kasi Kesos dan Lurah di kantor kelurahan menggunakan Desktop (`>= 1024px`).
+4. **Penegakan Role-Based Access Control (RBAC) pada Navigasi:**
+   - Mengintegrasikan navigasi berbasis hak akses staf:
+     - **`SUPER_ADMIN` (Kasi Kesejahteraan Sosial):** Memiliki akses penuh termasuk tombol mutasi *"Eksekusi Batch SAW"* dan menu *"Konfigurasi Bobot SAW"*.
+     - **`SURVEYOR` (Ketua RT):** Dibatasi hanya pada menu pendataan dan usulan warga di wilayah RT-nya, dilarang mengakses tombol mutasi SAW dan konfigurasi bobot.
+     - **`VIEWER` (Lurah Jurangmangu Barat):** Berperan sebagai peninjau dan pengesah Berita Acara, dilarang keras melihat tombol mutasi *"Eksekusi Batch SAW"* maupun menu konfigurasi bobot.
 
 ---
 
-### Changelog Fase 5 (Task 5)
+### Changelog Fase 6 (Task 6)
 
 #### Added
-- **Generator Dokumen PDF Resmi ([`backend/core/services/pdf_generator.py`](./backend/core/services/pdf_generator.py)):**
-  - `generate_berita_acara_pdf(batch_id, performed_by)`: Menghasilkan Berita Acara legal format A4 menggunakan ReportLab v5.0.1, lengkap dengan Kop Surat Kelurahan Jurangmangu Barat, garis ganda pembatas, tabel perangkingan KPM lolos kuota, pencatatan otomatis `AuditLog` dekripsi NIK, blok tanda tangan formal Kasi Kesos & Lurah, lampiran khusus warga TMS (`DISQUALIFIED`), dan QR Code verifikasi dokumen.
-  - `generate_individual_result_pdf(evaluation_id)`: Menghasilkan lembar bukti pengumuman kelayakan mandiri untuk warga via portal publik dengan penegakan masking visual PII 100%, status keputusan, skor cutoff, narasi XAI, matriks kriteria terbobot, dan QR Code verifikasi.
-- **Layanan Metrik Evaluasi Skripsi ([`backend/core/services/evaluation_metrics.py`](./backend/core/services/evaluation_metrics.py)):**
-  - `compute_batch_evaluation_metrics(batch_id)`: Perhitungan kuantitatif otomatis untuk *Fidelity Score*, *Hallucination Rate*, rincian kandidat lolos/tidak lolos/TMS, serta penjagaan pembagian nol saat $|K_{\text{TL}}| == 0$.
-  - `detect_narrative_hallucinations(...)`: Filter deteksi halusinasi kode kriteria asing, istilah kriteria terlarang, rekayasa angka peringkat/kuota, dan angka desimal di luar payload input dengan normalisasi koma desimal Indonesia.
-  - `get_sus_questionnaire_template()`: Template kuesioner baku 10 pertanyaan System Usability Scale (Brooke, 1996) berbahasa Indonesia dengan polaritas bergantian (+ / -) dan skala Likert 1–5.
-  - `export_thesis_evaluation_dataset(batch_id)` & `export_thesis_evaluation_dataset_xlsx(batch_id)`: Ekspor dataset evaluasi akademik lengkap ke lembar kerja Excel multi-sheet (Sheet 1: Data Uji & Evaluasi, Sheet 2: Ringkasan Metrik, Sheet 3: Instrumen SUS).
-- **REST API Endpoints ([`backend/core/views.py`](./backend/core/views.py) & [`backend/core/urls.py`](./backend/core/urls.py)):**
-  - `GET /api/selection/{batch_id}/berita-acara-pdf/`: Unduh PDF Berita Acara resmi (hak akses `SUPER_ADMIN` dan `VIEWER` / Lurah).
-  - `GET /api/public/result-pdf/?token=<signed_token>`: Unduh surat bukti seleksi warga portal publik dengan verifikasi token berstempel waktu (TTL 15 menit) pada batch berstatus `Published`.
-  - `GET /api/selection/{batch_id}/evaluation-metrics/`: Ringkasan metrik evaluasi skripsi dalam format JSON atau format workbook Excel (`?format=xlsx`).
-- **Suite Pengujian TDD ([`backend/tests/test_pdf_and_evaluation.py`](./backend/tests/test_pdf_and_evaluation.py)):**
-  - 9 pengujian komprehensif menguji formula Fidelity, normalisasi desimal Hallucination, penanganan $|K_{\text{TL}}| == 0$, Berita Acara PDF, masking PII dokumen publik warga, perizinan RBAC, dan validasi token kedaluwarsa.
-- **Architecture Decision Record ([`docs/decisions/ADR-006-controlled-nik-decryption-pdf-and-thesis-metrics.md`](./docs/decisions/ADR-006-controlled-nik-decryption-pdf-and-thesis-metrics.md)):**
-  - Dokumentasi keputusan arsitektur dekripsi terkontrol Berita Acara PDF, perlindungan zero-PII publik, dan metrik skripsi.
-
-#### Security
-- **UU PDP No. 27/2022 (Dekripsi NIK Terkontrol):** Dekripsi ciphertext `nik_encrypted` menggunakan AES-256-GCM hanya terjadi pada saat eksekusi `generate_berita_acara_pdf()`. Setiap dekripsi memicu pembuatan entri `AuditLog` dengan aksi `action=AuditLog.Action.NIK_DECRYPT`. Kolom `detail` dan `performed_by` divalidasi tidak boleh memuat NIK plaintext 16 digit.
-- **Zero-PII Public Download:** Endpoint `/api/public/result-pdf/` tidak pernah mendekripsi NIK. Dokumen yang dihasilkan selalu menggunakan `nik_masked` (`367403******0002`) dan `full_name_masked` (`Ahmad S******`).
-- **Cryptographic Token Verification:** Endpoint publik mewajibkan query parameter `token` yang divalidasi melalui `verify_pdf_download_token(token)` (Django TimestampSigner dengan salt `bansos.pdf_download` dan TTL 15 menit). Unduhan ditolak dengan HTTP 403 jika token tidak sah, kedaluwarsa, atau batch belum berstatus `Published`.
+- **Frontend Scaffolding & Configuration:**
+  - [`frontend/package.json`](./frontend/package.json): Dependensi inti React 18, React Router v6, Tailwind CSS, Lucide React, Axios, Vitest, dan React Testing Library.
+  - [`frontend/vite.config.ts`](./frontend/vite.config.ts): Konfigurasi build Vite, path alias `@/`, proxy backend `/api` ke `localhost:8000`, dan konfigurasi test runner Vitest jsdom.
+  - [`frontend/tailwind.config.js`](./frontend/tailwind.config.js): Konfigurasi palet warna *Civic Precision*, ekstensi font `Hanken Grotesk` dan `JetBrains Mono`, serta radius sudut terkalibrasi.
+  - [`frontend/src/index.css`](./frontend/src/index.css): Import font Google Fonts, utilitas scrollbar kustom, dan reset CSS kanvas.
+- **State Management & Klien API:**
+  - [`frontend/src/types/auth.ts`](./frontend/src/types/auth.ts): Definisi kontrak tipe TypeScript untuk `UserRole` (`SUPER_ADMIN`, `SURVEYOR`, `VIEWER`), objek `User`, dan token sesi.
+  - [`frontend/src/context/AuthContext.tsx`](./frontend/src/context/AuthContext.tsx): Context Provider untuk autentikasi staf, penyimpanan JWT token di localStorage, auto-login, dan mutasi logout.
+  - [`frontend/src/lib/api.ts`](./frontend/src/lib/api.ts): Klien Axios singleton dengan interceptor penyisipan otomatis header `Authorization: Bearer <token>` dan mekanisme refresh token.
+- **Komponen Tata Letak 3-Tier (<AppShell />):**
+  - [`frontend/src/components/layout/Sidebar.tsx`](./frontend/src/components/layout/Sidebar.tsx): Sidebar persisten (Desktop) dan slide-over drawer (Mobile/Tablet) dengan transisi mulus, penutup backdrop gelap, shortcut tombol keyboard Escape, kartu identitas staf, dan penyaringan menu RBAC otomatis.
+  - [`frontend/src/components/layout/Topbar.tsx`](./frontend/src/components/layout/Topbar.tsx): Topbar navigasi atas dengan tombol Hamburger ramah sentuhan (`min-h-[44px]`), breadcrumb hierarkis, indikator denyut Celery worker, badge peran staf, dan bebas clipping.
+  - [`frontend/src/components/layout/AppShell.tsx`](./frontend/src/components/layout/AppShell.tsx): Komponen pembungkus master layout yang mengintegrasikan Sidebar, Topbar, dan area kanvas konten utama dengan penyesuaian margin dinamis (`lg:pl-64`).
+- **Suite Pengujian TDD:**
+  - [`frontend/src/test-utils.tsx`](./frontend/src/test-utils.tsx): Helper `renderWithProviders` untuk membungkus pengujian komponen dalam `BrowserRouter` dan `AuthContext` dengan mocking peran pengguna dinamis.
+  - [`frontend/src/__tests__/AppShell.responsive.test.tsx`](./frontend/src/__tests__/AppShell.responsive.test.tsx): 4 skenario uji komprehensif menguji interaksi buka-tutup drawer mobile, penutupan via backdrop/tombol silang, penegakan isolasi aksi mutasi pada peran `VIEWER` (Lurah), ketersediaan modul lengkap untuk `SUPER_ADMIN`, dan pembatasan wilayah RT untuk peran `SURVEYOR`.
 
 #### Changed
-- [`backend/core/views.py`](./backend/core/views.py): Mengintegrasikan penanganan token unduhan PDF, layanan pembuatan PDF, dan ekspor metrik evaluasi.
-- [`backend/core/urls.py`](./backend/core/urls.py): Menambahkan rute `/api/selection/{batch_id}/berita-acara-pdf/`, `/api/selection/{batch_id}/evaluation-metrics/`, dan `/api/public/result-pdf/`.
+- **Topbar Action Grouping:** Menghilangkan potensi teks dan tombol terpotong pada layar tablet/kecil dengan pengelompokan fleksibel dan penghapusan tombol ilegal *"Sinkronisasi DTKS"*.
+- **Penyatuan Menu Navigasi:** Menyelaraskan seluruh label navigasi yang tidak konsisten pada file prototipe `.stitch` ke dalam skema terpadu yang mematuhi PRD.
 
 ---
 
-### Mekanisme Dekripsi Terkontrol Berita Acara PDF & QR Code & Lampiran TMS
+### Arsitektur Responsif 3-Tier `<AppShell />`
 
 ```
-  Staf Berwenang (Lurah / Kasi Kesos)
-                 │
-                 ▼
- [ GET /api/selection/{id}/berita-acara-pdf/ ]
-                 │
-                 ├─► [ 1. Verifikasi RBAC: SUPER_ADMIN / VIEWER ]
-                 │
-                 ▼
- [ 2. Query Batch, KPM Lolos, & Warga TMS ]
-                 │
-                 ▼
- [ 3. Dekripsi Terkontrol NIK (AES-256-GCM) ]
-      citizen.decrypt_nik() khusus untuk baris Berita Acara
-                 │
-                 ▼
- [ 4. Catat AuditLog Mutasi Legal ]
-      action: NIK_DECRYPT, actor: username, detail: zero-PII
-                 │
-                 ▼
- [ 5. Render ReportLab PDF Engine (In-Memory io.BytesIO) ]
-      ├─ Kop Surat Pemkot Tangerang Selatan & Kelurahan Jurangmangu Barat
-      ├─ Tabel Penetapan KPM Lolos Kuota (Peringkat, NIK, Nama, Skor V)
-      ├─ Tanda Tangan Resmi Kasi Kesos & Lurah Jurangmangu Barat
-      ├─ QR Code Verifikasi Keaslian Dokumen
-      └─ [ PageBreak ] ──► Lampiran I: Warga TMS (DISQUALIFIED & Alasan)
-                 │
-                 ▼
- [ 6. Response Stream: application/pdf ]
-      Content-Disposition: attachment; filename="Berita_Acara_Seleksi_Batch_...pdf"
+  ┌────────────────────────────────────────────────────────────────────────┐
+  │                           TAMPILAN DESKTOP (>= 1024px)                 │
+  │  ┌───────────────┬──────────────────────────────────────────────────┐  │
+  │  │ SIDEBAR FIXED │ TOPBAR (Breadcrumbs, Batch Selector, Celery Pulse)│  │
+  │  │ (lg:w-64)     ├──────────────────────────────────────────────────┤  │
+  │  │               │                                                  │  │
+  │  │ - Logo & Brand│ MAIN WORKBENCH CANVAS (lg:pl-64)                 │  │
+  │  │ - Action SAW  │                                                  │  │
+  │  │ - Menu Navigasi│ - Bento Metric Cards (xl:grid-cols-4)            │  │
+  │  │ - Profil Staf │ - Master-Detail Tables & XAI Panel               │  │
+  │  │               │                                                  │  │
+  │  └───────────────┴──────────────────────────────────────────────────┘  │
+  └────────────────────────────────────────────────────────────────────────┘
+
+  ┌────────────────────────────────────────────────────────────────────────┐
+  │                           TAMPILAN MOBILE (< 768px)                    │
+  │  ┌──────────────────────────────────────────────────────────────────┐  │
+  │  │ TOPBAR: [≡ Hamburger (44px)] EDSS JUBAR ... [Worker Ready] [Role]│  │
+  │  ├──────────────────────────────────────────────────────────────────┤  │
+  │  │ KONTEN UTAMA:                                                    │  │
+  │  │ - Reflow Vertikal: Grid 1 Kolom (grid-cols-1)                    │  │
+  │  │ - Tabel dengan Scroll Container Halus (Zero Horizontal Leak)     │  │
+  │  └──────────────────────────────────────────────────────────────────┘  │
+  │                                                                        │
+  │  Saat Hamburger ditekan:                                               │
+  │  [ BACKDROP GELAP (bg-black/60) ]                                      │
+  │    ┌────────────────────────┐                                          │
+  │    │ DRAWER SLIDE-OVER      │ ◄── Animasi slide dari kiri              │
+  │    │ [X Tutup] Logo EDSS    │                                          │
+  │    │ Navigasi Menu & Profil │                                          │
+  │    └────────────────────────┘                                          │
+  └────────────────────────────────────────────────────────────────────────┘
 ```
 
----
+#### Matriks Hak Akses Menu & Aksi Navigasi (RBAC)
 
-### Formula Evaluasi Skripsi (PRD Bagian 11.2)
-
-1. **Fidelity Score ($F_{\text{score}}$):**
-   $$\text{Fidelity Score} = \frac{1}{|K_{\text{TL}}|} \sum_{i \in K_{\text{TL}}} \mathbb{I}\left( C_{\text{AI\_primary}}(i) == \operatorname{argmax}_j (\Delta_{i,j} \cdot w_j) \right)$$
-   - $K_{\text{TL}}$: Himpunan calon KPM berstatus Tidak Lolos.
-   - $\Delta_{i,j} = \bar{r}_j^{\text{lolos}} - r_{ij}$: Kesenjangan nilai normalisasi terhadap rata-rata penerima lolos pada kriteria $j$.
-   - $w_j$: Bobot kriteria beku dari `BatchCriteria.frozen_weight`.
-   - *Zero-Division Guard*: Jika $|K_{\text{TL}}| == 0$ (seluruh peserta lolos), sistem mengembalikan `100.0%` secara deterministik.
-   - **Target PRD:** $F_{\text{score}} \ge 95.0\%$.
-
-2. **Hallucination Rate ($H_{\text{rate}}$):**
-   $$H_{\text{rate}} = \frac{N_{\text{invalid}}}{N_{\text{total}}} \times 100\%$$
-   - $N_{\text{invalid}}$: Jumlah narasi yang menyebutkan kriteria di luar $\{C_1, \dots, C_n\}$, istilah terlarang, atau angka desimal fiktif di luar payload input.
-   - *Normalisasi Format Indonesia*: Desimal koma `0,684` dinormalisasi ke `0.684` dan persentase `60%` dinormalisasi ke `0.60` agar tidak memicu deteksi salah (false-positive).
-   - **Target PRD:** $H_{\text{rate}} = 0.0\%$.
+| Menu / Komponen | Rute Halaman | `SUPER_ADMIN` (Kasi Kesos) | `SURVEYOR` (Ketua RT) | `VIEWER` (Lurah) |
+| :--- | :--- | :---: | :---: | :---: |
+| **Tombol Eksekusi Batch SAW** | Action Mutasi | **Tampil** | **Disembunyikan** | **Disembunyikan** |
+| **Dashboard Adjudikasi** | `/admin/dashboard` | **Tampil** | Dashboard RT | **Tampil** |
+| **Data Warga & Import Excel** | `/admin/citizens` | **Tampil** (Semua RT) | **Tampil** (Khusus RT-nya) | **Disembunyikan** |
+| **Dossier & Seleksi SAW** | `/admin/selection` | **Tampil** (Edit & Hitung) | Status Usulan RT | **Tampil** (Mode Baca) |
+| **XAI Model Explainability** | `/admin/xai` | **Tampil** | **Disembunyikan** | **Tampil** |
+| **Pengesahan Berita Acara** | `/admin/berita-acara` | **Tampil** | **Disembunyikan** | **Tampil** (Unduh PDF) |
+| **Konfigurasi Bobot SAW** | `/admin/criteria` | **Tampil** | **Disembunyikan** | **Disembunyikan** |
+| **Evaluasi Skripsi** | `/admin/evaluation` | **Tampil** | **Disembunyikan** | **Disembunyikan** |
+| **Audit Log & Integritas** | `/admin/audit` | **Tampil** | **Disembunyikan** | **Tampil** |
 
 ---
 
-### Daftar File Fase 5
+### Daftar File Fase 6
 
 | File | Tanggung Jawab |
 | :--- | :--- |
-| [`./backend/core/services/pdf_generator.py`](./backend/core/services/pdf_generator.py) | Generator ReportLab untuk Berita Acara resmi (Kop, QR, TMS) dan dokumen publik warga |
-| [`./backend/core/services/evaluation_metrics.py`](./backend/core/services/evaluation_metrics.py) | Perhitungan Fidelity Score, deteksi Hallucination, kuesioner SUS, & ekspor Excel |
-| [`./backend/core/views.py`](./backend/core/views.py) | View controller untuk Berita Acara PDF, hasil publik PDF, dan metrik skripsi |
-| [`./backend/core/urls.py`](./backend/core/urls.py) | Pendaftaran rute endpoint PDF pelaporan dan metrik skripsi |
-| [`./backend/tests/test_pdf_and_evaluation.py`](./backend/tests/test_pdf_and_evaluation.py) | 9 unit & integration tests untuk PDF generator, token publik, dan metrik skripsi |
-| [`./docs/decisions/ADR-006-controlled-nik-decryption-pdf-and-thesis-metrics.md`](./docs/decisions/ADR-006-controlled-nik-decryption-pdf-and-thesis-metrics.md) | Catatan keputusan arsitektur dekripsi Berita Acara dan evaluasi akademik |
+| [`./frontend/package.json`](./frontend/package.json) | Konfigurasi dependensi npm dan script eksekusi Vite/Vitest |
+| [`./frontend/vite.config.ts`](./frontend/vite.config.ts) | Konfigurasi build Vite, reverse proxy backend, dan setup Vitest jsdom |
+| [`./frontend/tailwind.config.js`](./frontend/tailwind.config.js) | Registrasi token desain *Civic Precision*, warna, font, dan radius |
+| [`./frontend/src/index.css`](./frontend/src/index.css) | Global stylesheet, import font Hanken Grotesk & JetBrains Mono |
+| [`./frontend/src/types/auth.ts`](./frontend/src/types/auth.ts) | Definisi tipe TypeScript peran pengguna (`SUPER_ADMIN`, `SURVEYOR`, `VIEWER`) |
+| [`./frontend/src/lib/api.ts`](./frontend/src/lib/api.ts) | Client HTTP Axios dengan interceptor JWT Bearer Token |
+| [`./frontend/src/context/AuthContext.tsx`](./frontend/src/context/AuthContext.tsx) | Provider context autentikasi staf, role switcher, dan mutasi logout |
+| [`./frontend/src/components/layout/Sidebar.tsx`](./frontend/src/components/layout/Sidebar.tsx) | Navigasi sidebar terpadu (Desktop) dan slide-over drawer (Mobile) dengan filter RBAC |
+| [`./frontend/src/components/layout/Topbar.tsx`](./frontend/src/components/layout/Topbar.tsx) | Navigasi atas dengan tombol hamburger, breadcrumb dinamis, dan role badge |
+| [`./frontend/src/components/layout/AppShell.tsx`](./frontend/src/components/layout/AppShell.tsx) | Shell pembungkus halaman dashboard dengan tata letak responsif 3-Tier |
+| [`./frontend/src/test-utils.tsx`](./frontend/src/test-utils.tsx) | Helper pengujian Vitest + RTL dengan pembungkus router dan context auth |
+| [`./frontend/src/__tests__/AppShell.responsive.test.tsx`](./frontend/src/__tests__/AppShell.responsive.test.tsx) | Suite pengujian TDD interaksi buka-tutup drawer mobile dan pengujian RBAC |
 
 ---
 
 ### Hasil Verifikasi Test
 
 ```text
-$ backend/.venv/Scripts/python.exe -m pytest backend/tests/test_pdf_and_evaluation.py -v
+$ npm --prefix frontend test -- --run src/__tests__/AppShell.responsive.test.tsx
 
-backend\tests\test_pdf_and_evaluation.py::test_fidelity_hallucination_metrics_and_signed_pdf_download PASSED [ 10%]
-backend\tests\test_pdf_and_evaluation.py::test_fidelity_score_formula_and_zero_division_guard PASSED [ 20%]
-backend\tests\test_pdf_and_evaluation.py::test_hallucination_rate_normalizes_indonesian_decimals_and_percentages PASSED [ 30%]
-backend\tests\test_pdf_and_evaluation.py::test_sus_questionnaire_template_and_export_dataset PASSED [ 40%]
-backend\tests\test_pdf_and_evaluation.py::test_berita_acara_pdf_generation_content_and_audit_log PASSED [ 50%]
-backend\tests\test_pdf_and_evaluation.py::test_individual_result_pdf_generation_masks_pii PASSED [ 60%]
-backend\tests\test_pdf_and_evaluation.py::test_berita_acara_pdf_api_endpoint_rbac PASSED [ 70%]
-backend\tests\test_pdf_and_evaluation.py::test_public_individual_pdf_endpoint_guards PASSED [ 80%]
-backend\tests\test_pdf_and_evaluation.py::test_evaluation_metrics_api_endpoint PASSED [ 90%]
-backend\tests\test_pdf_and_evaluation.py::test_evaluation_metrics_xlsx_export PASSED [100%]
+ RUN  v2.1.9 D:/Kuliah/SKRIPSI/BANSOS_SAW+LLM/frontend
 
-============================= 10 passed in 23.29s =============================
+ ✓ src/__tests__/AppShell.responsive.test.tsx (4 tests) 268ms
+   ✓ toggles mobile drawer via hamburger button and closes via backdrop
+   ✓ enforces RBAC: hides mutation actions from Viewer (Lurah) and displays approval menu
+   ✓ enforces RBAC: allows Super Admin to see all governance modules including SAW execution and weight config
+   ✓ enforces RBAC: scopes Surveyor (Ketua RT) strictly to RT operations
 
-# Verifikasi Regresi Keseluruhan Seluruh Suite Pengujian Backend (Task 1 s/d Task 5):
-$ backend/.venv/Scripts/python.exe -m pytest backend/ -v
-================== 99 passed, 1 warning in 86.57s (0:01:26) ===================
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  17:35:46
+   Duration  1.86s
+
+# Verifikasi Kompilasi TypeScript & Build Produksi Vite:
+$ npm --prefix frontend run build
+
+vite v6.4.4 building for production...
+transforming...
+✓ 1585 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.99 kB │ gzip:  0.55 kB
+dist/assets/index-BuKRZx9V.css   16.09 kB │ gzip:  3.87 kB
+dist/assets/index-6PmxP5Vj.js   184.65 kB │ gzip: 59.21 kB
+✓ built in 2.43s
 ```
 
 ---
 
 ## Dokumentasi Branch Sebelumnya
+
+<details>
+<summary><strong>Fase 5: feat/m5-pdf-reporting (PDF Berita Acara Generator with QR & TMS Appendix & Thesis Evaluation Metrics)</strong></summary>
+
+### Mengapa Fase Ini Dibutuhkan
+Fase 5 merealisasikan lapisan pelaporan resmi (*Official Reporting Layer*) dan instrumen pengujian skripsi (*Academic Evaluation Instruments*) sesuai PRD Bagian 1, 10, dan 11, serta ADR-002 dan ADR-006:
+- Berita Acara resmi berkekuatan hukum dengan Kop Surat Pemkot Tangerang Selatan, tabel penetapan penerima, tanda tangan Lurah & Kasi Kesos, lampiran terpisah warga TMS (`DISQUALIFIED`), dan QR Code validasi keaslian.
+- Dekripsi terkontrol NIK (`nik_encrypted` AES-256-GCM) dengan pencatatan otomatis ke `AuditLog` (`action=NIK_DECRYPT`).
+- Lembar pengumuman kelayakan mandiri publik zero-PII dengan penyamaran visual 100% dan token unduhan bertanda tangan kriptografis.
+- Perhitungan metrik evaluasi skripsi otomatis: *Fidelity Score* ($\ge 95\%$), *Hallucination Rate* ($0\%$), kuesioner baku SUS Indonesia, dan ekspor dataset multi-sheet ke format Excel (`.xlsx`).
+
+</details>
 
 <details>
 <summary><strong>Fase 4: feat/m4-api-responsive-ui (REST API Endpoints, RBAC Guards, Excel Ingest/Export, & Public Portal Shield)</strong></summary>
