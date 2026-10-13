@@ -158,7 +158,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "30/min",
         "user": "120/min",
-        "auth_login": os.environ.get("AUTH_LOGIN_RATE_LIMIT", "10/15m"),
+        "auth_login": os.environ.get("AUTH_LOGIN_RATE_LIMIT", "10/min"),
     },
 }
 

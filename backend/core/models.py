@@ -341,14 +341,20 @@ def _coerce_approved_by(value) -> str:
 
 
 class SelectionBatchQuerySet(AliasQuerySet):
+    FIELD_ALIASES = {"batch_number": "name"}
+
     def _map_kwargs(self, kwargs: dict) -> dict:
         mapped = super()._map_kwargs(kwargs)
         if "approved_by" in mapped:
             mapped["approved_by"] = _coerce_approved_by(mapped["approved_by"])
+        if "name" in mapped and isinstance(mapped["name"], int):
+            mapped["name"] = f"Batch {mapped['name']}"
         return mapped
 
 
 class SelectionBatch(models.Model):
+    _FIELD_ALIASES = {"batch_number": "name"}
+
     class Status(models.TextChoices):
         DRAFT = "Draft", "Draft"
         COLLECTING = "Collecting", "Collecting"
@@ -369,6 +375,19 @@ class SelectionBatch(models.Model):
         blank=True,
         related_name="created_batches",
     )
+
+    def __init__(self, *args, **kwargs):
+        if "batch_number" in kwargs and "name" not in kwargs:
+            bn = kwargs.pop("batch_number")
+            kwargs["name"] = f"Batch {bn}" if isinstance(bn, int) or str(bn).isdigit() else str(bn)
+        super().__init__(*args, **kwargs)
+
+    @property
+    def batch_number(self):
+        try:
+            return int(str(self.name).replace("Batch", "").strip())
+        except (ValueError, TypeError):
+            return self.id or 1
     approved_by = models.CharField(max_length=200, blank=True, default="")
     calculated_at = models.DateTimeField(null=True, blank=True)
     approved_at = models.DateTimeField(null=True, blank=True)
@@ -708,11 +727,11 @@ class Evaluation(models.Model):
 # ---------------------------------------------------------------------------
 
 class EvaluationDetailQuerySet(AliasQuerySet):
-    FIELD_ALIASES = {"normalized_score": "normalized_value"}
+    FIELD_ALIASES = {"normalized_score": "normalized_value", "crips_value": "raw_crips_value"}
 
 
 class EvaluationDetail(models.Model):
-    _FIELD_ALIASES = {"normalized_score": "normalized_value"}
+    _FIELD_ALIASES = {"normalized_score": "normalized_value", "crips_value": "raw_crips_value"}
 
     evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE, related_name="details")
     criteria = models.ForeignKey(Criteria, on_delete=models.PROTECT)
@@ -738,9 +757,19 @@ class EvaluationDetail(models.Model):
         ordering = ["criteria__order"]
 
     def __init__(self, *args, **kwargs):
+        if "crips_value" in kwargs and "raw_crips_value" not in kwargs:
+            kwargs["raw_crips_value"] = kwargs.pop("crips_value")
         if "normalized_score" in kwargs and "normalized_value" not in kwargs:
             kwargs["normalized_value"] = kwargs.pop("normalized_score")
         super().__init__(*args, **kwargs)
+
+    @property
+    def crips_value(self) -> int:
+        return self.raw_crips_value
+
+    @crips_value.setter
+    def crips_value(self, value: int) -> None:
+        self.raw_crips_value = value
 
     @property
     def normalized_score(self) -> Decimal:
@@ -812,11 +841,11 @@ class SelectionResult(models.Model):
 # ---------------------------------------------------------------------------
 
 class AuditLogQuerySet(AliasQuerySet):
-    FIELD_ALIASES = {"user_action": "action"}
+    FIELD_ALIASES = {"user_action": "action", "actor": "performed_by", "notes": "detail"}
 
 
 class AuditLog(models.Model):
-    _FIELD_ALIASES = {"user_action": "action"}
+    _FIELD_ALIASES = {"user_action": "action", "actor": "performed_by", "notes": "detail"}
 
     class Action(models.TextChoices):
         NIK_DECRYPT = "NIK_DECRYPT", "NIK Decryption (PDF Generation)"
@@ -828,6 +857,10 @@ class AuditLog(models.Model):
         PUBLIC_CHECK = "PUBLIC_CHECK", "Public Status Check"
         PDF_DOWNLOADED = "PDF_DOWNLOADED", "PDF Downloaded"
         SEED_DATA = "SEED_DATA", "Initial Seed Data"
+        BATCH_CREATED = "BATCH_CREATED", "Batch Created"
+        RT_SUBMITTED = "RT_SUBMITTED", "RT Data Submitted"
+        CRITERIA_UPDATED = "CRITERIA_UPDATED", "Criteria Updated"
+        EXCEL_IMPORT = "EXCEL_IMPORT", "Excel Ingest"
 
     batch = models.ForeignKey(
         SelectionBatch,
@@ -836,7 +869,7 @@ class AuditLog(models.Model):
         blank=True,
         related_name="audit_logs",
     )
-    action = models.CharField(max_length=30, choices=Action.choices)
+    action = models.CharField(max_length=50, choices=Action.choices)
     performed_by = models.CharField(max_length=200)  # username or "system"
     target_object_repr = models.TextField(blank=True)  # str() of target — no PII
     detail = models.TextField(blank=True)              # additional context — no PII
@@ -852,7 +885,27 @@ class AuditLog(models.Model):
     def __init__(self, *args, **kwargs):
         if "user_action" in kwargs and "action" not in kwargs:
             kwargs["action"] = kwargs.pop("user_action")
+        if "actor" in kwargs and "performed_by" not in kwargs:
+            kwargs["performed_by"] = kwargs.pop("actor")
+        if "notes" in kwargs and "detail" not in kwargs:
+            kwargs["detail"] = kwargs.pop("notes")
         super().__init__(*args, **kwargs)
+
+    @property
+    def actor(self) -> str:
+        return self.performed_by
+
+    @actor.setter
+    def actor(self, value: str) -> None:
+        self.performed_by = value
+
+    @property
+    def notes(self) -> str:
+        return self.detail
+
+    @notes.setter
+    def notes(self, value: str) -> None:
+        self.detail = value
 
     @property
     def user_action(self) -> str:

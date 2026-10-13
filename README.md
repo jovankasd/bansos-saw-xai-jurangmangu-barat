@@ -4,187 +4,218 @@ Platform **Explainable Decision Support System (EDSS)** berbasis web untuk selek
 
 ---
 
-## Dokumentasi Branch: `feat/m3-xai-fallback` (Fase 3 / Task 3 — Zero-PII Sanitizer, Gemini Flash XAI Explainer, Deterministic Fallback, & Async Worker)
+## Dokumentasi Branch: `feat/m4-api-responsive-ui` (Fase 4 / Task 4 — REST API Endpoints, RBAC Guards, Excel Ingest/Export, & Public Portal Shield)
 
 ### Mengapa Fase Ini Dibutuhkan (*Context & Why*)
 
-Setelah Fase 1 meletakkan fondasi kriptografi NIK dan Fase 2 mengimplementasikan engine deterministik Simple Additive Weighting (SAW), Fase 3 menghadirkan **lapisan penjelasan (Explainer Layer)** sesuai **PRD Bagian 8**, **[ADR-001](./docs/decisions/ADR-001-hybrid-saw-xai-with-deterministic-fallback.md)**, **[ADR-002](./docs/decisions/ADR-002-dual-layer-nik-crypto-and-zero-pii-xai.md)**, dan **[ADR-004](./docs/decisions/ADR-004-async-xai-queue-and-passwordless-public-portal.md)**:
+Setelah Fase 1 (Kriptografi & Model), Fase 2 (Engine SAW & Tie-Breaker), dan Fase 3 (Sanitasi Zero-PII & Explainer XAI Gemini), Fase 4 menghubungkan seluruh inti komputasi dengan antarmuka web melalui **lapisan REST API standar Django REST Framework (DRF)** sesuai **PRD Bagian 10**, **[ADR-004](./docs/decisions/ADR-004-async-xai-queue-and-passwordless-public-portal.md)**, dan **[ADR-005](./docs/decisions/ADR-005-responsive-ui-architecture-and-stitch-review-gate.md)**:
 
-1. **Zero-PII Sanitization (UU PDP No. 27/2022 & OWASP LLM02):**
-   Wajib menjamin tidak ada satupun Data Pribadi (nama asli, NIK, No KK, alamat, RT/RW) yang dikirim ke Google Gemini API. Pemohon diidentifikasi hanya dengan kode anonim (`KPM-042`).
-2. **Kepatuhan Terhadap Snapshot Bobot Beku (`BatchCriteria.frozen_weight`):**
-   Seluruh kalkulasi kesenjangan dan pembentukan prompt XAI wajib membaca bobot beku batch (`frozen_weight`), bukan master `Criteria.weight` yang dinamis, menjaga integritas historis batch.
-3. **Penjelasan Kontrafaktual & Transparansi Algoritmik:**
-   Memberikan narasi bahasa alami yang menjelaskan faktor pembeda utama dan saran edukatif bagi warga yang tidak lolos kuota, serta konfirmasi verifikasi bagi warga yang lolos.
-4. **Resiliensi Tinggi & Fallback Deterministik Bebas HTTP 500:**
-   Jika kuota API habis (HTTP 429), jaringan terputus, atau output LLM mengalami halusinasi kriteria setelah 2 kali *retry* dengan *exponential backoff*, sistem secara otomatis beralih ke generator deterministik berbasis penalti kesenjangan terbobot $\Delta_j \cdot w_j$ tanpa menghentikan batch.
-5. **State Machine Asinkron:**
-   Batch hanya dapat berpindah dari status `Calculated` ke `Narrated` apabila 100% kandidat `ELIGIBLE` telah memiliki narasi penjelasan yang tersimpan di basis data.
+1. **Role-Based Access Control (RBAC) Ketat & Scoping Wilayah (OWASP A01):**
+   - **Super Admin (Kasi Kesos):** Akses penuh untuk pembaruan kriteria, pembuatan batch, eksekusi kalkulasi SAW, penjadwalan narasi XAI, dan publikasi batch ke publik.
+   - **Surveyor (Ketua RT):** Akses dibatasi ketat (*hard-scoped*) hanya pada nomor RT wilayahnya sendiri (`request.user.rt_number`). Dilarang keras membaca, menambah, atau mengimpor data warga RT lain, serta dilarang mengakses mutasi alur seleksi.
+   - **Viewer (Lurah):** Akses *read-only* terhadap seluruh metrik, peringkat, dan narasi, dengan hak mutasi eksklusif hanya untuk menyetujui (*Approve*) batch yang telah berstatus `Narrated`.
+2. **Ingest Massal & Ekspor Rekapitulasi Excel Berstandar UU PDP:**
+   - Menyediakan endpoint import berkas `.xlsx` dengan pelaporan error baris granular, penolakan baris RT silang, deduplikasi instan via `nik_hash` $O(1)$, pembatasan ukuran berkas (maksimal 5 MB / 1.000 baris), serta penjagaan status batch (`Draft` atau `Collecting`).
+   - Menyediakan endpoint ekspor rekapitulasi hasil seleksi dalam format `.xlsx` resmi kelurahan.
+3. **Perisai Anti-Bot & Anti-Enumerasi Portal Publik (`/api/public/check-status/`):**
+   - Mengimplementasikan alur verifikasi berlapis tanpa login (passwordless) menggunakan 16 digit NIK + 4 digit terakhir No KK + Cloudflare Turnstile CAPTCHA.
+   - Mengatur urutan evaluasi pertahanan (*defense ordering*) presisi: verifikasi CAPTCHA terlebih dahulu sebelum menaikkan penghitung kegagalan NIK guna mencegah serangan DoS/Lockout massal oleh bot.
+   - Pembatasan laju IP (5 permintaan/menit/IP) dan *lockout* 15 menit setelah 5 kali salah input KK berturut-turut pada NIK yang sama (bahkan jika penyerang berganti-ganti alamat IP).
+   - Mengembalikan HTTP 404 generik jika data tidak cocok atau batch belum berstatus `Published` demi mencegah kebocoran informasi (*zero-enumeration*).
 
 ---
 
-### Changelog Fase 3 (Task 3)
+### Changelog Fase 4 (Task 4)
 
 #### Added
-- **Sanitizer Zero-PII ([`backend/core/services/sanitizer.py`](./backend/core/services/sanitizer.py)):**
-  - `build_anonymous_payload(evaluation_id)`: Membangun payload anonim sesuai PRD Bagian 8.1 (`applicant_code`, `rank`, `quota`, `status`, `final_score`, `cutoff_score`, `criteria_data`).
-  - Isolasi PII 100%: Menyaring nama, NIK (hash/masked/encrypted), No KK, dan alamat.
-  - Snapshot Enforced: Membaca `BatchCriteria.frozen_weight` per batch secara eksklusif.
-  - Menghitung rata-rata skor normalisasi penerima lolos ($\bar{r}_j^{\text{lolos}}$) dengan penanganan aman untuk kasus ekstrem (`quota = 0` dan `quota >= eligible`).
-  - Menolak kandidat `DISQUALIFIED` (TMS) karena warga TMS diarahkan ke `INELIGIBLE_NOTICE` administratif, bukan modul XAI.
-- **Generator Fallback Deterministik ([`backend/core/services/deterministic_fallback.py`](./backend/core/services/deterministic_fallback.py)):**
-  - `generate_deterministic_fallback(payload)`: Menghitung penalti kesenjangan terbobot $\Delta_j \cdot w_j = (\bar{r}_j^{\text{lolos}} - r_{ij}) \cdot w_j$.
-  - Menerapkan resolusi kriteria kembar kanonik: $C_1 \rightarrow C_2 \rightarrow C_3 \rightarrow C_4$.
-  - Penanganan khusus kandidat batas kuota (*borderline*): Jika seluruh $\Delta_j \le 0$ tetapi tidak lolos kuota karena *tie-breaker*, menghasilkan narasi spesifik mengenai kompetisi batas ambang kuota (*cutoff*).
-  - Menyusun narasi resmi terstandarisasi untuk status `LOLOS` dan `TIDAK_LOLOS`.
-- **Gemini Flash XAI Client & Validator ([`backend/core/services/xai_explainer.py`](./backend/core/services/xai_explainer.py)):**
-  - `generate_xai_for_evaluation(evaluation_id, gemini_client, backoff_seconds)`: Mengintegrasikan SDK resmi `google-genai` (`genai.Client`, `GenerateContentConfig`, `temperature: 0.15`, `response_mime_type: "application/json"`), mendukung *duck-typed client* (baik `client.models.generate_content` maupun `client.generate`) serta penanganan *response object/string/dict*.
-  - `validate_xai_output(data, allowed_criteria_codes, payload)`: Validasi ketat struktur JSON (`ringkasan_keputusan`, `faktor_penentu_utama`, `narasi_lengkap`, `rekomendasi_tindak_lanjut`), pembersihan otomatis blok kode markdown (` ```json `), pencegahan halusinasi kode kriteria non-aktif di seluruh 4 field, pencegahan halusinasi nilai numerik (*rank*, *quota*, dan angka skor desimal tak berdasar per PRD Bagian 11.2), serta ekstraksi otomatis `primary_criterion_code` untuk evaluasi *Fidelity Score*.
-  - Mekanisme *retry* maksimal 2 kali dengan *exponential backoff*, berpindah otomatis ke `generate_deterministic_fallback()` jika gagal tanpa melempar pengecualian HTTP 500.
-  - `map_explanation_to_public_schema(ai_payload)`: Memetakan kunci internal ke kontrak skema publik (`ringkasan`, `faktor_utama`, `narasi_lengkap`, `rekomendasi`) secara idempoten.
-- **Asynchronous Task Worker ([`backend/core/tasks.py`](./backend/core/tasks.py)):**
-  - `process_batch_xai_task(batch_id, gemini_client, evaluation_id, force)`: Memproses narasi seluruh kandidat `ELIGIBLE` dalam batch atau mode pemohon tunggal (`?evaluation_id=45`).
-  - *Idempotent Resume*: Secara cerdas melewati kandidat yang sudah memiliki narasi (`force=False`) sehingga pemrosesan ulang hemat kuota API dan aman dari interupsi.
-  - *Concurrency Protection*: Menggunakan row lock `select_for_update()` dalam transaksi database atomik untuk mencegah *race condition* antar worker paralel.
-  - *State Transition Gate*: Memperbarui status batch ke `"Narrated"` dan mencatat `AuditLog` (`XAI_GENERATED`) **hanya jika 100%** kandidat berhak telah memiliki narasi lengkap.
-  - Menolak eksekusi pada batch yang belum berstatus `Calculated`.
-- **Suite Pengujian TDD & Security Audit ([`backend/tests/test_xai_and_fallback.py`](./backend/tests/test_xai_and_fallback.py)):**
-  - 27 pengujian menyeluruh mencakup Zero-PII, isolasi bobot beku, resolusi $\Delta_j \cdot w_j$, kandidat batas kuota (*borderline*), retry/fallback, anti-halusinasi kriteria & angka, pembersihan blok markdown, *state machine*, mode evaluasi tunggal, resume idempoten, dan audit PII pada payload jaringan LLM.
+- **RBAC & RT-Scoping Permissions ([`backend/core/permissions.py`](./backend/core/permissions.py)):**
+  - `IsSuperAdmin`, `IsSurveyor`, `IsViewer`, `IsSuperAdminOrViewer`, `IsSuperAdminOrSurveyor`, `IsStaff`.
+  - Helper validasi dan normalisasi RT: `normalize_rt()` dan `check_surveyor_rt_scope(request, rt_number)`.
+- **Layanan Ingest & Ekspor Excel ([`backend/core/services/excel_ingest.py`](./backend/core/services/excel_ingest.py)):**
+  - `import_citizens_from_excel(batch_id, file_obj, user)`: Parsing `.xlsx` aman dengan openpyxl, validasi header kanonik, pelaporan baris error, pencegahan duplikasi NIK via `nik_hash`, kepatuhan enkripsi AES-256-GCM, guard batas status batch (`Draft`/`Collecting`), batas file 5 MB / 1.000 baris, dan penegakan RT surveyor.
+  - `export_batch_results_xlsx(batch_id)`: Ekspor ringkasan hasil kalkulasi dan pemeringkatan SAW ke lembar kerja Excel berformat rapi.
+- **Perisai Portal Publik & Rate Limiter ([`backend/core/services/rate_limiter.py`](./backend/core/services/rate_limiter.py)):**
+  - `verify_turnstile_captcha(token, remote_ip)`: Verifikasi Cloudflare Turnstile CAPTCHA dengan mode fail-closed di produksi dan bypass aman saat testing/debug.
+  - `check_ip_rate_limit(ip_address)`: Throttle 5 req/menit per IP via Django Cache.
+  - `check_nik_lockout(nik_hash)`: Cek status lockout 15 menit per `nik_hash`.
+  - `record_nik_failed_attempt(nik_hash)` & `reset_nik_failed_attempts(nik_hash)`: Penghitung kegagalan berturut-turut lintas IP.
+- **REST API Serializers ([`backend/core/serializers.py`](./backend/core/serializers.py)):**
+  - `LoginSerializer`, `StaffUserSerializer`, `CriteriaSerializer`, `CriteriaBatchUpdateSerializer` (dengan validasi jumlah bobot tepat 1.0000 dan rentang 0.0001–1.0000), `PeriodSerializer`, `SelectionBatchSerializer`, `CitizenCreateSerializer`, `SelectionResultItemSerializer`, `PublicCheckStatusRequestSerializer`.
+- **REST API Views ([`backend/core/views.py`](./backend/core/views.py)):**
+  - `StaffLoginRateThrottle` & `StaffLoginView`: Login staf dengan JWT token, informasi role, dan scoping RT.
+  - `CriteriaListView` & `CriteriaBatchUpdateView`: Pengelolaan master kriteria dan pembaharuan bobot.
+  - `BatchListCreateView`: Daftar periode/batch dan pembuatan batch baru.
+  - `CitizenCreateView` & `CitizenImportExcelView`: Registrasi pemohon bansos individual dan impor massal Excel.
+  - `SelectionMarkRtSubmittedView`: Penguncian pengumpulan data tingkat RT (`is_rt_submitted = True`).
+  - `SelectionCalculateView`: Pemicu engine SAW dan pembekuan bobot kriteria.
+  - `SelectionResultsListView`: Pengambilan hasil perangkingan, skor preferensi, dan status kuota.
+  - `SelectionGenerateXaiView` & `SelectionXaiProgressView`: Pemicu antrean tugas asinkron XAI dan pemantauan progres narasi.
+  - `SelectionApproveView`: Persetujuan batch eksklusif oleh Lurah (`VIEWER`).
+  - `SelectionPublishView`: Publikasi batch ke publik eksklusif oleh Super Admin (`SUPER_ADMIN`).
+  - `SelectionExportExcelView`: Pengunduhan rekapitulasi Excel.
+  - `PublicCheckStatusView`: Pemeriksaan status bantuan sosial transparan oleh masyarakat dengan perlindungan anti-bot berlapis.
+- **Routing URL ([`backend/core/urls.py`](./backend/core/urls.py) & [`backend/config/urls.py`](./backend/config/urls.py)):**
+  - Pendaftaran prefix `/api/` terpadu untuk seluruh rute internal dan publik.
+- **Suite Pengujian TDD & Audit RBAC/Security ([`backend/tests/test_api_endpoints.py`](./backend/tests/test_api_endpoints.py)):**
+  - 15 pengujian integrasi end-to-end yang menguji autentikasi JWT, hak akses RBAC, isolasi RT, alur state machine seleksi, impor/ekspor Excel, dan ketahanan pertahanan portal publik.
 
 #### Security
-- **OWASP LLM02 Sensitive Information Disclosure & UU PDP Kepatuhan Penuh:** Tidak ada data identitas warga yang pernah disentuh atau dikirimkan ke model LLM. Terverifikasi secara otomatis oleh `test_security_audit_zero_pii_in_llm_prompt_and_network_payload`.
-- **Anti-Hallucination Filtering (Criteria & Numbers):** Respons LLM diperiksa terhadap kriteria aktif serta konsistensi angka terhadap payload JSON (ranking, kuota, skor); manipulasi atau halusinasi angka/kriteria memicu penolakan dan fallback ke aturan deterministik kelurahan.
-- **Fail-Safe Robustness:** Pemadaman API eksternal atau *rate limiting* tidak pernah mengakibatkan *crash* atau kesalahan sistem 500 ke pengguna.
+- **OWASP A01 (Broken Access Control) & IDOR Mitigation:** Surveyor terisolasi pada wilayah RT miliknya sendiri; Lurah tidak dapat mengubah kriteria atau mengeksekusi kalkulasi SAW; Super Admin adalah satu-satunya peran yang berhak memublikasikan hasil seleksi.
+- **Pertahanan Berlapis Anti-Bot & Anti-Enumerasi NIK:**
+  1. *Turnstile CAPTCHA Guard*: Gagalkan bot secara instan tanpa membebani penghitung NIK (mencegah DoS lockout terhadap warga sah).
+  2. *IP Rate Limiting*: Maksimal 5 permintaan per menit per alamat IP.
+  3. *Per-NIK Distributed Lockout*: 15 menit penguncian setelah 5 kegagalan validasi No KK pada NIK yang sama.
+  4. *Generic 404 Response*: Merespons dengan pesan seragam tanpa membocorkan apakah NIK terdaftar pada sistem jika batch belum `Published` atau data tidak cocok.
+- **UU PDP No. 27/2022 Kepatuhan At-Rest & Transit:** NIK selalu disimpan dalam bentuk terenkripsi (`nik_encrypted`) dan ter-hash (`nik_hash`); respons publik portal hanya menampilkan penyamaran visual (`367403******0002` dan `Ahmad S******`).
+- **Hardening Hasil Audit `security-auditor`:** Pembatasan ukuran unggah Excel 5 MB, batas 1.000 baris, pemblokiran token CAPTCHA dummy di lingkungan produksi (fail-closed jika `TURNSTILE_SECRET_KEY` tidak dikonfigurasi), serta pencegahan penimpaan data warga RT lain.
 
 #### Changed
-- Modul layanan `core.services` diperluas dan diekspos melalui [`backend/core/services/__init__.py`](./backend/core/services/__init__.py).
-- Seluruh 47 pengujian dari Fase 1 (Kriptografi & Model) dan Fase 2 (SAW & Tie-Breaker) tetap 100% lulus tanpa regresi.
+- [`backend/core/models.py`](./backend/core/models.py): Menambahkan properti alias ORM (`batch_number` pada `SelectionBatch`, `crips_value` pada `EvaluationDetail`, `actor`/`notes` pada `AuditLog`) untuk keseragaman pemanggilan API.
+- [`backend/config/settings.py`](./backend/config/settings.py): Mengonfigurasi throttling default `auth_login` menjadi `10/min` dengan dukungan fallback parser cerdas `StaffLoginRateThrottle` untuk durasi interval format kustom (`10/15m`).
 
 ---
 
-### Skema Payload Zero-PII & Fallback Deterministik $\Delta_j \cdot w_j$
+### Direktori REST API Endpoints (PRD Bagian 10)
 
-#### 1. Payload Anonim ke Gemini API (PRD Bagian 8.1)
-```json
-{
-  "applicant_code": "KPM-042",
-  "rank": 35,
-  "quota": 30,
-  "status": "TIDAK_LOLOS",
-  "final_score": 0.684,
-  "cutoff_score": 0.725,
-  "criteria_data": [
-    {
-      "code": "C1",
-      "name": "Pendapatan Keluarga",
-      "type": "COST",
-      "weight": 0.30,
-      "raw_crips_label": "Rp 1.500.001 - Rp 2.500.000/bln",
-      "normalized_score": 0.60,
-      "avg_passed_score": 0.85
-    },
-    {
-      "code": "C2",
-      "name": "Jumlah Tanggungan",
-      "type": "BENEFIT",
-      "weight": 0.25,
-      "raw_crips_label": "1-2 orang tanggungan",
-      "normalized_score": 0.50,
-      "avg_passed_score": 0.80
-    },
-    {
-      "code": "C3",
-      "name": "Kondisi Tempat Tinggal",
-      "type": "COST",
-      "weight": 0.25,
-      "raw_crips_label": "Cukup (Semi-permanen, fasilitas terbatas)",
-      "normalized_score": 0.75,
-      "avg_passed_score": 0.75
-    },
-    {
-      "code": "C4",
-      "name": "Kepemilikan Aset",
-      "type": "COST",
-      "weight": 0.20,
-      "raw_crips_label": "Memiliki aset menengah (motor/elektronik)",
-      "normalized_score": 0.70,
-      "avg_passed_score": 0.70
-    }
-  ]
-}
+| Endpoint | Method | Role Akses | Deskripsi & Guard |
+| :--- | :--- | :--- | :--- |
+| `/api/auth/login/` | `POST` | Public / All | Otentikasi staf, pengembalian token JWT, role, & RT scope |
+| `/api/criteria/` | `GET` | `IsStaff` | Melihat daftar kriteria aktif & bobot master |
+| `/api/criteria/batch-update/` | `PUT` | `SUPER_ADMIN` | Pembaharuan bobot kriteria ($\sum w_j = 1.0000$) |
+| `/api/batches/` | `GET`, `POST` | `GET`: `IsStaff`<br>`POST`: `SUPER_ADMIN` | Melihat daftar batch atau membuat batch seleksi baru |
+| `/api/citizens/` | `POST` | `SUPER_ADMIN`, `SURVEYOR` | Menambahkan data warga (Surveyor dibatasi pada RT-nya) |
+| `/api/citizens/import-excel/` | `POST` | `SUPER_ADMIN`, `SURVEYOR` | Impor massal berkas `.xlsx` pemohon bansos (max 5 MB, 1.000 baris) |
+| `/api/selection/{id}/mark-rt-submitted/` | `POST` | `SUPER_ADMIN`, `SURVEYOR` | Mengunci status submit pengumpulan data RT |
+| `/api/selection/{id}/calculate/` | `POST` | `SUPER_ADMIN` | Eksekusi engine SAW, pembekuan bobot, & status `Calculated` |
+| `/api/selection/{id}/results/` | `GET` | `IsStaff` | Mengambil hasil ranking, nilai preferensi, & status kuota |
+| `/api/selection/{id}/generate-xai/` | `POST` | `SUPER_ADMIN` | Memicu worker asinkron penjelasan XAI Gemini & fallback |
+| `/api/selection/{id}/xai-progress/` | `GET` | `IsStaff` | Memantau progres narasi XAI & status transisi `Narrated` |
+| `/api/selection/{id}/approve/` | `PATCH` | `VIEWER` (Lurah) | Pengesahan/persetujuan batch oleh Lurah (status `Narrated` $\rightarrow$ `Approved`) |
+| `/api/selection/{id}/publish/` | `PATCH` | `SUPER_ADMIN` | Publikasi batch ke portal publik (status `Approved` $\rightarrow$ `Published`) |
+| `/api/selection/{id}/export-excel/` | `GET` | `IsStaff` | Mengunduh lembar rekapitulasi hasil seleksi dalam format `.xlsx` |
+| `/api/public/check-status/` | `POST` | Public | Pengecekan mandiri status bansos warga dengan perisai anti-bot |
+
+---
+
+### Matriks Role-Based Access Control (RBAC)
+
+```
++------------------------------------+-------------+--------------------+----------------+--------+
+| Operasi / Endpoint                 | Super Admin | Surveyor (Ketua RT)| Viewer (Lurah) | Publik |
++------------------------------------+-------------+--------------------+----------------+--------+
+| Login & Dapatkan Token JWT         |      V      |         V          |       V        |   -    |
+| Kelola & Edit Bobot Kriteria       |      V      |         -          |       -        |   -    |
+| Buat Periode / Batch Baru          |      V      |         -          |       -        |   -    |
+| Entri & Impor Warga (.xlsx)        |      V      |  V (Scoped RT-nya) |       -        |   -    |
+| Kunci Pengumpulan Data RT          |      V      |  V (Scoped RT-nya) |       -        |   -    |
+| Eksekusi Kalkulasi SAW             |      V      |         -          |       -        |   -    |
+| Lihat Hasil Ranking & Matriks      |      V      |         V          |       V        |   -    |
+| Generate Narasi XAI Gemini         |      V      |         -          |       -        |   -    |
+| Approve Batch Seleksi              |      -      |         -          |       V        |   -    |
+| Publish Batch ke Publik            |      V      |         -          |       -        |   -    |
+| Ekspor Rekapitulasi Excel          |      V      |         V          |       V        |   -    |
+| Cek Status Mandiri (/cek-bansos)   |      -      |         -          |       -        |   V    |
++------------------------------------+-------------+--------------------+----------------+--------+
 ```
 
-#### 2. Formulasi Kesenjangan Terbobot Fallback Deterministik
-Untuk setiap kriteria $j$:
+---
 
-$$\Delta_j = \bar{r}_j^{\text{lolos}} - r_{ij}$$
+### Arsitektur Perisai Portal Publik (`/api/public/check-status/`)
 
-$$\text{Penalti Terbobot}_j = \Delta_j \cdot w_j$$
-
-Kriteria penentu utama dipilih melalui:
-
-$$j^* = \operatorname{argmax}_j (\Delta_j \cdot w_j)$$
-
-Jika terdapat nilai penalti terbobot kembar, pemecahan dilakukan dengan prioritas kriteria kanonik $C_1 \succ C_2 \succ C_3 \succ C_4$.
+```
+   Permintaan Publik (NIK, No KK 4-digit, CAPTCHA Token)
+                         │
+                         ▼
+        [ 1. Verifikasi Turnstile CAPTCHA ]
+       Gagal ──► HTTP 403 Forbidden (Counter NIK TIDAK naik)
+                         │ Lolos
+                         ▼
+        [ 2. Throttle IP (5 req/menit/IP) ]
+       Batas Tercapai ──► HTTP 429 Too Many Requests
+                         │ Lolos
+                         ▼
+        [ 3. Cek Lockout NIK (15 Menit) ]
+       Sedang Lockout ──► HTTP 429 Too Many Requests
+                         │ Lolos
+                         ▼
+        [ 4. Validasi Format NIK (16-Digit) ]
+       Tidak Valid ──► HTTP 400 Bad Request
+                         │ Lolos
+                         ▼
+     [ 5. Hash NIK (HMAC-SHA256) & Pencarian DB ]
+       Tidak Ditemukan / KK Salah ──► Catat Gagal (+1) ──► HTTP 404 Not Found
+                         │                                 (Jika 5x ──► Lockout 15m)
+                         ▼
+     [ 6. Periksa Status Batch Seleksi ]
+       Batch Belum "Published" ──► HTTP 404 Not Found (Zero-Enumeration)
+                         │
+                         ▼
+     [ 7. Kembalikan Payload Publik Zero-PII ]
+       (Masked NIK/Nama, Status, Skor, Narasi XAI, & Download Token PDF)
+```
 
 ---
 
-### Daftar File Fase 3
+### Daftar File Fase 4
 
 | File | Tanggung Jawab |
 | :--- | :--- |
-| [`./backend/core/services/sanitizer.py`](./backend/core/services/sanitizer.py) | Membangun payload anonim Zero-PII, membaca `BatchCriteria.frozen_weight`, menghitung $\bar{r}_j^{\text{lolos}}$ |
-| [`./backend/core/services/deterministic_fallback.py`](./backend/core/services/deterministic_fallback.py) | Generator narasi deterministik berbasis aturan ($\Delta_j \cdot w_j$, tie-breaker $C_1–C_4$, & kasus batas kuota) |
-| [`./backend/core/services/xai_explainer.py`](./backend/core/services/xai_explainer.py) | Klien Gemini Flash API, validasi anti-halusinasi, *retry exponential backoff*, pemetaan skema publik |
-| [`./backend/core/tasks.py`](./backend/core/tasks.py) | Worker asinkron batch XAI dengan *state transition guard* ke status `"Narrated"` |
-| [`./backend/core/services/__init__.py`](./backend/core/services/__init__.py) | Ekspor publik modul layanan SAW & XAI |
-| [`./backend/tests/test_xai_and_fallback.py`](./backend/tests/test_xai_and_fallback.py) | 15 pengujian TDD, kasus batas, simulasi kegagalan Gemini, dan audit keamanan Zero-PII |
+| [`./backend/core/permissions.py`](./backend/core/permissions.py) | Definisi perizinan RBAC DRF dan validasi lingkup nomor RT surveyor |
+| [`./backend/core/services/excel_ingest.py`](./backend/core/services/excel_ingest.py) | Ingest berkas Excel pemohon bansos, deduplikasi `nik_hash`, dan ekspor rekapitulasi |
+| [`./backend/core/services/rate_limiter.py`](./backend/core/services/rate_limiter.py) | Verifikasi Cloudflare Turnstile, throttle IP, dan penguncian NIK 15 menit |
+| [`./backend/core/serializers.py`](./backend/core/serializers.py) | Serializer DRF untuk autentikasi, kriteria, batch, warga, hasil, dan portal publik |
+| [`./backend/core/views.py`](./backend/core/views.py) | Kontroller endpoint REST API lengkap PRD Bagian 10 |
+| [`./backend/core/urls.py`](./backend/core/urls.py) | Pemetaan rute URL API internal dan publik |
+| [`./backend/config/urls.py`](./backend/config/urls.py) | Integrasi rute `/api/` pada konfigurasi utama Django |
+| [`./backend/config/settings.py`](./backend/config/settings.py) | Konfigurasi throttling DRF dan integrasi SimpleJWT |
+| [`./backend/core/models.py`](./backend/core/models.py) | Penambahan properti alias model ORM |
+| [`./backend/tests/test_api_endpoints.py`](./backend/tests/test_api_endpoints.py) | 15 unit dan integration test REST API, RBAC, Excel, dan perisai publik |
 
 ---
 
 ### Hasil Verifikasi Test
 
 ```text
-$ backend/.venv/Scripts/python.exe -m pytest backend/tests/test_xai_and_fallback.py -v
+$ backend/.venv/Scripts/python.exe -m pytest backend/tests/test_api_endpoints.py -v
 
-backend\tests\test_xai_and_fallback.py::test_anonymous_payload_contains_zero_pii_and_uses_frozen_weights PASSED
-backend\tests\test_xai_and_fallback.py::test_anonymous_payload_criteria_data_fields_and_avg_passed_score PASSED
-backend\tests\test_xai_and_fallback.py::test_anonymous_payload_zero_passed_or_all_passed PASSED
-backend\tests\test_xai_and_fallback.py::test_anonymous_payload_rejects_disqualified_or_uncalculated PASSED
-backend\tests\test_xai_and_fallback.py::test_fallback_selects_highest_weighted_gap_and_maps_public_keys PASSED
-backend\tests\test_xai_and_fallback.py::test_fallback_canonical_tie_break_order_c1_to_c4 PASSED
-backend\tests\test_xai_and_fallback.py::test_fallback_borderline_tie_break_when_all_gaps_non_positive PASSED
-backend\tests\test_xai_and_fallback.py::test_fallback_for_status_lolos PASSED
-backend\tests\test_xai_and_fallback.py::test_xai_explainer_with_mocked_gemini_success PASSED
-backend\tests\test_xai_and_fallback.py::test_xai_explainer_retries_and_falls_back_on_error PASSED
-backend\tests\test_xai_and_fallback.py::test_xai_explainer_rejects_hallucinated_criteria_and_falls_back PASSED
-backend\tests\test_xai_and_fallback.py::test_xai_explainer_rejects_malformed_json_and_falls_back PASSED
-backend\tests\test_xai_and_fallback.py::test_process_batch_xai_task_transitions_to_narrated PASSED
-backend\tests\test_xai_and_fallback.py::test_process_batch_xai_task_rejects_invalid_batch_status PASSED
-backend\tests\test_xai_and_fallback.py::test_security_audit_zero_pii_in_llm_prompt_and_network_payload PASSED
-backend\tests\test_xai_and_fallback.py::test_validate_xai_output_strips_markdown_code_fences PASSED
-backend\tests\test_xai_and_fallback.py::test_validate_xai_output_rejects_hallucinated_code_in_summary_or_recommendation PASSED
-backend\tests\test_xai_and_fallback.py::test_validate_xai_output_rejects_hallucinated_numbers_rank_and_quota PASSED
-backend\tests\test_xai_and_fallback.py::test_validate_xai_output_rejects_hallucinated_decimal_score PASSED
-backend\tests\test_xai_and_fallback.py::test_validate_xai_output_extracts_primary_criterion_code_for_fidelity PASSED
-backend\tests\test_xai_and_fallback.py::test_map_explanation_to_public_schema_handles_existing_public_keys_and_edge_cases PASSED
-backend\tests\test_xai_and_fallback.py::test_sanitizer_rejects_incomplete_evaluation_details PASSED
-backend\tests\test_xai_and_fallback.py::test_sanitizer_falls_back_to_batch_cutoff_score PASSED
-backend\tests\test_xai_and_fallback.py::test_process_batch_xai_task_with_single_evaluation_id PASSED
-backend\tests\test_xai_and_fallback.py::test_process_batch_xai_task_skips_already_narrated_candidates_idempotently PASSED
-backend\tests\test_xai_and_fallback.py::test_process_batch_xai_task_blocks_narrated_status_when_generation_fails_partially PASSED
-backend\tests\test_xai_and_fallback.py::test_generate_xai_for_evaluation_duck_typed_client_support PASSED
+backend\tests\test_api_endpoints.py::test_staff_login_success_and_jwt_payload PASSED [  6%]
+backend\tests\test_api_endpoints.py::test_staff_login_invalid_credentials PASSED [ 13%]
+backend\tests\test_api_endpoints.py::test_criteria_list_and_batch_update_rbac PASSED [ 20%]
+backend\tests\test_api_endpoints.py::test_batches_list_and_create_rbac PASSED [ 26%]
+backend\tests\test_api_endpoints.py::test_citizen_single_create_surveyor_rt_scope PASSED [ 33%]
+backend\tests\test_api_endpoints.py::test_citizens_import_excel_deduplication_and_surveyor_scoping PASSED [ 40%]
+backend\tests\test_api_endpoints.py::test_selection_calculate_and_results_rbac PASSED [ 46%]
+backend\tests\test_api_endpoints.py::test_selection_generate_xai_and_progress PASSED [ 53%]
+backend\tests\test_api_endpoints.py::test_selection_approval_and_publish_state_machine_rbac PASSED [ 60%]
+backend\tests\test_api_endpoints.py::test_export_batch_results_excel PASSED [ 66%]
+backend\tests\test_api_endpoints.py::test_public_check_status_blocks_unpublished_batch PASSED [ 73%]
+backend\tests\test_api_endpoints.py::test_public_check_status_captcha_fail_does_not_increment_lockout PASSED [ 80%]
+backend\tests\test_api_endpoints.py::test_public_check_status_ip_rate_limit PASSED [ 86%]
+backend\tests\test_api_endpoints.py::test_public_check_status_nik_lockout_across_ips PASSED [ 93%]
+backend\tests\test_api_endpoints.py::test_public_check_status_success_payload_structure PASSED [100%]
 
-======================== 27 passed in 22.67s ========================
+======================= 15 passed, 1 warning in 46.75s =======================
 
-# Verifikasi Regresi Keseluruhan (Fase 1 + Fase 2 + Fase 3 + Security Guardrails):
+# Verifikasi Regresi Keseluruhan Seluruh Suite Pengujian Backend:
 $ backend/.venv/Scripts/python.exe -m pytest backend/tests/ -v
-======================= 74 passed in 34.13s =======================
+================== 89 passed, 1 warning in 67.57s (0:01:07) ==================
 ```
 
 ---
 
 ## Dokumentasi Branch Sebelumnya
+
+<details>
+<summary><strong>Fase 3: feat/m3-xai-fallback (Zero-PII Sanitizer, Gemini Flash XAI Explainer, Deterministic Fallback, & Async Worker)</strong></summary>
+
+### Mengapa Fase Ini Dibutuhkan
+Fase 3 menghadirkan lapisan penjelasan (Explainer Layer) sesuai PRD Bagian 8:
+- Sanitizer Zero-PII (UU PDP No. 27/2022 & OWASP LLM02) menjamin ketiadaan identitas warga yang terkirim ke Gemini API.
+- Snapshot bobot beku (`BatchCriteria.frozen_weight`) diisolasi dari perubahan bobot dinamis.
+- Explainer Gemini Flash API dengan generator fallback deterministik berbasis kesenjangan terbobot $\Delta_j \cdot w_j$ bebas HTTP 500.
+- Worker asinkron batch XAI dengan penguncian baris `select_for_update()` dan transisi status batch ke `Narrated`.
+
+</details>
 
 <details>
 <summary><strong>Fase 2: feat/m2-saw-tiebreaker (SAW Engine & 4-Level Tie-Breaker)</strong></summary>
@@ -228,6 +259,7 @@ Fase 1 membangun fondasi kepatuhan UU PDP No. 27/2022:
 
 ## Catatan Penting (Known Gotchas)
 
-- **Jangan Pernah Mengirim PII ke LLM:** Modul XAI hanya boleh menerima payload anonim yang telah disanitasi melalui `build_anonymous_payload()`.
-- **Gunakan Bobot Beku Setelah Kalkulasi:** Setelah status batch mencapai `Calculated`, seluruh modul hilir wajib membaca `BatchCriteria.frozen_weight` milik batch tersebut, bukan `Criteria.weight`.
-- **Fallback Otomatis Anti-500:** Modul penjelasan XAI tidak boleh melempar HTTP 500 jika API Gemini offline; sistem wajib selalu menyediakan narasi fallback deterministik.
+- **Isolasi Wilayah RT Surveyor:** Jangan mengizinkan pengguna ber-role `SURVEYOR` membaca atau memodifikasi data warga selain RT wilayahnya sendiri.
+- **Urutan Perisai Portal Publik:** Selalu validasi CAPTCHA Turnstile sebelum menaikkan counter lockout NIK untuk mencegah serangan DoS terhadap warga sah.
+- **Format Durasi Throttling DRF:** DRF throttle parser standar hanya memeriksa karakter pertama satuan waktu (`s`, `m`, `h`, `d`). Gunakan subclass `StaffLoginRateThrottle` untuk menangani string interval seperti `10/15m`.
+- **Zero-Enumeration pada Portal Publik:** Batch yang belum berstatus `Published` wajib mengembalikan HTTP 404 generik persis sama seperti data warga yang tidak ditemukan.
