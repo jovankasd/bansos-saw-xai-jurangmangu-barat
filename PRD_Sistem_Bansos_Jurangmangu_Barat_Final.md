@@ -251,7 +251,7 @@ Payload dikirim ke Gemini Flash dengan `temperature: 0.15` dan `response_mime_ty
     {
       "code": "C3",
       "name": "Kondisi Tempat Tinggal",
-      "type": "BENEFIT",
+      "type": "COST",
       "weight": 0.25,
       "raw_crips_label": "Rumah Semi Permanen",
       "normalized_score": 0.75,

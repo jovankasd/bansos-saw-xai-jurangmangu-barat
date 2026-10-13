@@ -33,7 +33,7 @@ Folder `.stitch/designs/` berisi 6 referensi desain awal (*Civic Precision*), na
      - Sidebar `lg:fixed lg:w-64`, konten utama `lg:pl-64`, grid `lg:grid-cols-12`.
      - Topbar harus menggunakan `flex-wrap` atau pengelompokan yang bersih agar *badge*, *dropdown batch*, dan profil pengguna **tidak pernah terpotong (clipped)** di tepi kanan layar.
 3. **Koreksi Inkonsistensi `.stitch` terhadap PRD:**
-   - **Kriteria $C_1 - C_4$ harus seragam di semua layar:** $C_1$ Pendapatan Keluarga (Cost, 0.30), $C_2$ Jumlah Tanggungan (Benefit, 0.25), $C_3$ Kondisi Tempat Tinggal (Benefit, 0.25), $C_4$ Kepemilikan Aset (Cost, 0.20). *(Jangan gunakan "Daya Listrik 900 VA" untuk $C_4$ seperti di sebagian file `.stitch`)*.
+   - **Kriteria $C_1 - C_4$ harus seragam di semua layar:** $C_1$ Pendapatan Keluarga (Cost, 0.30), $C_2$ Jumlah Tanggungan (Benefit, 0.25), $C_3$ Kondisi Tempat Tinggal (Cost, 0.25), $C_4$ Kepemilikan Aset (Cost, 0.20). *(Jangan gunakan "Daya Listrik 900 VA" untuk $C_4$ seperti di sebagian file `.stitch`)*.
    - **Menu Sidebar harus konsisten dan sesuai RBAC (Bagian 3 PRD):** Role `Viewer` (Lurah) tidak boleh melihat tombol eksekusi mutasi seperti "Eksekusi Batch SAW".
    - **Patuhi Batasan "Not Doing" (Bagian 12 PRD):** Jangan buat form upload sanggahan dua arah di Portal Publik (arahkan warga melapor ke Ketua RT untuk pemutakhiran periode berikutnya) dan jangan buat fitur sinkronisasi langsung ke API SIKS-NG/DTKS Kemensos.
 
