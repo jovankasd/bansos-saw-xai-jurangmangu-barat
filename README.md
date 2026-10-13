@@ -26,14 +26,14 @@ Fase 1 meletakkan pondasi kriptografi dan skema basis data. Fase 2 mengimplement
 - **4-Level Tie-Breaker ([`backend/core/services/tie_breaker.py`](./backend/core/services/tie_breaker.py)):**
   - `resolve_rankings_with_tie_breaker(candidates, quota)`: Pengurutan deterministik dengan kunci `(-V_i, -r_{C1}, -r_{C2}, -real\_dependents\_count, created\_at, id)` — tanpa `IndexError` pada `quota=0` atau `quota≥len(eligible)`.
 - **Suite Pengujian TDD + Edge-Case ([`backend/tests/test_saw_and_tiebreaker.py`](./backend/tests/test_saw_and_tiebreaker.py)):**
-  - 18 pengujian otomatis mencakup seluruh aturan bisnis FR-01–FR-03 beserta kasus batas.
+  - 22 pengujian otomatis mencakup seluruh aturan bisnis FR-01–FR-03 beserta kasus batas (termasuk pengujian eksplisit Level 1 $C_1$, Level 2 $C_2$, Level 3 Tanggungan Riil, Level 4 Timestamp + `id` ASC, serta kuota $\le 0$).
 
 #### Security
 - **Snapshot Freeze Immutability:** `BatchCriteria.frozen_weight` tidak dapat berubah setelah kalkulasi meski `Criteria.weight` diubah oleh admin — terbukti oleh `test_post_calculation_weight_mutation_does_not_alter_frozen_snapshot`.
 - **State Machine Guard:** Kalkulasi ulang pada batch `Approved` atau `Published` langsung ditolak (`ValidationError`) — terbukti oleh `test_approved_batch_rejects_recalculation`.
 
 #### Changed
-- Dibangun di atas `feat/m1-crypto-models` — seluruh 15 pengujian Fase 1 tetap lulus tanpa modifikasi.
+- Dibangun di atas `feat/m1-crypto-models` — seluruh 20 pengujian Fase 1 & Security tetap lulus tanpa modifikasi.
 
 ---
 
@@ -71,8 +71,8 @@ Ketika dua kandidat memiliki $V_i$ yang identik di batas kuota, urutan pemenang 
 | :--- | :--- |
 | [`./backend/core/services/__init__.py`](./backend/core/services/__init__.py) | Package marker untuk modul layanan |
 | [`./backend/core/services/saw_engine.py`](./backend/core/services/saw_engine.py) | Pipeline SAW atomik (validasi → freeze → filter TMS → normalisasi R_ij/V_i → tie-breaker → tulis hasil) |
-| [`./backend/core/services/tie_breaker.py`](./backend/core/services/tie_breaker.py) | Tie-breaker deterministik 4-level dengan penanganan `quota=0` dan `quota≥eligible` |
-| [`./backend/tests/test_saw_and_tiebreaker.py`](./backend/tests/test_saw_and_tiebreaker.py) | 18 pengujian TDD mencakup semua aturan bisnis FR-01–FR-03 dan kasus batas |
+| [`./backend/core/services/tie_breaker.py`](./backend/core/services/tie_breaker.py) | Tie-breaker deterministik 4-level dengan penanganan `quota<=0` dan `quota>=eligible` |
+| [`./backend/tests/test_saw_and_tiebreaker.py`](./backend/tests/test_saw_and_tiebreaker.py) | 22 pengujian TDD mencakup semua aturan bisnis FR-01–FR-03 dan kasus batas |
 
 ---
 
@@ -99,12 +99,16 @@ tests/test_saw_and_tiebreaker.py::test_approved_batch_rejects_recalculation PASS
 tests/test_saw_and_tiebreaker.py::test_published_batch_rejects_recalculation PASSED
 tests/test_saw_and_tiebreaker.py::test_calculate_batch_saw_transitions_status_to_calculated PASSED
 tests/test_saw_and_tiebreaker.py::test_calculate_batch_saw_creates_audit_log PASSED
+tests/test_saw_and_tiebreaker.py::test_tie_breaker_uses_c1_at_level_1 PASSED
+tests/test_saw_and_tiebreaker.py::test_tie_breaker_uses_c2_at_level_2 PASSED
+tests/test_saw_and_tiebreaker.py::test_tie_breaker_uses_evaluation_id_as_final_tie_breaker PASSED
+tests/test_saw_and_tiebreaker.py::test_quota_negative_no_index_error PASSED
 
-18 passed in 5.94s
+22 passed in 7.88s
 
-# Full suite (Fase 1 + Fase 2 + Security):
+# Full suite (Fase 1 + Fase 2 + Security Guardrails):
 $ .\.venv\Scripts\python.exe -m pytest tests/ -v
-38 passed in 7.12s
+42 passed in 9.08s
 ```
 
 ---

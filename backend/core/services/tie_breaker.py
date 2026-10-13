@@ -58,7 +58,7 @@ def resolve_rankings_with_tie_breaker(
     )
 
     n = len(sorted_candidates)
-    effective_quota = min(quota, n)
+    effective_quota = max(0, min(quota, n))
 
     # Determine cutoff_score safely
     if effective_quota == 0:

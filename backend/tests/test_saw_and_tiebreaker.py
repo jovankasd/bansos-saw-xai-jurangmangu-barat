@@ -611,3 +611,152 @@ def test_calculate_batch_saw_creates_audit_log(seeded_batch_with_ties):
         action=AuditLog.Action.BATCH_CALCULATED,
         performed_by="kasi_kesos",
     ).exists()
+
+
+# ---------------------------------------------------------------------------
+# Additional Edge-Case Tests (Doubt-Driven Development)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_tie_breaker_uses_c1_at_level_1():
+    """
+    KPM-1 and KPM-2 have identical V_i (0.8500).
+    Level 1 (r_C1) must resolve: higher r_C1 wins.
+    """
+    period = _make_period()
+    batch = _make_batch(period, quota=1)
+
+    c1 = _make_citizen("3674039999990001", "Level1 Winner", "9001")
+    eval1 = _add_evaluation(
+        batch, c1, real_dependents=3,
+        crips_values={"C1": 1, "C2": 2, "C3": 1, "C4": 1},
+    )
+
+    c2 = _make_citizen("3674039999990002", "Level1 Loser", "9002")
+    eval2 = _add_evaluation(
+        batch, c2, real_dependents=3,
+        crips_values={"C1": 2, "C2": 5, "C3": 1, "C4": 1},
+    )
+
+    calculate_batch_saw(batch.id, performed_by="kasi_kesos")
+
+    res1 = eval1.result
+    res2 = eval2.result
+
+    assert res1.final_score_v == Decimal("0.8500")
+    assert res2.final_score_v == Decimal("0.8500")
+    assert res1.ranking == 1, f"Expected winner rank 1, got {res1.ranking}"
+    assert res2.ranking == 2, f"Expected loser rank 2, got {res2.ranking}"
+    assert res1.status == "LOLOS"
+    assert res2.status == "TIDAK_LOLOS"
+    assert res2.tie_break_level == 1, f"Expected tie_break_level=1, got {res2.tie_break_level}"
+
+
+@pytest.mark.django_db
+def test_tie_breaker_uses_c2_at_level_2():
+    """
+    KPM-1 and KPM-2 have identical V_i (0.8750) and identical r_C1 (1.0000).
+    Level 2 (r_C2) must resolve: higher r_C2 wins.
+    """
+    period = _make_period()
+    batch = _make_batch(period, quota=1)
+
+    c1 = _make_citizen("3674039999990003", "Level2 Winner", "9003")
+    eval1 = _add_evaluation(
+        batch, c1, real_dependents=3,
+        crips_values={"C1": 1, "C2": 4, "C3": 2, "C4": 1},
+    )
+
+    c2 = _make_citizen("3674039999990004", "Level2 Loser", "9004")
+    eval2 = _add_evaluation(
+        batch, c2, real_dependents=3,
+        crips_values={"C1": 1, "C2": 2, "C3": 1, "C4": 1},
+    )
+
+    calculate_batch_saw(batch.id, performed_by="kasi_kesos")
+
+    res1 = eval1.result
+    res2 = eval2.result
+
+    assert res1.final_score_v == Decimal("0.8750")
+    assert res2.final_score_v == Decimal("0.8750")
+    assert res1.ranking == 1, f"Expected winner rank 1, got {res1.ranking}"
+    assert res2.ranking == 2, f"Expected loser rank 2, got {res2.ranking}"
+    assert res1.status == "LOLOS"
+    assert res2.status == "TIDAK_LOLOS"
+    assert res2.tie_break_level == 2, f"Expected tie_break_level=2, got {res2.tie_break_level}"
+
+
+@pytest.mark.django_db
+def test_tie_breaker_uses_evaluation_id_as_final_tie_breaker():
+    """
+    Two candidates have identical V_i, r_C1, r_C2, real_dependents_count, and created_at.
+    The candidate with smaller evaluation.id must rank higher deterministically.
+    """
+    period = _make_period()
+    batch = _make_batch(period, quota=1)
+
+    c1 = _make_citizen("3674039999990005", "Same All 1", "9005")
+    eval1 = _add_evaluation(
+        batch, c1, real_dependents=3,
+        crips_values={"C1": 2, "C2": 4, "C3": 1, "C4": 1},
+    )
+
+    c2 = _make_citizen("3674039999990006", "Same All 2", "9006")
+    eval2 = _add_evaluation(
+        batch, c2, real_dependents=3,
+        crips_values={"C1": 2, "C2": 4, "C3": 1, "C4": 1},
+    )
+
+    # Force identical created_at timestamp
+    fixed_time = timezone.now()
+    Evaluation.objects.filter(id__in=[eval1.id, eval2.id]).update(created_at=fixed_time)
+    eval1.refresh_from_db()
+    eval2.refresh_from_db()
+    assert eval1.created_at == eval2.created_at
+    assert eval1.id < eval2.id
+
+    calculate_batch_saw(batch.id, performed_by="kasi_kesos")
+
+    res1 = eval1.result
+    res2 = eval2.result
+
+    assert res1.ranking == 1, f"Expected eval1 (smaller id) rank 1, got {res1.ranking}"
+    assert res2.ranking == 2, f"Expected eval2 (larger id) rank 2, got {res2.ranking}"
+    assert res1.status == "LOLOS"
+    assert res2.status == "TIDAK_LOLOS"
+
+
+@pytest.mark.django_db
+def test_quota_negative_no_index_error():
+    """quota < 0 must be clamped to 0 without IndexError. All ELIGIBLE receive TIDAK_LOLOS."""
+    period = _make_period()
+    # Direct DB write bypassing validation to test engine resilience
+    batch = SelectionBatch.objects.create(
+        period=period,
+        name="Batch Negative Quota",
+        quota=0,  # PositiveIntegerField default, we'll test engine with tie_breaker directly
+        status=SelectionBatch.Status.COLLECTING,
+    )
+    c = _make_citizen("3674039999990007", "Negative Quota Citizen", "9007")
+    _add_evaluation(batch, c, crips_values={"C1": 1, "C2": 5, "C3": 1, "C4": 1})
+
+    from core.services.tie_breaker import resolve_rankings_with_tie_breaker
+    eval_obj = Evaluation.objects.get(batch=batch, citizen=c)
+    candidate_list = [{
+        "evaluation_id": eval_obj.id,
+        "evaluation": eval_obj,
+        "final_score_v": Decimal("1.0000"),
+        "r_c1": Decimal("1.0000"),
+        "r_c2": Decimal("1.0000"),
+        "real_dependents_count": 3,
+        "created_at": eval_obj.created_at,
+    }]
+    # Call tie breaker with negative quota
+    resolved = resolve_rankings_with_tie_breaker(candidate_list, quota=-5)
+    assert len(resolved) == 1
+    assert resolved[0]["status"] == "TIDAK_LOLOS"
+    assert resolved[0]["ranking"] == 1
+    assert resolved[0]["cutoff_score"] > Decimal("1.0000")
+
