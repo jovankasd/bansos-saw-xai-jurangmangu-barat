@@ -171,6 +171,12 @@ def calculate_batch_saw(
         Evaluation.objects.filter(batch=batch).select_related("citizen").prefetch_related("details__criteria")
     )
 
+    if not all_evaluations:
+        raise ValidationError(
+            "Batch tidak memiliki data usulan evaluasi warga untuk dikalkulasi.",
+            code="empty_batch_evaluations",
+        )
+
     disqualified_evals = [e for e in all_evaluations if e.eligibility_status == "DISQUALIFIED"]
     eligible_evals = [e for e in all_evaluations if e.eligibility_status == "ELIGIBLE"]
 
@@ -259,7 +265,7 @@ def calculate_batch_saw(
             "final_score_v": v_i,
             "r_c1": normalized.get("C1", Decimal("0")),
             "r_c2": normalized.get("C2", Decimal("0")),
-            "real_dependents_count": eval_obj.real_dependents_count,
+            "real_dependents_count": eval_obj.real_dependents_count or 0,
             "created_at": eval_obj.created_at,
         })
 

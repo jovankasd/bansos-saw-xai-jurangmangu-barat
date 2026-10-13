@@ -760,3 +760,71 @@ def test_quota_negative_no_index_error():
     assert resolved[0]["ranking"] == 1
     assert resolved[0]["cutoff_score"] > Decimal("1.0000")
 
+
+@pytest.mark.django_db
+def test_empty_batch_evaluations_raises_validation_error():
+    """A batch with zero evaluations must raise ValidationError(code='empty_batch_evaluations')."""
+    period = _make_period()
+    batch = _make_batch(period, quota=5)
+    with pytest.raises(ValidationError) as exc_info:
+        calculate_batch_saw(batch.id, performed_by="kasi_kesos")
+    assert exc_info.value.code == "empty_batch_evaluations"
+    assert "tidak memiliki data usulan evaluasi warga" in str(exc_info.value)
+
+
+@pytest.mark.django_db
+def test_nonexistent_batch_id_raises_does_not_exist():
+    """calculate_batch_saw() with non-existent PK must raise SelectionBatch.DoesNotExist."""
+    with pytest.raises(SelectionBatch.DoesNotExist):
+        calculate_batch_saw(999999, performed_by="kasi_kesos")
+
+
+@pytest.mark.django_db
+def test_invalid_crips_value_nonpositive_raises_validation_error():
+    """raw_crips_value <= 0 on eligible evaluation detail must raise ValidationError(code='invalid_crips_value')."""
+    period = _make_period()
+    batch = _make_batch(period, quota=2)
+    c = _make_citizen("3674039999990008", "Zero Crips Citizen", "9008")
+    eval_obj = _add_evaluation(batch, c, crips_values={"C1": 1, "C2": 5, "C3": 1, "C4": 1})
+    # Force raw_crips_value=0 directly via DB update to bypass model clean()
+    EvaluationDetail.objects.filter(evaluation=eval_obj, criteria__code="C1").update(raw_crips_value=0)
+
+    with pytest.raises(ValidationError) as exc_info:
+        calculate_batch_saw(batch.id, performed_by="kasi_kesos")
+    assert exc_info.value.code == "invalid_crips_value"
+    assert "harus > 0" in str(exc_info.value)
+
+
+def test_tie_breaker_empty_candidates_returns_empty():
+    """Empty candidate list must return empty list without error."""
+    from core.services.tie_breaker import resolve_rankings_with_tie_breaker
+    assert resolve_rankings_with_tie_breaker([], quota=10) == []
+
+
+def test_tie_breaker_none_and_missing_keys_handled_robustly():
+    """Candidates with None or missing values for fields must be sorted safely without TypeError/KeyError."""
+    from core.services.tie_breaker import resolve_rankings_with_tie_breaker
+    candidates = [
+        {
+            "evaluation_id": 1,
+            "final_score_v": Decimal("0.8500"),
+            "r_c1": None,
+            "r_c2": None,
+            "real_dependents_count": None,
+            "created_at": None,
+        },
+        {
+            "evaluation_id": 2,
+            "final_score_v": Decimal("0.9000"),
+        },
+    ]
+    resolved = resolve_rankings_with_tie_breaker(candidates, quota=1)
+    assert len(resolved) == 2
+    assert resolved[0]["evaluation_id"] == 2
+    assert resolved[0]["ranking"] == 1
+    assert resolved[0]["status"] == "LOLOS"
+    assert resolved[1]["evaluation_id"] == 1
+    assert resolved[1]["ranking"] == 2
+    assert resolved[1]["status"] == "TIDAK_LOLOS"
+
+
