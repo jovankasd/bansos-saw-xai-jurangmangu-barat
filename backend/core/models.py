@@ -22,13 +22,17 @@ Key constraints enforced:
 
 from __future__ import annotations
 
+import re
 from decimal import Decimal
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 
 from core.crypto import (
+    contains_plaintext_nik,
     decrypt_nik,
     encrypt_nik,
     hash_nik,
@@ -36,6 +40,8 @@ from core.crypto import (
     mask_nik,
     validate_nik,
 )
+
+_KK_LAST4_PATTERN = re.compile(r"^[0-9]{4}$", re.ASCII)
 
 
 # ---------------------------------------------------------------------------
@@ -105,24 +111,57 @@ class Criteria(models.Model):
         ordering = ["order"]
         verbose_name_plural = "Criteria"
 
+    def __init__(self, *args, **kwargs):
+        if "attribute_type" in kwargs and "criterion_type" not in kwargs:
+            kwargs["criterion_type"] = kwargs.pop("attribute_type")
+        super().__init__(*args, **kwargs)
+
+    @property
+    def attribute_type(self) -> str:
+        return self.criterion_type
+
+    @attribute_type.setter
+    def attribute_type(self, value: str) -> None:
+        self.criterion_type = value
+
     def __str__(self) -> str:
-        return f"{self.code} — {self.name} ({self.criterion_type}, w={self.weight})"
+        return f"{self.code} - {self.name} ({self.criterion_type}, w={self.weight})"
 
 
 class SubCriteria(models.Model):
     """Crips 1..5 per criterion — maps a numeric raw value to a label."""
     criteria = models.ForeignKey(Criteria, on_delete=models.CASCADE, related_name="subcriteria")
-    crips_value = models.PositiveSmallIntegerField()   # 1..5
+    crips_value = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )   # 1..5
     label = models.CharField(max_length=300)
     description = models.TextField(blank=True)
 
     class Meta:
         db_table = "subcriteria"
-        unique_together = [("criteria", "crips_value")]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["criteria", "crips_value"],
+                name="uq_subcriteria_criteria_value",
+            ),
+        ]
         ordering = ["criteria__order", "crips_value"]
 
+    def __init__(self, *args, **kwargs):
+        if "condition_label" in kwargs and "label" not in kwargs:
+            kwargs["label"] = kwargs.pop("condition_label")
+        super().__init__(*args, **kwargs)
+
+    @property
+    def condition_label(self) -> str:
+        return self.label
+
+    @condition_label.setter
+    def condition_label(self, value: str) -> None:
+        self.label = value
+
     def __str__(self) -> str:
-        return f"{self.criteria.code} — Crips {self.crips_value}: {self.label}"
+        return f"{self.criteria.code} - Crips {self.crips_value}: {self.label}"
 
 
 # ---------------------------------------------------------------------------
@@ -131,8 +170,11 @@ class SubCriteria(models.Model):
 
 class Period(models.Model):
     name = models.CharField(max_length=200, unique=True)   # e.g. "Semester I 2026"
-    year = models.PositiveSmallIntegerField()
-    semester = models.PositiveSmallIntegerField(choices=[(1, "Semester I"), (2, "Semester II")])
+    year = models.PositiveSmallIntegerField(default=2026)
+    semester = models.PositiveSmallIntegerField(
+        choices=[(1, "Semester I"), (2, "Semester II")],
+        default=1,
+    )
     start_date = models.DateField()
     end_date = models.DateField()
     is_active = models.BooleanField(default=True)
@@ -141,6 +183,19 @@ class Period(models.Model):
     class Meta:
         db_table = "period"
         ordering = ["-year", "-semester"]
+
+    def __init__(self, *args, **kwargs):
+        if "period_name" in kwargs and "name" not in kwargs:
+            kwargs["name"] = kwargs.pop("period_name")
+        super().__init__(*args, **kwargs)
+
+    @property
+    def period_name(self) -> str:
+        return self.name
+
+    @period_name.setter
+    def period_name(self, value: str) -> None:
+        self.name = value
 
     def __str__(self) -> str:
         return self.name
@@ -156,11 +211,16 @@ class SelectionBatch(models.Model):
         PUBLISHED = "Published", "Published"
 
     period = models.ForeignKey(Period, on_delete=models.PROTECT, related_name="batches")
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, blank=True, default="")
     quota = models.PositiveSmallIntegerField()
+    cutoff_score = models.DecimalField(max_digits=8, decimal_places=4, null=True, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
     created_by = models.ForeignKey(
-        StaffUser, on_delete=models.PROTECT, related_name="created_batches"
+        StaffUser,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="created_batches",
     )
     approved_by = models.ForeignKey(
         StaffUser,
@@ -181,7 +241,7 @@ class SelectionBatch(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
-        return f"{self.name} [{self.status}]"
+        return f"{self.name or self.period.name} [{self.status}]"
 
 
 # ---------------------------------------------------------------------------
@@ -209,6 +269,19 @@ class BatchCriteria(models.Model):
             models.UniqueConstraint(fields=["batch", "criteria"], name="uq_batch_criteria"),
         ]
         ordering = ["criteria__order"]
+
+    def __init__(self, *args, **kwargs):
+        if "attribute_type" in kwargs and "criterion_type" not in kwargs:
+            kwargs["criterion_type"] = kwargs.pop("attribute_type")
+        super().__init__(*args, **kwargs)
+
+    @property
+    def attribute_type(self) -> str:
+        return self.criterion_type
+
+    @attribute_type.setter
+    def attribute_type(self, value: str) -> None:
+        self.criterion_type = value
 
     def __str__(self) -> str:
         return f"[{self.batch}] {self.code} frozen_weight={self.frozen_weight}"
@@ -240,6 +313,11 @@ class CitizenManager(models.Manager):
         via AES-256-GCM and stored as nik_encrypted.
         """
         validate_nik(raw_nik)
+        if not isinstance(kk_last4, str) or not _KK_LAST4_PATTERN.match(kk_last4):
+            raise ValidationError(
+                "kk_last4 wajib terdiri dari tepat 4 digit angka.",
+                code="invalid_kk_last4",
+            )
 
         nik_h = hash_nik(raw_nik)
         nik_enc = encrypt_nik(raw_nik)
@@ -274,7 +352,7 @@ class Citizen(models.Model):
     # --- Household ---
     kk_last4 = models.CharField(max_length=4)   # last 4 digits of KK for public portal auth
     full_name = models.CharField(max_length=300)
-    full_name_masked = models.CharField(max_length=300)
+    full_name_masked = models.CharField(max_length=300, blank=True)
 
     # --- Address ---
     address = models.TextField()
@@ -291,6 +369,21 @@ class Citizen(models.Model):
     class Meta:
         db_table = "citizen"
         ordering = ["-created_at"]
+
+    def clean(self) -> None:
+        super().clean()
+        if contains_plaintext_nik(self.nik_encrypted) or contains_plaintext_nik(self.nik_masked):
+            raise ValidationError(
+                "Pelanggaran UU PDP No. 27/2022: NIK plaintext 16 digit dilarang disimpan pada nik_encrypted atau nik_masked."
+            )
+        if not isinstance(self.kk_last4, str) or not _KK_LAST4_PATTERN.match(self.kk_last4):
+            raise ValidationError("kk_last4 wajib terdiri dari tepat 4 digit angka.")
+
+    def save(self, *args, **kwargs) -> None:
+        if self.full_name and not self.full_name_masked:
+            self.full_name_masked = mask_name(self.full_name)
+        self.clean()
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return f"Citizen {self.nik_masked} ({self.full_name_masked})"
@@ -350,18 +443,38 @@ class Evaluation(models.Model):
         ]
         ordering = ["created_at"]
 
+    def __init__(self, *args, **kwargs):
+        if "disqualification_reason" in kwargs and "tms_reason" not in kwargs:
+            kwargs["tms_reason"] = kwargs.pop("disqualification_reason") or ""
+        super().__init__(*args, **kwargs)
+
+    @property
+    def disqualification_reason(self) -> str:
+        return self.tms_reason
+
+    @disqualification_reason.setter
+    def disqualification_reason(self, value: str) -> None:
+        self.tms_reason = value or ""
+
     def __str__(self) -> str:
         return f"Eval {self.citizen.nik_masked} @ {self.batch}"
 
 
 # ---------------------------------------------------------------------------
-# EvaluationDetail — per-criterion raw Crips value for one Evaluation
+# EvaluationDetail — per-criterion raw Crips value + normalized r_ij
 # ---------------------------------------------------------------------------
 
 class EvaluationDetail(models.Model):
     evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE, related_name="details")
     criteria = models.ForeignKey(Criteria, on_delete=models.PROTECT)
-    raw_crips_value = models.PositiveSmallIntegerField()   # 1..5
+    raw_crips_value = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )   # 1..5
+    normalized_value = models.DecimalField(
+        max_digits=8,
+        decimal_places=4,
+        default=Decimal("0.0000"),
+    )
 
     class Meta:
         db_table = "evaluation_detail"
@@ -372,6 +485,19 @@ class EvaluationDetail(models.Model):
             ),
         ]
         ordering = ["criteria__order"]
+
+    def __init__(self, *args, **kwargs):
+        if "normalized_score" in kwargs and "normalized_value" not in kwargs:
+            kwargs["normalized_value"] = kwargs.pop("normalized_score")
+        super().__init__(*args, **kwargs)
+
+    @property
+    def normalized_score(self) -> Decimal:
+        return self.normalized_value
+
+    @normalized_score.setter
+    def normalized_score(self, value: Decimal) -> None:
+        self.normalized_value = value
 
     def __str__(self) -> str:
         return f"{self.evaluation} — {self.criteria.code}={self.raw_crips_value}"
@@ -389,6 +515,7 @@ class SelectionResult(models.Model):
 
     class ExplanationSource(models.TextChoices):
         GEMINI = "GEMINI", "Gemini Flash API"
+        GEMINI_API = "GEMINI_API", "Gemini Flash API (PRD Alias)"
         DETERMINISTIC_FALLBACK = "DETERMINISTIC_FALLBACK", "Deterministic Fallback"
         INELIGIBLE_NOTICE = "INELIGIBLE_NOTICE", "TMS Notice (No XAI)"
 
@@ -440,6 +567,13 @@ class AuditLog(models.Model):
         PDF_DOWNLOADED = "PDF_DOWNLOADED", "PDF Downloaded"
         SEED_DATA = "SEED_DATA", "Initial Seed Data"
 
+    batch = models.ForeignKey(
+        SelectionBatch,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="audit_logs",
+    )
     action = models.CharField(max_length=30, choices=Action.choices)
     performed_by = models.CharField(max_length=200)  # username or "system"
     target_object_repr = models.TextField(blank=True)  # str() of target — no PII
@@ -451,5 +585,19 @@ class AuditLog(models.Model):
         db_table = "audit_log"
         ordering = ["-timestamp"]
 
+    def __init__(self, *args, **kwargs):
+        if "user_action" in kwargs and "action" not in kwargs:
+            kwargs["action"] = kwargs.pop("user_action")
+        super().__init__(*args, **kwargs)
+
+    @property
+    def user_action(self) -> str:
+        return self.action
+
+    @user_action.setter
+    def user_action(self, value: str) -> None:
+        self.action = value
+
     def __str__(self) -> str:
         return f"[{self.timestamp:%Y-%m-%d %H:%M}] {self.action} by {self.performed_by}"
+

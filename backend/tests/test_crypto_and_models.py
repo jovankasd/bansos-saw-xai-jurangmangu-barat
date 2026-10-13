@@ -169,3 +169,139 @@ def test_seed_initial_data_creates_criteria():
     # Weights must sum to 1.00
     total = sum(c.weight for c in criteria.values())
     assert total == Decimal("1.00")
+
+    # COST C1 Crips 1 must be lowest income (<= Rp 500.000) so min(X)/X_ij gives 1.00 to poorest
+    c1_crips1 = criteria["C1"].subcriteria.get(crips_value=1)
+    c1_crips5 = criteria["C1"].subcriteria.get(crips_value=5)
+    assert "500.000" in c1_crips1.label
+    assert "500.000" not in c1_crips5.label
+
+
+def test_security_audit_unicode_nik_and_tampered_ciphertext_rejected():
+    """
+    Security audit check (UU PDP & OWASP A02/A03):
+    - Non-ASCII Unicode digits (e.g. Arabic-Indic 16 digits) must be rejected by validate_nik & hash_nik.
+    - Tampered AES-256-GCM ciphertext or truncated token must raise ValueError.
+    - Empty or 2-char names in mask_name must not raise IndexError or leak unmasked chars.
+    """
+    arabic_digits_nik = "٠١٢٣٤٥٦٧٨٩٠١٢٣٤٥"  # 16 Unicode digits, not ASCII 0-9
+    with pytest.raises(ValidationError):
+        validate_nik(arabic_digits_nik)
+    with pytest.raises(ValidationError):
+        hash_nik(arabic_digits_nik)
+    with pytest.raises(ValidationError):
+        validate_nik(3674031208850002)  # type: ignore[arg-type]
+
+    # Tampered AES-GCM token must raise ValueError
+    valid_token = encrypt_nik("3674031208850002")
+    flipped_char = "A" if valid_token[-2] != "A" else "B"
+    tampered_token = valid_token[:-2] + flipped_char + valid_token[-1]
+    with pytest.raises(ValueError, match="Gagal mendekripsi NIK"):
+        decrypt_nik(tampered_token)
+
+    with pytest.raises(ValueError, match="Gagal mendekripsi NIK"):
+        decrypt_nik("dG9vc2hvcnQ=")  # truncated blob
+
+    # Edge cases for mask_name
+    assert mask_name("") == ""
+    assert mask_name("   ") == ""
+    assert mask_name("Su") == "S*"
+    assert mask_name("A") == "*"
+
+
+@pytest.mark.django_db
+def test_citizen_blocks_plaintext_nik_at_rest_and_enforces_prd_schema_constraints():
+    """
+    Security audit check (UU PDP No. 27/2022):
+    - Saving a Citizen directly with plaintext 16-digit NIK in nik_encrypted or nik_masked must raise ValidationError.
+    - PRD Section 9 fields (SelectionBatch.cutoff_score, EvaluationDetail.normalized_value, AuditLog.batch)
+      and UniqueConstraints (BatchCriteria, Evaluation, EvaluationDetail) must be enforced.
+    """
+    from decimal import Decimal
+    from django.db import IntegrityError
+    from django.utils import timezone
+    from core.models import (
+        AuditLog,
+        BatchCriteria,
+        Evaluation,
+        EvaluationDetail,
+        Period,
+        SelectionBatch,
+    )
+
+    raw_nik = "3674031208850002"
+    with pytest.raises(ValidationError, match="UU PDP"):
+        bad_citizen = Citizen(
+            nik_hash=hash_nik(raw_nik),
+            nik_encrypted=raw_nik,  # Plaintext NIK violation!
+            nik_masked="367403******0002",
+            kk_last4="5501",
+            full_name="Ahmad Subarjo",
+            address="Jl. Test",
+            rt="003",
+            rw="001",
+        )
+        bad_citizen.save()
+
+    call_command("seed_initial_data", verbosity=0)
+    c1 = Criteria.objects.get(code="C1")
+    assert c1.attribute_type == "COST"
+
+    period = Period.objects.create(
+        period_name="Tahap Uji 2026",
+        start_date=timezone.now().date(),
+        end_date=timezone.now().date(),
+    )
+    batch = SelectionBatch.objects.create(
+        period=period,
+        name="Batch Uji 1",
+        quota=10,
+        cutoff_score=Decimal("0.7250"),
+    )
+    assert batch.cutoff_score == Decimal("0.7250")
+
+    bc = BatchCriteria.objects.create(
+        batch=batch,
+        criteria=c1,
+        code=c1.code,
+        name=c1.name,
+        attribute_type=c1.attribute_type,
+        frozen_weight=c1.weight,
+    )
+    assert bc.attribute_type == "COST"
+
+    citizen, _ = Citizen.objects.create_or_update_with_nik(
+        raw_nik=raw_nik,
+        kk_last4="5501",
+        full_name="Ahmad Subarjo",
+        address="Jl. Jurangmangu Barat No. 10",
+        rt="003",
+        rw="001",
+    )
+    eval_obj = Evaluation.objects.create(
+        batch=batch,
+        citizen=citizen,
+        real_dependents_count=3,
+        disqualification_reason="",
+    )
+    detail = EvaluationDetail.objects.create(
+        evaluation=eval_obj,
+        criteria=c1,
+        raw_crips_value=3,
+        normalized_value=Decimal("0.6000"),
+    )
+    assert detail.normalized_value == Decimal("0.6000")
+    assert detail.normalized_score == Decimal("0.6000")
+
+    log = AuditLog.objects.create(
+        batch=batch,
+        user_action=AuditLog.Action.BATCH_CALCULATED,
+        performed_by="kasi_kesos",
+    )
+    assert log.batch == batch
+    assert log.user_action == AuditLog.Action.BATCH_CALCULATED
+
+    # Duplicate Evaluation for same (batch, citizen) must violate UniqueConstraint
+    with pytest.raises(IntegrityError):
+        Evaluation.objects.create(batch=batch, citizen=citizen)
+

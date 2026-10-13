@@ -15,16 +15,21 @@ Idempotent: safe to run multiple times; uses get_or_create / update_or_create.
 
 from __future__ import annotations
 
+from datetime import date
 from decimal import Decimal
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from core.models import AuditLog, Criteria, StaffUser, SubCriteria
+from core.models import AuditLog, Criteria, Period, SelectionBatch, StaffUser, SubCriteria
 
 
 # ---------------------------------------------------------------------------
 # Criteria seed data (PRD §5 — AGENTS.md constraints, C1-C4)
+# For COST criteria (C1, C4), smaller Crips value (1) = lowest cost / highest
+# social assistance priority so r_ij = min(X_j) / X_ij yields 1.00 for Crips 1.
+# For BENEFIT criteria (C2, C3), larger Crips value (5) = highest priority so
+# r_ij = X_ij / max(X_j) yields 1.00 for Crips 5.
 # ---------------------------------------------------------------------------
 
 CRITERIA_DATA = [
@@ -35,11 +40,11 @@ CRITERIA_DATA = [
         "weight": Decimal("0.30"),
         "order": 1,
         "subcriteria": [
-            (1, "Sangat Tinggi (> Rp 5.000.000/bln)", "Pendapatan keluarga di atas Rp 5.000.000 per bulan"),
-            (2, "Tinggi (Rp 3.000.001 – Rp 5.000.000/bln)", "Pendapatan keluarga Rp 3.000.001–5.000.000 per bulan"),
-            (3, "Sedang (Rp 1.500.001 – Rp 3.000.000/bln)", "Pendapatan keluarga Rp 1.500.001–3.000.000 per bulan"),
-            (4, "Rendah (Rp 500.001 – Rp 1.500.000/bln)", "Pendapatan keluarga Rp 500.001–1.500.000 per bulan"),
-            (5, "Sangat Rendah (≤ Rp 500.000/bln)", "Pendapatan keluarga di bawah atau sama dengan Rp 500.000 per bulan"),
+            (1, "Sangat Rendah (<= Rp 500.000/bln)", "Pendapatan keluarga di bawah atau sama dengan Rp 500.000 per bulan"),
+            (2, "Rendah (Rp 500.001 - Rp 1.500.000/bln)", "Pendapatan keluarga Rp 500.001-1.500.000 per bulan"),
+            (3, "Sedang (Rp 1.500.001 - Rp 2.500.000/bln)", "Pendapatan keluarga Rp 1.500.001-2.500.000 per bulan"),
+            (4, "Tinggi (Rp 2.500.001 - Rp 4.000.000/bln)", "Pendapatan keluarga Rp 2.500.001-4.000.000 per bulan"),
+            (5, "Sangat Tinggi (> Rp 4.000.000/bln)", "Pendapatan keluarga di atas Rp 4.000.000 per bulan"),
         ],
     },
     {
@@ -50,10 +55,10 @@ CRITERIA_DATA = [
         "order": 2,
         "subcriteria": [
             (1, "Tidak ada tanggungan", "Tidak memiliki anggota keluarga yang ditanggung"),
-            (2, "1–2 orang tanggungan", "Menanggung 1 hingga 2 anggota keluarga"),
-            (3, "3–4 orang tanggungan", "Menanggung 3 hingga 4 anggota keluarga"),
-            (4, "5–6 orang tanggungan", "Menanggung 5 hingga 6 anggota keluarga"),
-            (5, "≥ 7 orang tanggungan", "Menanggung 7 atau lebih anggota keluarga"),
+            (2, "1-2 orang tanggungan", "Menanggung 1 hingga 2 anggota keluarga"),
+            (3, "3-4 orang tanggungan", "Menanggung 3 hingga 4 anggota keluarga"),
+            (4, "5-6 orang tanggungan", "Menanggung 5 hingga 6 anggota keluarga"),
+            (5, ">= 7 orang tanggungan", "Menanggung 7 atau lebih anggota keluarga"),
         ],
     },
     {
@@ -93,7 +98,7 @@ CRITERIA_DATA = [
 DEMO_STAFF = [
     {
         "username": "kasi_kesos",
-        "full_name": "Kasi Kesejahteraan Sosial",
+        "full_name": "Budi Hartono, S.Sos (Kasi Kesos)",
         "role": "SUPER_ADMIN",
         "password": "BansosAdmin2026!",
         "rt_number": "",
@@ -123,7 +128,7 @@ DEMO_STAFF = [
 
 
 class Command(BaseCommand):
-    help = "Seed initial criteria (C1–C4), subcriteria (Crips 1–5), and demo staff accounts."
+    help = "Seed initial criteria (C1-C4), subcriteria (Crips 1-5), demo staff accounts, and initial period/batch."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -137,9 +142,10 @@ class Command(BaseCommand):
         self.verbosity = options.get("verbosity", 1)
         self._seed_criteria(reset=options.get("reset_criteria", False))
         self._seed_staff()
-        self._log_seed()
+        batch = self._seed_period_and_batch()
+        self._log_seed(batch=batch)
 
-        self.stdout.write(self.style.SUCCESS("✓ seed_initial_data completed successfully."))
+        self.stdout.write(self.style.SUCCESS("[OK] seed_initial_data completed successfully."))
 
     def _seed_criteria(self, reset: bool = False) -> None:
         if reset:
@@ -182,9 +188,34 @@ class Command(BaseCommand):
                 self.stdout.write(f"  Exists  staff: {user}")
             sdata["password"] = password  # restore for idempotency
 
-    def _log_seed(self) -> None:
+    def _seed_period_and_batch(self) -> SelectionBatch:
+        admin_user = StaffUser.objects.filter(role=StaffUser.Role.SUPER_ADMIN).first()
+        period, _ = Period.objects.get_or_create(
+            name="Bansos Sembako Tahap I 2026",
+            defaults={
+                "year": 2026,
+                "semester": 1,
+                "start_date": date(2026, 1, 1),
+                "end_date": date(2026, 6, 30),
+                "is_active": True,
+            },
+        )
+        batch, _ = SelectionBatch.objects.get_or_create(
+            period=period,
+            name="Seleksi Bansos Sembako Tahap I 2026",
+            defaults={
+                "quota": 30,
+                "status": SelectionBatch.Status.COLLECTING,
+                "created_by": admin_user,
+            },
+        )
+        return batch
+
+    def _log_seed(self, batch: SelectionBatch | None = None) -> None:
         AuditLog.objects.create(
+            batch=batch,
             action=AuditLog.Action.SEED_DATA,
             performed_by="system:seed_initial_data",
-            detail="Criteria C1–C4, SubCriteria Crips 1–5, and demo staff seeded.",
+            detail="Criteria C1–C4, SubCriteria Crips 1–5, demo staff, and initial batch seeded.",
         )
+
