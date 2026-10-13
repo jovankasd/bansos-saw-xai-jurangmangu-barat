@@ -1,31 +1,13 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "./context/AuthContext";
-import { AppShell } from "./components/layout/AppShell";
+import { AuthProvider } from "./context/AuthContext";
 import { PublicPortalPage } from "./pages/PublicPortalPage";
 import { LoginPage } from "./pages/LoginPage";
-
-// Placeholder Dashboard View for Task 6 Verification
-const DashboardPlaceholder: React.FC = () => {
-  const { user } = useAuth();
-  return (
-    <AppShell
-      title="Dashboard Adjudikasi"
-      breadcrumb={["Tata Kelola", "Ringkasan Eksekutif"]}
-    >
-      <div className="space-y-6">
-        <div className="bg-white rounded-xl p-6 border border-border-subtle shadow-sm">
-          <h2 className="text-xl font-bold text-on-surface">
-            Selamat Datang, {user?.name || "Staf Kelurahan"}
-          </h2>
-          <p className="text-sm text-on-surface-variant mt-1">
-            Sistem Pendukung Keputusan Hibrida SAW & XAI Bansos Jurangmangu Barat.
-          </p>
-        </div>
-      </div>
-    </AppShell>
-  );
-};
+import { ExecutiveDashboardPage } from "./pages/dashboard/ExecutiveDashboardPage";
+import { CriteriaManagementPage } from "./pages/dashboard/CriteriaManagementPage";
+import { SurveyorInputPage } from "./pages/dashboard/SurveyorInputPage";
+import { SawRankingPage } from "./pages/dashboard/SawRankingPage";
+import { XaiGeneratorPage } from "./pages/dashboard/XaiGeneratorPage";
 
 export const App: React.FC = () => {
   return (
@@ -35,8 +17,12 @@ export const App: React.FC = () => {
           <Route path="/" element={<Navigate to="/cek-bansos" replace />} />
           <Route path="/cek-bansos" element={<PublicPortalPage />} />
           <Route path="/admin/login" element={<LoginPage />} />
-          <Route path="/admin/dashboard" element={<DashboardPlaceholder />} />
-          <Route path="/admin/*" element={<DashboardPlaceholder />} />
+          <Route path="/admin/dashboard" element={<ExecutiveDashboardPage />} />
+          <Route path="/admin/criteria" element={<CriteriaManagementPage />} />
+          <Route path="/admin/citizens" element={<SurveyorInputPage />} />
+          <Route path="/admin/selection" element={<SawRankingPage />} />
+          <Route path="/admin/xai" element={<XaiGeneratorPage />} />
+          <Route path="/admin/*" element={<ExecutiveDashboardPage />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

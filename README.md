@@ -4,106 +4,103 @@ Platform **Explainable Decision Support System (EDSS)** berbasis web untuk selek
 
 ---
 
-## Dokumentasi Branch: `feat/m4b-public-portal` (Fase 7 / Task 7 — Public Citizen Portal `/cek-bansos`, Masking PII, CriteriaGapChart C1..C4, & Staff Login `/admin/login` - Milestone 4B)
+## Dokumentasi Branch: `feat/m4c-dashboard-screens` (Fase 8 / Task 8 — Admin & Surveyor Core Operational Screens: Executive Dashboard, Criteria Management, Surveyor RT Input & TMS Gate, SAW Ranking 11-Kolom Sticky, & XAI Monitor - Milestone 4C)
 
 ### Mengapa Fase Ini Dibutuhkan (*Context & Why*)
 
-Fase 7 mengimplementasikan portal transparansi publik bagi warga pemohon bansos (`/cek-bansos`) serta gerbang masuk staf adjudikasi (`/admin/login`) dengan mematuhi prinsip akuntabilitas terbuka, keamanan data kependudukan (**UU PDP No. 27/2022**), dan arahan rancangan **Civic Precision**:
+Fase 8 merealisasikan 5 layar operasional inti bagi staf tata kelola adjudikasi (Kasi Kesos / Super Admin dan Surveyor Ketua RT) sesuai mandat **PRD Final v3.0**, **ADR-003**, **ADR-004**, **ADR-005**, serta protokol wajib peninjauan desain **`AGENTS.md` Bagian 2 (Review Desain #3)**:
 
-1. **Akses Mandiri Passwordless untuk Warga (PRD Bagian 12.1):**
-   - Warga tidak dibebani akun pendaftaran, kata sandi, atau verifikasi email yang berpotensi menyulitkan warga lansia. Verifikasi dilakukan secara mandiri menggunakan kombinasi 16 digit NIK + 4 digit terakhir nomor KK + CAPTCHA Cloudflare Turnstile.
-2. **Perlindungan Privasi Berlapis & Zero-PII Display:**
-   - Seluruh identitas warga yang ditampilkan di layar publik wajib disamarkan secara visual: NIK disamarkan menjadi `367403******0002` dan nama kepala keluarga menjadi `Ahmad S******`.
-   - Hanya batch seleksi yang telah disahkan Lurah dan berstatus `Published` yang dapat diakses oleh publik. Permintaan status terhadap batch sebelum publikasi menghasilkan respons `404 Not Found` guna mencegah kebocoran ranking prematur.
-3. **Koreksi Deviasi Prototipe `.stitch` (Review Desain #2 & AGENTS.md Bagian 2):**
-   - **Penghapusan Form Sanggahan Dua Arah (PRD Bagian 12.2):** Prototipe mentah `.stitch` memuat form sanggahan dan pengaduan anonim interaktif di portal publik. Sesuai batasan sistem resmi (*Not Doing*), form tersebut dihapus total dan digantikan oleh *Kartu Edukasi Prosedur Advokasi Offline ke Ketua RT* untuk pemutakhiran data pada periode DTKS berikutnya.
-   - **Penyeragaman Kriteria $C_1$–$C_4$:** Mengoreksi teks kriteria ke-4 pada prototipe mentah ("Daya Listrik 900 VA") menjadi kriteria resmi **"Kepemilikan Aset"** ($C_4$, `COST`, Bobot 20%).
-   - **Tautan Unduh PDF Resmi Ber-Token:** Tombol unduh lembar hasil transparansi dihubungkan langsung ke endpoint bertanda tangan kriptografis (`/api/public/result-pdf/?token=${download_token}`) dengan QR Code verifikasi keabsahan.
-4. **Visualisasi Kesenjangan Kriteria Terbobot (`CriteriaGapChart.tsx`):**
-   - Menghadirkan bilah perbandingan horizontal yang intuitif bagi warga awam: membandingkan capaian nilai normalisasi pemohon ($r_{ij} \times 100$) terhadap rata-rata capaian keluarga yang berhasil lolos kuota ($\bar{r}_j^{\text{lolos}} \times 100$) lengkap dengan selisih poin ($\Delta$).
-5. **Autentikasi Staf Berbasis Peran (`LoginPage.tsx`):**
-   - Gerbang masuk staf kelurahan (Kasi Kesos / Super Admin, Surveyor RT, dan Lurah / Viewer) menggunakan SimpleJWT, penyimpanan token aman di context dan localStorage, serta pengalihan rute otomatis sesuai hak akses.
+1. **Dashboard Eksekutif Bebas Pelanggaran Regulasi (`ExecutiveDashboardPage.tsx`):**
+   - **Kepatuhan Batasan "Not Doing" (PRD Bagian 12.3):** Menghapus total tombol terlarang *"Sinkronisasi DTKS"* dari desain mentah `.stitch` (baris 269), karena integrasi langsung ke API SIKS-NG/DTKS Kemensos berada di luar kewenangan operasional kelurahan dan dilindungi regulasi nasional. Digantikan tombol resmi **"Ekspor Usulan (.xlsx)"** dan **"Refresh Data"**.
+   - **Bento Grid Kartu Metrik:** Menyajikan ringkasan eksekutif 4 pilar: Total Calon KPM (Eligible vs Disqualified TMS), Kuota Penerima Manfaat, Pipeline State Machine (Tahap 1–6), dan status mesin AI/Zero-PII.
+   - **Rekapitulasi Sebaran per RT (RT 01 s/d RT 10):** Memetakan proporsi usulan warga dan estimasi kelolosan kuota per wilayah RT.
+
+2. **Validasi Keras Matematis & Snapshot Snapshot Kriteria (`CriteriaManagementPage.tsx`):**
+   - **Validasi Interaktif $\sum w_j = 1.00$ (FR-01):** Menolak secara reaktif apabila akumulasi bobot $\sum w_j \neq 1.000$. Jika tidak seimbang, bilah visual berubah menjadi merah (`bg-rose-50`), muncul peringatan interaktif, dan tombol *"Simpan & Validasi Bobot"* otomatis di-*disable*.
+   - **Indikator Frozen Snapshot Kriteria:** Menampilkan badge gembok emas dan banner status beku jika batch seleksi aktif telah melewati tahap kalkulasi, memastikan perubahan bobot di masa mendatang tidak merusak histori batch lama (`BATCH_CRITERIA`).
+   - **Koreksi Tipe $C_3$ & $C_4$:** Mengoreksi kekeliruan `.stitch` di mana $C_3$ dilabeli *Benefit* menjadi kriteria resmi **COST (0.25)** (*Kondisi Tempat Tinggal*) dan $C_4$ menjadi **COST (0.20)** (*Kepemilikan Aset*).
+
+3. **Gerbang Usulan RT, Dependents Riil, & Filter TMS Pintu Masuk (`SurveyorInputPage.tsx`):**
+   - **Pendataan Lapangan Mandiri & Massal:** Menyediakan formulir masukan cepat keluarga rentan serta modul unggah massal Excel (`POST /api/citizens/import-excel/`) dengan tautan unduh berkas template resmi.
+   - **Input Khusus `real_dependents_count` (Tie-Breaker Level 3):** Menyimpan jumlah jiwa tanggungan riil sebenarnya (misal: 4 jiwa) langsung ke tabel `EVALUATION` untuk keperluan resolusi skor kembar deterministik di ambang kuota.
+   - **Gerbang Diskualifikasi TMS (FR-02):** Sakelar status kelayakan administratif (`ELIGIBLE` vs `DISQUALIFIED`) dengan dropdown alasan wajib (`ASN/TNI/POLRI`, `PKH Ganda`, `Pindah Domisili`, `Meninggal Dunia`). Warga TMS langsung dipisahkan agar tidak mendistorsi matriks SAW namun tetap tercatat untuk lampiran resmi Berita Acara.
+
+4. **Tabel SAW 11-Kolom Sticky & Transparansi Dekomposisi (`SawRankingPage.tsx`):**
+   - **Solusi Responsivitas Tabel 11-Kolom:** Mengatasi masalah tabel terjepit di `.stitch` dengan membungkus tabel dalam kontainer `overflow-x-auto custom-scroll` dan menerapkan **kolom identitas sticky** (`sticky left-0` untuk `#` dan `sticky left-10` untuk Nama/NIK KPM berlatar putih dengan bayangan z-index). Identitas warga tetap terbaca saat operator menggulir nilai kriteria ke kanan di tablet/ponsel.
+   - **Pembatas Visual Batas Kuota (*Quota Cutoff Divider*):** Menampilkan pemisah visual tegas berlatar emerald gelap antara peringkat lolos kuota (Rank $\le 30$) dan baris cadangan (Rank $\ge 31$).
+   - **Panel Inspeksi Dekomposisi Matriks ($R_{ij}$):** Menghitung dan menampilkan perkalian terbobot $w_j \cdot r_{ij}$ per kriteria untuk setiap kandidat yang diklik.
+
+5. **Monitor Pekerja Asinkron & Koreksi Total $C_4$ Aset (`XaiGeneratorPage.tsx`):**
+   - **Koreksi Kritis Kriteria $C_4$:** Mengeliminasi seluruh teks palsu `.stitch` ("C4: Daya Listrik PLN" dan "daya listrik 900 VA") menjadi kriteria resmi **"C4: Kepemilikan Aset"** (Cost, 0.20) pada chip kriteria, narasi AI, dan grafik kesenjangan kriteria.
+   - **Chip Metrik Tidak Terpotong (*Unclipped Metric Chips*):** Menata 4 metrik status (Gemini Success, Deterministic Fallback, In Progress, Pending) dalam grid adaptif (`grid-cols-1 sm:grid-cols-2 xl:grid-cols-4`) sehingga tidak ada teks yang terpotong di layar tablet/mobile.
+   - **Transparansi Payload Zero-PII:** Memverifikasi di antarmuka bahwa data yang dialirkan ke cloud AI hanya berupa kode anonim (`KPM-035`) dan skor kriteria tanpa nama atau NIK warga (kepatuhan UU PDP No. 27/2022).
 
 ---
 
-### Changelog Fase 7 (Task 7)
+### Changelog Fase 8 (Task 8)
 
 #### Added
-- **Komponen Visualisasi Publik:**
-  - [`frontend/src/components/public/CriteriaGapChart.tsx`](./frontend/src/components/public/CriteriaGapChart.tsx): Modul grafik perbandingan kesenjangan kriteria $C_1$ s/d $C_4$ dengan progress bar komparatif (skor pemohon vs garis batas benchmark rata-rata penerima lolos), indikator selisih poin ($\Delta$), serta legenda terkalibrasi.
-- **Halaman Portal Publik Warga:**
-  - [`frontend/src/pages/PublicPortalPage.tsx`](./frontend/src/pages/PublicPortalPage.tsx): Antarmuka pencarian mandiri status KPM dengan formulir verifikasi 16 digit NIK + 4 digit KK, simulasi widget CAPTCHA, kartu dossier keputusan (LOLOS, TIDAK_LOLOS, DISKUALIFIKASI_TMS), 4 bagian narasi transparansi XAI (Ringkasan, Counterfactual, Pernyataan Sikap, Rekomendasi), jadwal zonasi resmi penyaluran per RW, dan kartu advokasi offline RT.
-- **Halaman Login Staf Kelurahan:**
-  - [`frontend/src/pages/LoginPage.tsx`](./frontend/src/pages/LoginPage.tsx): Antarmuka masuk staf bernuansa *Civic Card Shield*, input username dan password dengan fitur show/hide, penanganan error 401/403/429, serta integrasi role-based redirect ke `/admin/dashboard`, `/admin/surveyor`, atau `/admin/approval`.
-- **Tipe Data Kontrak Publik:**
-  - [`frontend/src/types/public.ts`](./frontend/src/types/public.ts): Definisi antarmuka TypeScript untuk `CriterionGapItem`, `ExplanationData`, `ApplicantMasked`, `SelectionResultPublic`, dan `PublicCheckStatusResponse`.
-- **Suite Pengujian TDD:**
-  - [`frontend/src/__tests__/PublicPortalPage.test.tsx`](./frontend/src/__tests__/PublicPortalPage.test.tsx): 6 skenario pengujian komprehensif memvalidasi formulir verifikasi, kepatuhan batas "Not Doing" (ketiadaan form sanggahan dua arah), rendering dossier hasil dengan penyamaran PII, penanganan ragam status (LOLOS vs TIDAK_LOLOS), penanganan error keamanan (403, 429 lockout, 404), serta alur login staf.
-
-#### Security
-- **Perlindungan Anti-Enumerasi & PII Masking:**
-  - Nama dan NIK selalu ditampilkan dalam format masking (`Ahmad S******` & `367403******0002`).
-  - Respons 404 generik mencegah penyerang memetakan keberadaan NIK warga jika batch belum dipublikasikan atau nomor KK tidak cocok.
-- **Penanganan Lockout & Rate Limit:**
-  - Notifikasi antarmuka terstandarisasi saat IP melampaui 5 permintaan/menit atau NIK dikunci selama 15 menit akibat 5 kali kegagalan verifikasi nomor KK beruntun.
-- **Signed Download Token:**
-  - Tombol unduh lembar ketetapan PDF menggunakan token bertanda tangan `TimestampSigner`, mencegah pengunduhan acak tanpa otorisasi.
+- **5 Komponen Halaman Operasional Dashboard:**
+  - [`frontend/src/pages/dashboard/ExecutiveDashboardPage.tsx`](./frontend/src/pages/dashboard/ExecutiveDashboardPage.tsx): Dashboard ikhtisar eksekutif Kasi Kesos dengan bento grid metrik, sebaran usulan RT 01–10, log audit aktivitas sistem, dan penghapusan tombol ilegal sinkronisasi DTKS.
+  - [`frontend/src/pages/dashboard/CriteriaManagementPage.tsx`](./frontend/src/pages/dashboard/CriteriaManagementPage.tsx): Antarmuka konfigurasi bobot preferensi dengan validasi interaktif $\sum w_j = 1.00$, bilah proporsi adaptif, indikator gembok *Frozen Criteria Snapshot*, dan kartu pemetaan Crips $C_1 - C_4$.
+  - [`frontend/src/pages/dashboard/SurveyorInputPage.tsx`](./frontend/src/pages/dashboard/SurveyorInputPage.tsx): Layar operasional Surveyor RT dengan input angka riil `real_dependents_count`, sakelar gerbang TMS administratif (FR-02), dropzone import spreadsheet massal (`.xlsx`), dan riwayat pengajuan KPM wilayah.
+  - [`frontend/src/pages/dashboard/SawRankingPage.tsx`](./frontend/src/pages/dashboard/SawRankingPage.tsx): Antarmuka peringkat hasil komputasi SAW dengan tabel 11-kolom berfitur *sticky identity column*, pembatas visual batas kuota (*cutoff divider*), penanda tie-breaker bertingkat, dan panel detail dekomposisi matriks $r_{ij}$.
+  - [`frontend/src/pages/dashboard/XaiGeneratorPage.tsx`](./frontend/src/pages/dashboard/XaiGeneratorPage.tsx): Layar pemantauan antrean pekerja asinkron Celery/Django-Q, bilah progres adjudikasi XAI, kartu metrik unclipped, pelindung Zero-PII, inspeksi narasi dwibahasa, dan koreksi kriteria $C_4$ Kepemilikan Aset.
+- **Suite Pengujian Vitest TDD:**
+  - [`frontend/src/__tests__/DashboardScreens.test.tsx`](./frontend/src/__tests__/DashboardScreens.test.tsx): 11 skenario pengujian komprehensif menguji ketiadaan tombol DTKS, validasi dinamis $\sum w_j = 1.00$, deteksi snapshot kriteria, input tanggungan riil, rendering tabel matriks SAW sticky, dan eksklusi label daya listrik pada modul XAI.
 
 #### Changed
-- **Pembaruan Rute Aplikasi ([`frontend/src/App.tsx`](./frontend/src/App.tsx)):**
-  - Mendaftarkan rute publik `/` dan `/cek-bansos` ke `<PublicPortalPage />`.
-  - Mendaftarkan rute otentikasi `/admin/login` ke `<LoginPage />`.
-- **Koreksi Deviasi Desain `.stitch`:**
-  - Menghapus komponen textarea dan tombol "Kirim Sanggahan Resmi" dari portal warga.
-  - Memperbarui label kriteria ke-4 menjadi "Kepemilikan Aset" ($C_4$).
+- **Pembaruan Routing Aplikasi ([`frontend/src/App.tsx`](./frontend/src/App.tsx)):**
+  - Menghubungkan rute operasional internal `/admin/dashboard`, `/admin/criteria`, `/admin/citizens`, `/admin/selection`, dan `/admin/xai` langsung ke ke-5 komponen operasional di atas menggantikan placeholder statis.
+
+#### Security & Compliance
+- **Penegakan Aturan Batasan "Not Doing" (PRD Bagian 12.3):**
+  - Mencegah fitur fiktif atau berbahaya seperti koneksi API langsung ke server Kemensos tanpa payung regulasi.
+- **Zero-PII Verification:**
+  - Memastikan modul inspeksi payload XAI hanya mengekspos `applicant_code`, peringkat, dan metrik kriteria anonim.
+- **Hierarchical Tie-Breaker Resolution:**
+  - Menyediakan penampung data `real_dependents_count` pada form input RT untuk mendukung resolusi skor kembar di Level 3 tie-breaker PRD.
 
 ---
 
-### Arsitektur Alur Verifikasi Portal Publik & Proteksi Berlapis
+### Perbandingan Desain Prototipe `.stitch` vs Implementasi Resmi
 
 ```
-  ┌────────────────────────────────────────────────────────────────────────┐
-  │                   ALUR VERIFIKASI WARGA (/cek-bansos)                  │
-  └────────────────────────────────────────────────────────────────────────┘
-                                     │
-                                     ▼
-        Input: [ NIK 16 Digit ] + [ 4 Digit KK ] + [ CAPTCHA Turnstile ]
-                                     │
-                                     ▼
-                 POST /api/public/check-status/
-                                     │
-           ┌─────────────────────────┴─────────────────────────┐
-           │                                                   │
-     [ HTTP 403 / 429 ]                                  [ HTTP 200 OK ]
-           │                                                   │
-  - Gagal CAPTCHA                                     - Batch Status: "Published"
-  - Rate limit (5 req/menit)                          - NIK Digest Valid & KK Cocok
-  - Lockout 15 menit (5x fail)                        - Reset Counter Kegagalan NIK
-           │                                                   │
-           ▼                                                   ▼
-  [ Alert Merah Informatif ]                          [ DOSSIER TRANSPARANSI ]
-                                                      - NIK Masked: 367403******0002
-                                                      - Nama Masked: Ahmad S******
-                                                      - Status: LOLOS / TIDAK_LOLOS / TMS
-                                                      - Skor Vi vs Ambang Cutoff
-                                                      - 4 Bagian Narasi XAI Gemini
-                                                      - CriteriaGapChart (C1..C4)
-                                                      - Unduh PDF Resmi (Signed Token)
-                                                      - Prosedur Pelaporan Offline ke RT
+┌───────────────────────────────────────┬────────────────────────────────────────────────────────┐
+│ Desain Mentah .stitch (Deviasi)       │ Implementasi Resmi Fase 8 (Civic Precision & PRD)      │
+├───────────────────────────────────────┼────────────────────────────────────────────────────────┤
+│ Tombol "Sinkronisasi DTKS" di header  │ DIHAPUS TOTAL (PRD 12.3 Not-Doing); diganti Ekspor     │
+│ dashboard eksekutif.                  │ Excel (.xlsx) resmi kelurahan & Refresh Data Batch.   │
+├───────────────────────────────────────┼────────────────────────────────────────────────────────┤
+│ Validasi bobot pasif tanpa proteksi   │ Validasi INTERAKTIF: button simpan disabled jika       │
+│ interaktif bila sum != 1.00.          │ sum != 1.00, alert visual merah/hijau & snapshot lock. │
+├───────────────────────────────────────┼────────────────────────────────────────────────────────┤
+│ C4 dilabeli "Daya Listrik PLN" dan   │ KOREKSI 100% MENJADI "Kepemilikan Aset" (Cost, 0.20)   │
+│ narasi hardcoded "daya listrik 900 VA"│ di seluruh chips, narasi XAI, dan chart gap kriteria.  │
+├───────────────────────────────────────┼────────────────────────────────────────────────────────┤
+│ C3 di manajemen bobot dilabeli Benefit│ KOREKSI MENJADI "COST (0.25)" (Kondisi Tempat Tinggal).│
+├───────────────────────────────────────┼────────────────────────────────────────────────────────┤
+│ Tabel 11 kolom SAW terjepit di laptop │ Wrapper overflow-x-auto + KOLOM IDENTITAS STICKY       │
+│ sempit dan terpotong di tablet/HP.    │ (Nomor & Nama KPM tetap terkunci saat scroll kriteria).│
+├───────────────────────────────────────┼────────────────────────────────────────────────────────┤
+│ Kartu metrik worker XAI terpotong     │ Grid responsif proporsional (1 col mobile, 2 tablet,   │
+│ pada teks "Deterministic Fallback".   │ 4 desktop) dengan padding bernapas (unclipped).        │
+└───────────────────────────────────────┴────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### Daftar File Fase 7
+### Daftar File Fase 8
 
 | File | Tanggung Jawab |
 | :--- | :--- |
-| [`./frontend/src/types/public.ts`](./frontend/src/types/public.ts) | Definisi kontrak tipe TypeScript untuk respons status publik dan grafik komparasi |
-| [`./frontend/src/components/public/CriteriaGapChart.tsx`](./frontend/src/components/public/CriteriaGapChart.tsx) | Komponen grafik gap horizontal kriteria $C_1$–$C_4$ dengan penanda benchmark rata-rata |
-| [`./frontend/src/pages/PublicPortalPage.tsx`](./frontend/src/pages/PublicPortalPage.tsx) | Halaman portal transparansi bansos warga dengan formulir verifikasi dan dossier hasil |
-| [`./frontend/src/pages/LoginPage.tsx`](./frontend/src/pages/LoginPage.tsx) | Halaman autentikasi staf kelurahan (SimpleJWT) dengan pengalihan peran |
-| [`./frontend/src/App.tsx`](./frontend/src/App.tsx) | Konfigurasi rute aplikasi React Router untuk portal publik dan panel admin |
-| [`./frontend/src/__tests__/PublicPortalPage.test.tsx`](./frontend/src/__tests__/PublicPortalPage.test.tsx) | Suite pengujian TDD Vitest untuk alur portal publik dan login staf |
+| [`./frontend/src/pages/dashboard/ExecutiveDashboardPage.tsx`](./frontend/src/pages/dashboard/ExecutiveDashboardPage.tsx) | Dashboard ikhtisar eksekutif Kasi Kesos (Bento grid, agregat RT, audit log, tanpa tombol DTKS) |
+| [`./frontend/src/pages/dashboard/CriteriaManagementPage.tsx`](./frontend/src/pages/dashboard/CriteriaManagementPage.tsx) | Konfigurasi bobot kriteria SAW dengan validasi $\sum w_j = 1.00$ dan status *Frozen Criteria Snapshot* |
+| [`./frontend/src/pages/dashboard/SurveyorInputPage.tsx`](./frontend/src/pages/dashboard/SurveyorInputPage.tsx) | Formulir pendataan lapangan KPM RT, input `real_dependents_count`, sakelar gerbang TMS, dan impor Excel |
+| [`./frontend/src/pages/dashboard/SawRankingPage.tsx`](./frontend/src/pages/dashboard/SawRankingPage.tsx) | Tabel ranking komputasi SAW 11-kolom dengan kolom identitas sticky, garis batas kuota, dan drawer matriks |
+| [`./frontend/src/pages/dashboard/XaiGeneratorPage.tsx`](./frontend/src/pages/dashboard/XaiGeneratorPage.tsx) | Pemantauan worker asinkron XAI, progres narasi, Zero-PII sanitasi, dan koreksi kriteria $C_4$ Aset |
+| [`./frontend/src/App.tsx`](./frontend/src/App.tsx) | Konfigurasi rute React Router untuk 5 halaman operasional internal staf kelurahan |
+| [`./frontend/src/__tests__/DashboardScreens.test.tsx`](./frontend/src/__tests__/DashboardScreens.test.tsx) | Suite pengujian TDD Vitest untuk 5 layar operasional Admin dan Surveyor |
 
 ---
 
@@ -114,13 +111,13 @@ $ npm --prefix frontend test -- --run
 
  RUN  v2.1.9 D:/Kuliah/SKRIPSI/BANSOS_SAW+LLM/frontend
 
- ✓ src/__tests__/AppShell.responsive.test.tsx (4 tests) 386ms
+ ✓ src/__tests__/AppShell.responsive.test.tsx (4 tests) 328ms
    ✓ toggles mobile drawer via hamburger button and closes via backdrop
    ✓ enforces RBAC: hides mutation actions from Viewer (Lurah) and displays approval menu
    ✓ enforces RBAC: allows Super Admin to see all governance modules including SAW execution and weight config
    ✓ enforces RBAC: scopes Surveyor (Ketua RT) strictly to RT operations
 
- ✓ src/__tests__/PublicPortalPage.test.tsx (6 tests) 436ms
+ ✓ src/__tests__/PublicPortalPage.test.tsx (6 tests) 407ms
    ✓ renders NIK + 4-digit KK + CAPTCHA verification form and excludes prohibited two-way appeal form
    ✓ submits verification and renders full dossier with masked PII, 4-part XAI narrative, and C1..C4 gap chart
    ✓ renders LOLOS status correctly with approval badge
@@ -128,28 +125,54 @@ $ npm --prefix frontend test -- --run
    ✓ renders login form and authenticates staff successfully
    ✓ displays error banner on authentication failure
 
- Test Files  2 passed (2)
-      Tests  10 passed (10)
-   Start at  17:53:31
-   Duration  2.12s
+ ✓ src/__tests__/DashboardScreens.test.tsx (11 tests) 584ms
+   ✓ excludes Sinkronisasi DTKS button on ExecutiveDashboardPage per PRD Not-Doing
+   ✓ renders KPI cards and active batch metrics
+   ✓ disables weight save button when sum of weights != 1.00 on CriteriaManagementPage
+   ✓ enables weight save button when sum of weights == 1.00
+   ✓ renders Frozen Criteria Snapshot indicator when batch is locked
+   ✓ renders real dependents count and TMS reason selector on SurveyorInputPage
+   ✓ shows TMS disqualification reason select when status is DISQUALIFIED
+   ✓ renders SAW ranking table and matrix detail drawer on SawRankingPage
+   ✓ displays sticky table and C3 as COST and C4 as Kepemilikan Aset
+   ✓ displays C4 as Kepemilikan Aset in XAI payload monitor
+   ✓ shows Zero-PII sanitation badge and worker progress
+
+ Test Files  3 passed (3)
+      Tests  21 passed (21)
+   Start at  18:11:10
+   Duration  4.71s
 
 # Verifikasi Kompilasi TypeScript & Build Produksi Vite:
 $ npm --prefix frontend run build
 
 vite v6.4.4 building for production...
 transforming...
-✓ 1644 modules transformed.
+✓ 1649 modules transformed.
 rendering chunks...
 computing gzip size...
-dist/index.html                   0.99 kB │ gzip:  0.55 kB
-dist/assets/index-BLoSdA0E.css   25.48 kB │ gzip:  5.30 kB
-dist/assets/index-DN_S2L_Z.js   276.13 kB │ gzip: 87.56 kB
-✓ built in 2.38s
+dist/index.html                   0.99 kB │ gzip:   0.55 kB
+dist/assets/index-Dk8B41x0.css   33.12 kB │ gzip:   6.26 kB
+dist/assets/index-B-ilBthb.js   358.73 kB │ gzip: 101.38 kB
+✓ built in 4.53s
 ```
 
 ---
 
 ## Dokumentasi Branch Sebelumnya
+
+<details>
+<summary><strong>Fase 7: feat/m4b-public-portal (Public Citizen Portal /cek-bansos, Masking PII, CriteriaGapChart C1..C4, & Staff Login /admin/login - Milestone 4B)</strong></summary>
+
+### Mengapa Fase Ini Dibutuhkan
+Fase 7 mengimplementasikan portal transparansi publik bagi warga pemohon bansos (`/cek-bansos`) serta gerbang masuk staf adjudikasi (`/admin/login`) dengan mematuhi prinsip akuntabilitas terbuka, keamanan data kependudukan (**UU PDP No. 27/2022**), dan arahan rancangan **Civic Precision**:
+- Akses mandiri passwordless untuk warga dengan verifikasi NIK 16 digit + 4 digit terakhir nomor KK + Cloudflare CAPTCHA Turnstile.
+- Perlindungan privasi berlapis dan penyamaran visual 100% (`367403******0002` & `Ahmad S******`).
+- Penghapusan form sanggahan dua arah (PRD 12.2) diganti dengan kartu edukasi advokasi offline ke Ketua RT.
+- Grafik komparasi kesenjangan kriteria terbobot horizontal (`CriteriaGapChart.tsx`).
+- Autentikasi staf SimpleJWT dengan pembagian peran terstruktur (`LoginPage.tsx`).
+
+</details>
 
 <details>
 <summary><strong>Fase 6: feat/m4a-frontend-appshell (Frontend Scaffolding, Civic Precision Theme, & 3-Tier Responsive AppShell - Milestone 4A)</strong></summary>
