@@ -1,0 +1,651 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..900;1,300..900&amp;family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={"darkMode":"class","theme":{"extend":{"colors":{"status-rejected-fg":"#991B1B","surface":"#f8f9ff","status-review-fg":"#92400E","background":"#f8f9ff","error-container":"#ffdad6","primary":"#003426","on-tertiary-fixed-variant":"#005049","on-primary":"#ffffff","primary-container":"#0f4c3a","on-surface-variant":"#404944","secondary-fixed":"#d1e4ff","on-error-container":"#93000a","status-approved-bg":"#ECFDF5","on-secondary":"#ffffff","on-tertiary":"#ffffff","secondary-container":"#c7dfff","surface-variant":"#d5e3fc","inverse-surface":"#233144","tertiary-fixed-dim":"#6bd8cb","status-approved-fg":"#065F46","on-tertiary-container":"#52c1b4","on-primary-container":"#82bba4","on-surface":"#0d1c2e","secondary":"#49607c","surface-container-lowest":"#ffffff","xai-weight-positive":"#059669","xai-weight-negative":"#E11D48","surface-dim":"#ccdbf3","border-strong":"#CBD5E1","primary-fixed-dim":"#99d3ba","surface-tint":"#306855","secondary-fixed-dim":"#b0c9e8","on-secondary-container":"#4b637e","tertiary":"#00332e","xai-confidence":"#0284C7","tertiary-fixed":"#89f5e7","on-error":"#ffffff","surface-container-highest":"#d5e3fc","on-background":"#0d1c2e","on-primary-fixed-variant":"#15503e","on-primary-fixed":"#002117","outline-variant":"#bfc9c3","outline":"#707974","primary-fixed":"#b4efd6","surface-container":"#e6eeff","surface-container-high":"#dce9ff","status-review-bg":"#FFFBEB","surface-canvas":"#F8FAFC","on-secondary-fixed-variant":"#314863","surface-bright":"#f8f9ff","tertiary-container":"#004c45","on-secondary-fixed":"#011d35","surface-container-low":"#eff4ff","on-tertiary-fixed":"#00201d","border-subtle":"#E2E8F0","inverse-primary":"#99d3ba","surface-subtle":"#F1F5F9","inverse-on-surface":"#eaf1ff","status-rejected-bg":"#FEF2F2","error":"#ba1a1a"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"space-xl":"2.25rem","margin":"2rem","space-xs":"0.25rem","gutter-mobile":"0.75rem","space-sm":"0.5rem","margin-mobile":"1rem","space-lg":"1.5rem","space-md":"1rem","gutter":"1.25rem"},"fontFamily":{"headline-xl-mobile":["Hanken Grotesk"],"label-sm":["JetBrains Mono"],"body-md":["Hanken Grotesk"],"headline-xl":["Hanken Grotesk"],"label-lg":["JetBrains Mono"],"headline-md":["Hanken Grotesk"],"headline-lg":["Hanken Grotesk"],"body-lg":["Hanken Grotesk"],"body-sm":["Hanken Grotesk"],"label-md":["JetBrains Mono"],"headline-sm":["Hanken Grotesk"]},"fontSize":{"headline-xl-mobile":["28px",{"lineHeight":"36px","letterSpacing":"-0.02em","fontWeight":"700"}],"label-sm":["10px",{"lineHeight":"14px","letterSpacing":"0.06em","fontWeight":"500"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"headline-xl":["36px",{"lineHeight":"44px","letterSpacing":"-0.025em","fontWeight":"700"}],"label-lg":["13px",{"lineHeight":"18px","letterSpacing":"0.02em","fontWeight":"500"}],"headline-md":["22px",{"lineHeight":"30px","letterSpacing":"-0.015em","fontWeight":"600"}],"headline-lg":["28px",{"lineHeight":"36px","letterSpacing":"-0.02em","fontWeight":"600"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"body-sm":["12px",{"lineHeight":"18px","fontWeight":"400"}],"label-md":["11px",{"lineHeight":"16px","letterSpacing":"0.04em","fontWeight":"500"}],"headline-sm":["18px",{"lineHeight":"26px","letterSpacing":"-0.01em","fontWeight":"600"}]}}}};</script></head><body class="bg-surface font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-primary text-on-primary z-50 flex flex-col justify-between border-r border-primary-container shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex flex-col"><div class="h-16 px-space-lg flex items-center gap-space-sm border-b border-primary-container/60"><img alt="Logo Bansos Jurangmangu Barat" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UnlsZRMjfn2NMBZw9Gj877GRMl4Qf4gR0eio37ft6qXeLAtuGGVWqn3TrXXb5ugRrk9v2jho7igzYwUFEp757DUbAXNpLzCiTcxIWxed0ZgY_0TLLipmIjQy6MopNiWSI5ONolaPjoy3KJRtXFOWxyCpYHflVTnuKz-sh0ekN3rysO5MNAd7ooyoBMtxe9QbtKbaJjTappPcVgdXBquZoxR8Sgp1Vf5-NLwylFmmJKw9pM44hHN_rrHA"><div class="flex flex-col leading-none"><span class="font-headline-sm text-headline-sm text-on-primary tracking-tight font-bold">EDSS Bansos</span><span class="font-label-sm text-label-sm text-primary-fixed uppercase tracking-wider">Kel. Jurangmangu Barat</span></div></div><div class="px-space-md py-space-sm"><div class="bg-primary-container/80 rounded-lg p-space-sm border border-primary-fixed-dim/20 flex items-center justify-between"><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[16px] text-primary-fixed">verified</span><span class="font-label-sm text-label-sm text-primary-fixed uppercase tracking-wider">Kecamatan Pondok Aren</span></div><span class="font-label-sm text-label-sm bg-primary px-space-xs py-0.5 rounded text-on-primary border border-primary-fixed/30">SPBE v2.4</span></div></div><div class="px-space-lg pt-space-xs pb-space-xs"><span class="font-label-sm text-label-sm uppercase tracking-widest text-primary-fixed-dim/70">Modul Adjudikasi &amp; XAI</span></div><nav class="flex flex-col gap-1 px-space-sm" data-active-classes="bg-primary-container text-on-primary font-bold shadow-sm"><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-primary-container/60 hover:text-on-primary transition-colors" data-path="overview-dan-analitik" href="#"><span class="material-symbols-outlined text-[18px]">insights</span><span class="font-body-md text-body-md">Overview &amp; Analitik</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-primary-container/60 hover:text-on-primary transition-colors" data-path="seleksi-saw-dan-ranking" href="#"><span class="material-symbols-outlined text-[18px]">format_list_numbered</span><span class="font-body-md text-body-md">Seleksi SAW &amp; Ranking</span></a><a aria-current="page" class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg transition-colors bg-primary-container text-on-primary font-bold shadow-sm" data-path="generator-narasi-xai" href="#"><span class="material-symbols-outlined text-[18px]">psychology</span><span class="font-body-md text-body-md">Generator Narasi XAI (Gemini)</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-primary-container/60 hover:text-on-primary transition-colors" data-path="manajemen-kriteria-dan-bobot" href="#"><span class="material-symbols-outlined text-[18px]">tune</span><span class="font-body-md text-body-md">Manajemen Kriteria &amp; Bobot</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-primary-container/60 hover:text-on-primary transition-colors" data-path="verifikasi-data-rt-dan-tms" href="#"><span class="material-symbols-outlined text-[18px]">fact_check</span><span class="font-body-md text-body-md">Verifikasi Data RT &amp; TMS</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-primary-container/60 hover:text-on-primary transition-colors" data-path="evaluasi-skripsi" href="#"><span class="material-symbols-outlined text-[18px]">school</span><span class="font-body-md text-body-md">Evaluasi Skripsi (Fidelity &amp; SUS)</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-primary-container/60 hover:text-on-primary transition-colors" data-path="portal-publik" href="#"><span class="material-symbols-outlined text-[18px]">public</span><span class="font-body-md text-body-md">Portal Publik (Preview)</span></a></nav></div><div class="p-space-md border-t border-primary-container/70 flex flex-col gap-space-xs"><div class="flex items-center justify-between text-primary-fixed-dim text-xs font-label-sm"><span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-status-approved-fg animate-pulse"></span> Engine Status: Online</span><span class="text-primary-fixed font-label-sm">SAW + SHAP</span></div><div class="text-[11px] font-body-sm text-primary-fixed-dim/60 leading-tight">Sistem Pendukung Keputusan Bansos Pemkot Tangerang Selatan. Jurbar Integrated Platform.</div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-md border-b border-border-subtle z-40 px-space-lg flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md flex-1"><img alt="Logo Bansos Jurangmangu Barat" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UnlsZRMjfn2NMBZw9Gj877GRMl4Qf4gR0eio37ft6qXeLAtuGGVWqn3TrXXb5ugRrk9v2jho7igzYwUFEp757DUbAXNpLzCiTcxIWxed0ZgY_0TLLipmIjQy6MopNiWSI5ONolaPjoy3KJRtXFOWxyCpYHflVTnuKz-sh0ekN3rysO5MNAd7ooyoBMtxe9QbtKbaJjTappPcVgdXBquZoxR8Sgp1Vf5-NLwylFmmJKw9pM44hHN_rrHA"><div class="hidden xl:flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant"><span class="text-secondary">EDSS</span><span class="material-symbols-outlined text-[14px]">chevron_right</span><span class="text-secondary">Jurangmangu Barat</span><span class="material-symbols-outlined text-[14px]">chevron_right</span><span class="text-primary font-semibold">Kasi Kesos Dossier</span></div><div class="flex items-center gap-space-sm bg-surface-subtle px-space-sm py-1 rounded-lg border border-border-subtle"><span class="material-symbols-outlined text-[18px] text-secondary">calendar_month</span><select class="bg-transparent font-label-md text-label-md text-on-surface focus:outline-none cursor-pointer pr-space-xs"><option selected="">Bansos Sembako Tahap I 2026 - Kuota 50 KPM</option><option>PKH Alokasi Q1 2026 - Kuota 35 KPM</option><option>BLT Dana Kelurahan 2025 (Arsip)</option></select></div><div class="hidden lg:flex items-center gap-2 bg-status-approved-bg text-status-approved-fg border border-status-approved-fg/20 px-2.5 py-1 rounded-lg shadow-sm leading-none"><span class="w-2 h-2 rounded-full bg-status-approved-fg shrink-0"></span><span class="font-label-md text-[11px] font-semibold uppercase tracking-wider">Batch: Calculated / Ready for XAI</span></div></div><div class="flex items-center gap-space-md"><div class="relative hidden md:block"><span class="material-symbols-outlined absolute left-space-sm top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant">search</span><input class="w-56 pl-8 pr-space-sm py-1.5 bg-surface-subtle border border-border-subtle rounded-lg font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary" placeholder="Cari NIK / Nama KPM / RT..." type="text"></div><button class="relative p-1.5 rounded-lg text-secondary hover:bg-surface-subtle hover:text-on-surface transition-colors" title="Notifikasi Validasi"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-error"></span></button><div class="h-6 w-px bg-border-subtle"></div><div class="flex items-center gap-space-sm"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="flex flex-col text-left"><span class="font-headline-sm text-[13px] leading-tight text-on-surface font-semibold">Budi Hartono, S.Sos</span><span class="font-label-sm text-label-sm text-secondary">Kasi Kesos Kelurahan</span></div></div></div></header><main class="relative pt-16 bg-surface min-h-screen"><div class="flex flex-col w-full">
+<!-- Sub-header Breadcrumb & Operational Strip -->
+<div class="bg-surface-container-lowest px-margin py-space-sm flex flex-wrap items-center justify-between gap-space-sm shadow-sm">
+<div class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant">
+<span class="text-secondary font-label-md">EDSS-CORE</span>
+<span class="text-outline-variant font-label-md">/</span>
+<span class="text-secondary font-label-md">Asynchronous Jobs</span>
+<span class="text-outline-variant font-label-md">/</span>
+<span class="text-primary font-bold font-label-md">Worker Worker-Pool-ID #BNS-2026-03</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="flex items-center gap-1.5 px-space-sm py-0.5 rounded-lg bg-surface-subtle text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px] text-xai-weight-positive">lock</span>
+<span class="">Zero-PII Sanitation Active</span>
+</div>
+<div class="flex items-center gap-1.5 px-space-sm py-0.5 rounded-lg bg-status-approved-bg text-status-approved-fg font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-approved-fg animate-ping"></span>
+<span class="">Gemini 2.5 Flash Online</span>
+</div>
+</div>
+</div>
+<div class="p-margin flex flex-col gap-space-lg">
+<!-- Header Section -->
+<div class="flex flex-col lg:flex-row lg:items-end justify-between gap-space-md">
+<div class="flex flex-col gap-1 max-w-3xl">
+<div class="flex items-center gap-space-xs">
+<span class="px-space-xs py-0.5 rounded bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold tracking-wider uppercase">FR-04 / FR-05 Sub-Modul</span>
+<span class="font-label-sm text-label-sm text-secondary">Bagian 8: Adjudikasi Otomatis</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">Explainable AI (XAI) Engine &amp; Asynchronous Worker Monitor</h1>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">Pembangkitan narasi penjelasan keputusan berbasis Google Gemini Flash 2.5 dengan sanitasi data PII dan fallback deterministik.</p>
+</div>
+<div class="flex items-center gap-space-sm self-start lg:self-auto">
+<button class="flex items-center gap-1.5 px-space-md py-space-sm rounded-lg bg-surface-container-lowest text-secondary shadow-sm hover:bg-surface-subtle transition-colors font-headline-sm text-body-sm font-medium" id="btnPauseWorker" onclick="toggleWorker()">
+<span class="material-symbols-outlined text-[18px]" id="pauseIcon">pause_circle</span>
+<span id="pauseLabel" class="">Pause Poller</span>
+</button>
+<button class="flex items-center gap-1.5 px-space-md py-space-sm rounded-lg bg-primary text-on-primary shadow-sm hover:bg-primary-container transition-colors font-headline-sm text-body-sm font-semibold">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+<span class="">Konfigurasi LLM Prompt</span>
+</button>
+</div>
+</div>
+<!-- Worker Progress Banner (Real-time polling state) -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-md">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-sm">
+<span class="material-symbols-outlined text-[22px]">memory</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">Celery Task Queue: Batch #BNS-2026-03</span>
+<span class="px-space-xs py-0.5 rounded bg-surface-subtle text-on-surface-variant font-label-sm text-label-sm">Worker Pool: gevent-x4</span>
+</div>
+<span class="font-body-sm text-body-sm text-secondary">Alokasi Bansos Sembako Tahap I 2026 • Kelurahan Jurangmangu Barat</span>
+</div>
+</div>
+<div class="flex items-center gap-space-lg">
+<div class="flex flex-col items-end">
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Elapsed Time</span>
+<span class="font-label-lg text-label-lg font-bold text-on-surface">02m : 14s</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Throughput Rate</span>
+<span class="font-label-lg text-label-lg font-bold text-xai-weight-positive">12.0 RPM <span class="font-label-sm text-label-sm font-normal text-secondary">(Rate-Safe)</span></span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Remaining Est.</span>
+<span class="font-label-lg text-label-lg font-bold text-on-surface">~ 01m : 05s</span>
+</div>
+</div>
+</div>
+<!-- Linear Gradient Progress Bar -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between text-body-sm">
+<div class="flex items-center gap-2">
+<span class="font-body-md text-body-md font-semibold text-on-surface">Progres Adjudikasi XAI</span>
+<span class="font-label-md text-label-md text-secondary">64 dari 96 KPM Selesai</span>
+</div>
+<span class="font-label-lg text-label-lg font-bold text-primary">66.7%</span>
+</div>
+<div class="w-full h-3 rounded-full bg-surface-subtle overflow-hidden p-0.5 flex">
+<div class="h-full rounded-full bg-gradient-to-r from-primary via-primary-container to-xai-weight-positive transition-all duration-700 shadow-sm" style="width: 66.7%;"></div>
+</div>
+</div>
+<!-- Detailed Breakdown Metrics Chips -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-space-sm pt-space-xs">
+<div class="bg-surface rounded-lg p-space-sm flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-xai-weight-positive"></span>
+<span class="font-body-sm text-body-sm text-on-surface">Gemini API Success</span>
+</div>
+<span class="font-label-md text-label-md font-bold text-on-surface">62 KPM</span>
+</div>
+<div class="bg-surface rounded-lg p-space-sm flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-status-review-fg"></span>
+<span class="font-body-sm text-body-sm text-on-surface">Deterministic Fallback</span>
+</div>
+<span class="font-label-md text-label-md font-bold text-status-review-fg">2 KPM</span>
+</div>
+<div class="bg-surface rounded-lg p-space-sm flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-xai-confidence animate-pulse"></span>
+<span class="font-body-sm text-body-sm text-on-surface">Sedang Dihasilkan</span>
+</div>
+<span class="font-label-md text-label-md font-bold text-xai-confidence">1 KPM</span>
+</div>
+<div class="bg-surface rounded-lg p-space-sm flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary"></span>
+<span class="font-body-sm text-body-sm text-on-surface">Antrean Tertunda</span>
+</div>
+<span class="font-label-md text-label-md font-bold text-secondary">31 KPM</span>
+</div>
+</div>
+</div>
+<!-- Main Two-Column Composition -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+<!-- Left Column: Antrean KPM & Selector (5 Columns) -->
+<div class="lg:col-span-5 flex flex-col gap-space-md">
+<!-- Filter and Search Header -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">Antrean Kandidat</span>
+<span class="px-space-xs py-0.5 rounded bg-surface-subtle font-label-sm text-label-sm text-secondary font-bold">96 Terdaftar</span>
+</div>
+<div class="flex items-center gap-1 text-secondary text-body-sm">
+<span class="material-symbols-outlined text-[16px]">sync</span>
+<span class="font-label-sm text-label-sm">Live Feed (2s)</span>
+</div>
+</div>
+<div class="flex gap-space-xs">
+<div class="relative flex-1">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-[16px] text-secondary">search</span>
+<input class="w-full pl-8 pr-2 py-1.5 rounded-lg bg-surface text-body-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-subtle" placeholder="Filter Applicant Code / Skor..." type="text">
+</div>
+<select class="px-2 py-1.5 rounded-lg bg-surface font-label-sm text-label-sm text-on-surface focus:outline-none">
+<option>Semua Status</option>
+<option>Selesai XAI</option>
+<option>Sedang Proses</option>
+<option>Dalam Antrean</option>
+</select>
+</div>
+</div>
+<!-- Candidate Cards Stack -->
+<div class="flex flex-col gap-space-xs max-h-[720px] overflow-y-auto pr-1" id="kpmListContainer">
+<!-- Card 1: Selected Item (KPM-042 - Focus Item) -->
+<div class="cursor-pointer bg-surface-container-lowest rounded-lg p-space-md shadow-md bg-gradient-to-r from-primary-container/10 via-surface-container-lowest to-surface-container-lowest transition-all hover:shadow-md flex flex-col gap-space-xs" id="card-KPM-042" onclick="selectKpm('KPM-042')">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg font-bold text-primary">KPM-042</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-subtle font-label-sm text-label-sm text-secondary">RW 04 / RT 02</span>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-approved-bg text-status-approved-fg font-label-sm text-label-sm font-semibold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-status-approved-fg"></span> Selesai XAI
+              </span>
+</div>
+<div class="flex items-center justify-between text-body-sm pt-1">
+<div class="flex items-center gap-3">
+<div>
+<span class="font-label-sm text-label-sm text-secondary">SAW Score:</span>
+<span class="font-label-md text-label-md font-bold text-on-surface ml-1">0.684</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-secondary">Rank:</span>
+<span class="font-label-md text-label-md font-bold text-status-rejected-fg ml-1">#35 <span class="text-secondary font-normal font-label-sm">/ 30 Kuota</span></span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-rejected-bg text-status-rejected-fg font-label-sm text-label-sm font-bold uppercase tracking-wider">TIDAK LOLOS</span>
+</div>
+<div class="flex items-center justify-between pt-1 font-label-sm text-label-sm text-secondary">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px] text-primary">smart_toy</span> Gemini 2.5 Flash</span>
+<span class="">100% PII Masked</span>
+</div>
+</div>
+<!-- Card 2: Currently Generating (Pulse Animation) -->
+<div class="cursor-pointer bg-surface-container-lowest rounded-lg p-space-md shadow-sm transition-all hover:shadow-md flex flex-col gap-space-xs" id="card-KPM-043" onclick="selectKpm('KPM-043')">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">KPM-043</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-subtle font-label-sm text-label-sm text-secondary">RW 03 / RT 05</span>
+</div>
+<span class="px-2 py-0.5 rounded bg-secondary-container text-on-secondary-container font-label-sm text-label-sm font-semibold flex items-center gap-1 animate-pulse">
+<span class="w-2 h-2 rounded-full bg-xai-confidence animate-ping"></span> Sedang Diproses
+              </span>
+</div>
+<div class="flex items-center justify-between text-body-sm pt-1">
+<div class="flex items-center gap-3">
+<div>
+<span class="font-label-sm text-label-sm text-secondary">SAW Score:</span>
+<span class="font-label-md text-label-md font-bold text-on-surface ml-1">0.718</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-secondary">Rank:</span>
+<span class="font-label-md text-label-md font-bold text-status-approved-fg ml-1">#28 <span class="text-secondary font-normal font-label-sm">/ 30 Kuota</span></span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-approved-bg text-status-approved-fg font-label-sm text-label-sm font-bold uppercase tracking-wider">LOLOS KUOTA</span>
+</div>
+<div class="flex items-center justify-between pt-1 font-label-sm text-label-sm text-secondary">
+<span class="flex items-center gap-1 text-xai-confidence"><span class="material-symbols-outlined text-[13px] animate-spin">refresh</span> Synthesizing Narrative...</span>
+<span class="">Chunk 2/3</span>
+</div>
+</div>
+<!-- Card 3: Completed via Fallback -->
+<div class="cursor-pointer bg-surface-container-lowest rounded-lg p-space-md shadow-sm transition-all hover:shadow-md flex flex-col gap-space-xs" id="card-KPM-041" onclick="selectKpm('KPM-041')">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">KPM-041</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-subtle font-label-sm text-label-sm text-secondary">RW 01 / RT 01</span>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-review-bg text-status-review-fg font-label-sm text-label-sm font-semibold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-status-review-fg"></span> Fallback Deterministik
+              </span>
+</div>
+<div class="flex items-center justify-between text-body-sm pt-1">
+<div class="flex items-center gap-3">
+<div>
+<span class="font-label-sm text-label-sm text-secondary">SAW Score:</span>
+<span class="font-label-md text-label-md font-bold text-on-surface ml-1">0.652</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-secondary">Rank:</span>
+<span class="font-label-md text-label-md font-bold text-status-rejected-fg ml-1">#41 <span class="text-secondary font-normal font-label-sm">/ 30 Kuota</span></span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-rejected-bg text-status-rejected-fg font-label-sm text-label-sm font-bold uppercase tracking-wider">TIDAK LOLOS</span>
+</div>
+<div class="flex items-center justify-between pt-1 font-label-sm text-label-sm text-secondary">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px] text-status-review-fg">offline_bolt</span> Rule Template Engine v1</span>
+<span class="">Backoff 429 Handled</span>
+</div>
+</div>
+<!-- Card 4: Completed Normal -->
+<div class="cursor-pointer bg-surface-container-lowest rounded-lg p-space-md shadow-sm transition-all hover:shadow-md flex flex-col gap-space-xs" id="card-KPM-040" onclick="selectKpm('KPM-040')">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">KPM-040</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-subtle font-label-sm text-label-sm text-secondary">RW 07 / RT 03</span>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-approved-bg text-status-approved-fg font-label-sm text-label-sm font-semibold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-status-approved-fg"></span> Selesai XAI
+              </span>
+</div>
+<div class="flex items-center justify-between text-body-sm pt-1">
+<div class="flex items-center gap-3">
+<div>
+<span class="font-label-sm text-label-sm text-secondary">SAW Score:</span>
+<span class="font-label-md text-label-md font-bold text-on-surface ml-1">0.842</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-secondary">Rank:</span>
+<span class="font-label-md text-label-md font-bold text-status-approved-fg ml-1">#04 <span class="text-secondary font-normal font-label-sm">/ 30 Kuota</span></span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-approved-bg text-status-approved-fg font-label-sm text-label-sm font-bold uppercase tracking-wider">LOLOS KUOTA</span>
+</div>
+<div class="flex items-center justify-between pt-1 font-label-sm text-label-sm text-secondary">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px] text-primary">smart_toy</span> Gemini 2.5 Flash</span>
+<span class="">Fidelity 100%</span>
+</div>
+</div>
+<!-- Card 5: Queued Item -->
+<div class="cursor-pointer bg-surface-container-lowest rounded-lg p-space-md shadow-sm opacity-80 transition-all hover:opacity-100 flex flex-col gap-space-xs" id="card-KPM-044" onclick="selectKpm('KPM-044')">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg font-bold text-secondary">KPM-044</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-subtle font-label-sm text-label-sm text-secondary">RW 02 / RT 04</span>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-subtle text-secondary font-label-sm text-label-sm font-semibold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Menunggu Antrean
+              </span>
+</div>
+<div class="flex items-center justify-between text-body-sm pt-1">
+<div class="flex items-center gap-3">
+<div>
+<span class="font-label-sm text-label-sm text-secondary">SAW Score:</span>
+<span class="font-label-md text-label-md font-bold text-on-surface ml-1">0.612</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-secondary">Rank:</span>
+<span class="font-label-md text-label-md font-bold text-on-surface ml-1">#52</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-subtle text-secondary font-label-sm text-label-sm font-semibold uppercase tracking-wider">PENDING EVAL</span>
+</div>
+<div class="flex items-center justify-between pt-1 font-label-sm text-label-sm text-secondary">
+<span class="">Posisi Antrean: #1 di antrean</span>
+<span class="">Payload Siap</span>
+</div>
+</div>
+<!-- Card 6: Queued Item -->
+<div class="cursor-pointer bg-surface-container-lowest rounded-lg p-space-md shadow-sm opacity-70 transition-all hover:opacity-100 flex flex-col gap-space-xs" id="card-KPM-045" onclick="selectKpm('KPM-045')">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg font-bold text-secondary">KPM-045</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-subtle font-label-sm text-label-sm text-secondary">RW 05 / RT 01</span>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-subtle text-secondary font-label-sm text-label-sm font-semibold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Menunggu Antrean
+              </span>
+</div>
+<div class="flex items-center justify-between text-body-sm pt-1">
+<div class="flex items-center gap-3">
+<div>
+<span class="font-label-sm text-label-sm text-secondary">SAW Score:</span>
+<span class="font-label-md text-label-md font-bold text-on-surface ml-1">0.590</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-secondary">Rank:</span>
+<span class="font-label-md text-label-md font-bold text-on-surface ml-1">#58</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-subtle text-secondary font-label-sm text-label-sm font-semibold uppercase tracking-wider">PENDING EVAL</span>
+</div>
+<div class="flex items-center justify-between pt-1 font-label-sm text-label-sm text-secondary">
+<span class="">Posisi Antrean: #2 di antrean</span>
+<span class="">Payload Siap</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Inspector Narasi XAI & Uji Kesetiaan (7 Columns) -->
+<div class="lg:col-span-7 flex flex-col gap-space-md">
+<!-- Inspector Card Top Header -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm pb-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-12 h-12 rounded-xl bg-status-rejected-bg text-status-rejected-fg flex items-center justify-center font-label-lg text-label-lg font-bold">
+                #35
+              </div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-headline-md text-headline-md font-bold text-on-surface">KPM-042</span>
+<span class="font-body-md text-body-md text-secondary font-medium">Ahmad S*****</span>
+<span class="px-space-xs py-0.5 rounded bg-status-rejected-bg text-status-rejected-fg font-label-sm text-label-sm font-bold">TIDAK LOLOS KUOTA (Peringkat 35 / 30)</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary">NIK: 3674030109****** • KK: 3674030208****** • Domisili: RW 04 / RT 02</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 self-start sm:self-auto">
+<button class="flex items-center gap-1 px-space-sm py-1.5 rounded-lg bg-surface-subtle hover:bg-surface-container text-on-surface font-label-sm text-label-sm font-semibold transition-colors" onclick="simulateRegenerate()">
+<span class="material-symbols-outlined text-[16px] text-primary" id="regenIcon">autorenew</span>
+<span class="">Regenerate Single XAI</span>
+</button>
+<button class="flex items-center gap-1 px-space-sm py-1.5 rounded-lg bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold hover:bg-primary transition-colors" onclick="openAuditModal()">
+<span class="material-symbols-outlined text-[16px]">verified_user</span>
+<span class="">Uji Petik Lurah</span>
+</button>
+</div>
+</div>
+<!-- Section 1: Payload Anonim Terverifikasi (Masking PII 100%) -->
+<div class="bg-surface rounded-xl p-space-md flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-xai-weight-positive">format_image_left</span>
+<span class="font-headline-sm text-body-md font-semibold text-on-surface">Bagian 1: Payload Anonim Terverifikasi (Zero PII Injected)</span>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-status-approved-bg text-status-approved-fg font-label-sm text-label-sm font-semibold">Masking PII 100% OK</span>
+</div>
+<p class="font-body-sm text-body-sm text-secondary">Data yang dikirim ke Google Gemini API telah dide-identifikasi sesuai standar UU Perlindungan Data Pribadi (UU PDP No. 27/2022). Identitas NIK, Nama, dan No Telp dihapus secara deterministik.</p>
+<!-- Vector Matrix Visualization: Nilai KPM vs Rata-rata Lolos -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-sm pt-space-xs">
+<!-- C1: Pendapatan -->
+<div class="bg-surface-container-lowest rounded-lg p-space-sm flex flex-col gap-1 shadow-sm">
+<div class="flex items-center justify-between font-label-sm text-label-sm text-secondary">
+<span class="">C1: Pendapatan (Cost)</span>
+<span class="text-status-rejected-fg font-bold font-label-sm">Δ -0.25 (Pinalti)</span>
+</div>
+<div class="flex items-baseline justify-between">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">Rp 1.850.000</span>
+<span class="font-label-sm text-label-sm text-secondary">Avg Lolos: ≤ Rp 1.100.000</span>
+</div>
+<!-- Micro Diverging Bar -->
+<div class="w-full bg-surface-subtle h-1.5 rounded-full overflow-hidden flex">
+<div class="bg-xai-weight-negative h-full rounded-full" style="width: 72%;"></div>
+</div>
+<span class="font-label-sm text-label-sm text-secondary">Normalized: 0.594 (Sub-optimal)</span>
+</div>
+<!-- C2: Tanggungan -->
+<div class="bg-surface-container-lowest rounded-lg p-space-sm flex flex-col gap-1 shadow-sm">
+<div class="flex items-center justify-between font-label-sm text-label-sm text-secondary">
+<span class="">C2: Tanggungan (Benefit)</span>
+<span class="text-xai-weight-positive font-bold font-label-sm">Δ +0.10 (Kuat)</span>
+</div>
+<div class="flex items-baseline justify-between">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">4 Jiwa</span>
+<span class="font-label-sm text-label-sm text-secondary">Avg Lolos: 3.8 Jiwa</span>
+</div>
+<div class="w-full bg-surface-subtle h-1.5 rounded-full overflow-hidden flex">
+<div class="bg-xai-weight-positive h-full rounded-full" style="width: 80%;"></div>
+</div>
+<span class="font-label-sm text-label-sm text-secondary">Normalized: 0.800 (Kompetitif)</span>
+</div>
+<!-- C3: Kondisi Rumah & Listrik -->
+<div class="bg-surface-container-lowest rounded-lg p-space-sm flex flex-col gap-1 shadow-sm">
+<div class="flex items-center justify-between font-label-sm text-label-sm text-secondary">
+<span class="">C3 &amp; C4: Aset &amp; Listrik</span>
+<span class="text-secondary font-bold font-label-sm">Netral</span>
+</div>
+<div class="flex items-baseline justify-between">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">900 VA</span>
+<span class="font-label-sm text-label-sm text-secondary">Avg Lolos: 450 VA</span>
+</div>
+<div class="w-full bg-surface-subtle h-1.5 rounded-full overflow-hidden flex">
+<div class="bg-status-review-fg h-full rounded-full" style="width: 60%;"></div>
+</div>
+<span class="font-label-sm text-label-sm text-secondary">Normalized: 0.650 (Sedang)</span>
+</div>
+</div>
+</div>
+<!-- Section 2: Narasi Output Gemini Terstruktur (JSON Parsed) -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-primary">psychology</span>
+<span class="font-headline-sm text-body-md font-semibold text-on-surface">Bagian 2: Sintesis Narasi Gemini Flash 2.5 (Valid JSON Schema)</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="font-label-sm text-label-sm text-secondary">Response Time:</span>
+<span class="font-label-sm text-label-sm font-bold text-primary">640 ms</span>
+</div>
+</div>
+<!-- Badge Ringkasan Keputusan -->
+<div class="bg-surface-container-lowest rounded-lg p-space-sm shadow-sm flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-[20px] text-status-rejected-fg shrink-0 mt-0.5">info</span>
+<div class="flex flex-col gap-0.5">
+<span class="font-label-sm text-label-sm uppercase tracking-wider font-bold text-secondary">Ringkasan Keputusan Algoritmik</span>
+<p class="font-body-md text-body-md text-on-surface font-medium leading-snug">
+                  Berdasarkan kalkulasi Simple Additive Weighting (SAW), usulan pemohon berada pada peringkat ke-35 dengan skor komposit 0.684. Alokasi kuota Bansos Sembako Tahap I terbatas hanya untuk 30 penerima prioritas tertinggi di Kelurahan Jurangmangu Barat.
+                </p>
+</div>
+</div>
+<!-- Faktor Penentu Utama (Counterfactual Attribution) -->
+<div class="flex flex-col gap-space-xs">
+<span class="font-label-sm text-label-sm font-bold uppercase tracking-wider text-secondary">Faktor Penentu Utama (Counterfactual Explanations)</span>
+<div class="flex flex-wrap gap-space-xs">
+<div class="flex items-center gap-2 bg-surface-container-lowest px-space-sm py-1 rounded-lg shadow-sm">
+<span class="w-2 h-2 rounded-full bg-status-rejected-fg"></span>
+<span class="font-body-sm text-body-sm text-on-surface font-semibold">C1: Pendapatan Keluarga</span>
+<span class="px-1.5 py-0.5 rounded bg-status-rejected-bg text-status-rejected-fg font-label-sm text-label-sm font-bold">Delta: -0.25 Poin</span>
+</div>
+<div class="flex items-center gap-2 bg-surface-container-lowest px-space-sm py-1 rounded-lg shadow-sm">
+<span class="w-2 h-2 rounded-full bg-xai-weight-positive"></span>
+<span class="font-body-sm text-body-sm text-on-surface font-semibold">C2: Jumlah Tanggungan</span>
+<span class="px-1.5 py-0.5 rounded bg-status-approved-bg text-status-approved-fg font-label-sm text-label-sm font-bold">Delta: +0.10 Poin</span>
+</div>
+<div class="flex items-center gap-2 bg-surface-container-lowest px-space-sm py-1 rounded-lg shadow-sm">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-body-sm text-body-sm text-on-surface font-semibold">C4: Daya Listrik PLN</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-subtle text-secondary font-label-sm text-label-sm font-bold">Delta: -0.05 Poin</span>
+</div>
+</div>
+</div>
+<!-- Narasi Lengkap Bahasa Indonesia -->
+<div class="bg-surface-container-lowest rounded-lg p-space-md shadow-sm flex flex-col gap-space-xs">
+<span class="font-label-sm text-label-sm font-bold uppercase tracking-wider text-secondary">Narasi Publik Bahasa Indonesia (Resmi &amp; Humanis)</span>
+<div class="font-body-md text-body-md text-on-surface leading-relaxed text-justify space-y-2">
+<p class="">
+                  “Yth. Bapak/Ibu pemohon Ahmad S*****, melalui proses verifikasi dan pemeringkatan berbasis sistem pendukung keputusan objektif Kelurahan Jurangmangu Barat, kami menginformasikan bahwa berkas usulan Anda pada program <strong>Bansos Sembako Tahap I Tahun 2026</strong> memperoleh skor kelayakan <strong>0.684</strong>.
+                </p>
+<p class="">
+                  Pada tahap alokasi ini, kuota kelurahan ditetapkan sebanyak <strong>30 Kepala Keluarga</strong> dengan batas bawah skor penerima sebesar <strong>0.710</strong>. Meskipun indikator jumlah tanggungan keluarga Anda (4 jiwa) memiliki bobot kerentanan yang tinggi, indikator pendapatan keluarga terdaftar (Rp 1.850.000) dan daya listrik 900 VA menempatkan usulan Anda pada prioritas ke-35 di wilayah Kelurahan Jurangmangu Barat. Oleh karena itu, usulan Anda belum dapat diakomodasi pada periode tahap pertama ini.”
+                </p>
+</div>
+</div>
+<!-- Rekomendasi Edukatif -->
+<div class="bg-status-review-bg text-status-review-fg rounded-lg p-space-sm flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-[20px] shrink-0 mt-0.5">lightbulb</span>
+<div class="flex flex-col gap-0.5">
+<span class="font-label-sm text-label-sm uppercase tracking-wider font-bold">Rekomendasi Pemutakhiran Data &amp; Hak Banding KPM</span>
+<p class="font-body-sm text-body-sm leading-snug">
+                  Jika terdapat perubahan kondisi sosial-ekonomi seperti penurunan pendapatan atau pertambahan tanggungan disabilitas/lansia, pemohon disarankan menghubungi Ketua RT 02 / RW 04 untuk pengkinian berkas DTKS sebelum penutupan rekonsiliasi Tahap II (15 April 2026).
+                </p>
+</div>
+</div>
+</div>
+<!-- Section 3: XAI Fidelity Check Metric & Safety Gateways -->
+<div class="bg-surface rounded-xl p-space-md flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">gavel</span>
+<span class="font-headline-sm text-body-md font-semibold text-on-surface">Bagian 3: XAI Fidelity Check Metric &amp; Deterministic Safety</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary">Evaluasi Skripsi Framework v2.4</span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-space-sm pt-space-xs">
+<div class="bg-surface-container-lowest p-space-sm rounded-lg shadow-sm flex flex-col gap-0.5">
+<span class="font-label-sm text-label-sm text-secondary">Fidelity Score</span>
+<span class="font-headline-sm text-headline-sm font-bold text-xai-weight-positive">100.0%</span>
+<span class="font-body-sm text-body-sm text-secondary">Setia ke bobot SAW</span>
+</div>
+<div class="bg-surface-container-lowest p-space-sm rounded-lg shadow-sm flex flex-col gap-0.5">
+<span class="font-label-sm text-label-sm text-secondary">Hallucination Risk</span>
+<span class="font-headline-sm text-headline-sm font-bold text-xai-weight-positive">0.0%</span>
+<span class="font-body-sm text-body-sm text-secondary">Grounding checks PASS</span>
+</div>
+<div class="bg-surface-container-lowest p-space-sm rounded-lg shadow-sm flex flex-col gap-0.5">
+<span class="font-label-sm text-label-sm text-secondary">Prompt Temperature</span>
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">0.15</span>
+<span class="font-body-sm text-body-sm text-secondary">Deterministic mode</span>
+</div>
+<div class="bg-surface-container-lowest p-space-sm rounded-lg shadow-sm flex flex-col gap-0.5">
+<span class="font-label-sm text-label-sm text-secondary">Guardrail Status</span>
+<span class="font-headline-sm text-headline-sm font-bold text-status-approved-fg flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">check_circle</span> VERIFIED
+                </span>
+<span class="font-body-sm text-body-sm text-secondary">No ethical leakage</span>
+</div>
+</div>
+</div>
+<!-- Bottom Action Buttons Strip -->
+<div class="flex flex-wrap items-center justify-between gap-space-sm pt-space-xs">
+<div class="flex items-center gap-2">
+<button class="flex items-center gap-1 px-space-md py-space-sm rounded-lg bg-surface-subtle hover:bg-surface-container text-on-surface font-body-sm text-body-sm font-medium transition-colors">
+<span class="material-symbols-outlined text-[16px]">terminal</span>
+<span class="">Inspeksi Raw JSON Payload</span>
+</button>
+<button class="flex items-center gap-1 px-space-md py-space-sm rounded-lg bg-surface-subtle hover:bg-surface-container text-on-surface font-body-sm text-body-sm font-medium transition-colors">
+<span class="material-symbols-outlined text-[16px]">download</span>
+<span class="">Ekspor Dossier PDF</span>
+</button>
+</div>
+<div class="flex items-center gap-2">
+<button class="flex items-center gap-1.5 px-space-lg py-space-sm rounded-lg bg-primary text-on-primary font-headline-sm text-body-sm font-semibold hover:bg-primary-container transition-colors shadow-sm" id="btnSahkan" onclick="markAsAudited()">
+<span class="material-symbols-outlined text-[18px]">approval_delegation</span>
+<span class="">Sahkan &amp; Tandai Siap Rilis</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Uji Petik Validasi Lurah Modal (Accessible Overlay) -->
+<div class="hidden fixed inset-0 z-50 flex items-center justify-center p-space-md bg-inverse-surface/40 backdrop-blur-sm" id="auditModal">
+<div class="bg-surface-container-lowest rounded-xl max-w-lg w-full p-space-lg shadow-xl flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+</div>
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">Uji Petik Validasi Lurah / Kasi Kesos</span>
+</div>
+<button class="text-secondary hover:text-on-surface" onclick="closeAuditModal()">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<div class="flex flex-col gap-space-sm">
+<p class="font-body-sm text-body-sm text-secondary">
+          Tindakan ini mendokumentasikan inspeksi manual terhadap narasi yang di-generate AI untuk memastikan kesesuaian faktual sebelum diumumkan ke Portal Publik Transparansi Jurangmangu Barat.
+        </p>
+<div class="bg-surface rounded-lg p-space-sm flex flex-col gap-1 text-body-sm">
+<div class="flex justify-between">
+<span class="text-secondary">Subjek KPM:</span>
+<span class="font-bold text-on-surface">KPM-042 (Ahmad S*****)</span>
+</div>
+<div class="flex justify-between">
+<span class="text-secondary">Peringkat / Status:</span>
+<span class="font-bold text-status-rejected-fg">#35 (Tidak Lolos Kuota 30)</span>
+</div>
+<div class="flex justify-between">
+<span class="text-secondary">Fidelity Validated:</span>
+<span class="font-bold text-xai-weight-positive">100% Sesuai Bobot SAW</span>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm font-semibold text-on-surface">Catatan Peninjauan Pejabat Kelurahan</label>
+<textarea class="w-full p-2.5 rounded-lg bg-surface text-body-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-subtle" placeholder="Masukkan catatan adjudikasi jika ada koreksi..." rows="3">Telah diperiksa. Narasi objektif, tidak diskriminatif, dan rekomendasi pemutakhiran DTKS telah tertera dengan benar.</textarea>
+</div>
+</div>
+<div class="flex items-center justify-end gap-space-sm pt-space-xs">
+<button class="px-space-md py-space-sm rounded-lg bg-surface-subtle text-secondary font-headline-sm text-body-sm font-medium hover:bg-surface-container" onclick="closeAuditModal()">
+          Batal
+        </button>
+<button class="px-space-md py-space-sm rounded-lg bg-primary text-on-primary font-headline-sm text-body-sm font-semibold hover:bg-primary-container shadow-sm" onclick="confirmAudit()">
+          Bubuhkan Paraf Digital
+        </button>
+</div>
+</div>
+</div>
+</div>
+<script>
+  let isWorkerActive = true;
+
+  function toggleWorker() {
+    isWorkerActive = !isWorkerActive;
+    const label = document.getElementById('pauseLabel');
+    const icon = document.getElementById('pauseIcon');
+    if (isWorkerActive) {
+      label.innerText = 'Pause Poller';
+      icon.innerText = 'pause_circle';
+    } else {
+      label.innerText = 'Resume Poller';
+      icon.innerText = 'play_circle';
+    }
+  }
+
+  function selectKpm(kpmId) {
+    const cards = document.querySelectorAll('#kpmListContainer > div');
+    cards.forEach(c => {
+      c.classList.remove('bg-gradient-to-r', 'from-primary-container/10');
+      c.classList.remove('shadow-md');
+      c.classList.add('shadow-sm');
+    });
+
+    const activeCard = document.getElementById('card-' + kpmId);
+    if (activeCard) {
+      activeCard.classList.add('bg-gradient-to-r', 'from-primary-container/10');
+      activeCard.classList.remove('shadow-sm');
+      activeCard.classList.add('shadow-md');
+    }
+  }
+
+  function simulateRegenerate() {
+    const icon = document.getElementById('regenIcon');
+    icon.classList.add('animate-spin');
+    setTimeout(() => {
+      icon.classList.remove('animate-spin');
+      alert('Sintesis ulang Gemini Flash selesai. Fidelity 100% terkonfirmasi.');
+    }, 900);
+  }
+
+  function openAuditModal() {
+    const modal = document.getElementById('auditModal');
+    modal.classList.remove('hidden');
+  }
+
+  function closeAuditModal() {
+    const modal = document.getElementById('auditModal');
+    modal.classList.add('hidden');
+  }
+
+  function confirmAudit() {
+    closeAuditModal();
+    const btn = document.getElementById('btnSahkan');
+    btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">verified</span><span>Telah Disahkan Lurah</span>';
+    btn.classList.remove('bg-primary');
+    btn.classList.add('bg-xai-weight-positive');
+  }
+
+  function markAsAudited() {
+    confirmAudit();
+  }
+</script></main></div>
+
+</body></html>

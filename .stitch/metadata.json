@@ -1,0 +1,50 @@
+{
+  "projectId": "5769575203168675309",
+  "projectTitle": "Custom Website Design PRD",
+  "designSystemId": "assets/e259388421e44192bb140940a3997ccf",
+  "designSystemName": "Civic Precision",
+  "screens": [
+    {
+      "id": "48e24155319c4ba7b28c7456f4886fd2",
+      "slug": "executive-admin-dashboard",
+      "title": "Executive Admin Dashboard (NEXA-Style)",
+      "html_url": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzdmZWY2ZGQxMTVjMjQ3MDRhNjllN2M3NDdhMjE2ZGJjEgsSBxCPyt78jhEYAZIBIwoKcHJvamVjdF9pZBIVQhM1NzY5NTc1MjAzMTY4Njc1MzA5&filename=&opi=96797242",
+      "screenshot_url": "https://lh3.googleusercontent.com/aida/AEtjO1VkVsQmNfovZ5xXWBXcyESm8cbzMur_lySArr7qU3b-warJt19VV9ZZ5qfCj7jKn3UDgYmDCmSmQt5wd9vGwlO7YqEHN32xBTrE9subFy-wbMrN6sJPfz58UvHAATSWmMbMxfhJ7e04hCItaaberO25J29gPghr3vJ8aWQxj6xa-Ut_-DbqzSIADgSR_M-yyBuBdEm1sBn3YZn-gZegTLKol8GAtXFhLXbSPP1K2U0TCSSaSPwGaRkqa30"
+    },
+    {
+      "id": "6b88596ee6374b908267048606ef3369",
+      "slug": "portal-publik-cek-bansos",
+      "title": "Portal Publik Cek Bansos",
+      "html_url": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1ZDliOTUwZDhjNGUwNWMyZmEwYjk4MGQ0YzI1EgsSBxCPyt78jhEYAZIBIwoKcHJvamVjdF9pZBIVQhM1NzY5NTc1MjAzMTY4Njc1MzA5&filename=&opi=89354086",
+      "screenshot_url": "https://lh3.googleusercontent.com/aida/AEtjO1XWuAVHZLJnfVZkC2Qw86AfBkcqEHveZZLk1qMmwjIKWuNoZdUWamkrPZukQW1NiviMyo604Bpf3_LgNfCNGmBJXCBGHou-kURPFbH8GGY6zdiCZeFdeYFHKZzrebLL7i4KjyxmhhMEuzPJ1ZyFnszIDmVSqJRij4xAhQpQ60FC6xRRccYrQnr42oxJIHhSFSU0MxNUQXpxxrFc6Fy6frxdWFVczrkoRsykso4GnNvmpTS5B0YJtmgdfh0"
+    },
+    {
+      "id": "85652ad2fbea474cb7671cbfc1b9a8e4",
+      "slug": "seleksi-saw-ranking-kpm",
+      "title": "Seleksi SAW & Ranking KPM",
+      "html_url": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1ZDliOTZkNjI3ZjkwMjJkNTc1NjlkMTljMWNjEgsSBxCPyt78jhEYAZIBIwoKcHJvamVjdF9pZBIVQhM1NzY5NTc1MjAzMTY4Njc1MzA5&filename=&opi=89354086",
+      "screenshot_url": "https://lh3.googleusercontent.com/aida/AEtjO1XGvYLscxIIYU1BFcI9IX5C-0xgIy1QUcdrwb--cWQzarEtsiCCGX_Npf4uha6j28KYPbayS1wUjbWn7gdKLI-oSnaFFBExNmc9l_nNQnOxEG49jpGW0XDWDFcBn2p3NGYLcQgfWzXz1ijJ0Z5-bF279NenDD9BfJp40TVWV97grMvRThx4zbU9qQlwObidaeMwDHH96YBDgDCDFya8lUgFxDeTGNXNBuNil1JGzGjSsf7vI6DvcmSxDmo"
+    },
+    {
+      "id": "a1a7acfae0f248e789adff6233273608",
+      "slug": "manajemen-kriteria-bobot",
+      "title": "Manajemen Kriteria & Bobot",
+      "html_url": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1ZDliOTYyNzdmOTYwODlhZjcyNjIyMTdmZjQ5EgsSBxCPyt78jhEYAZIBIwoKcHJvamVjdF9pZBIVQhM1NzY5NTc1MjAzMTY4Njc1MzA5&filename=&opi=89354086",
+      "screenshot_url": "https://lh3.googleusercontent.com/aida/AEtjO1VP1AsTKt9cvFC7cewXZO-ClLGH6Xo2tWnmtXpAKXwRa9MHrvJ4V9DTWQjGA6f4Mg5ZLcJ52O2qXTjYqCOt6cwbWc812yoAmjeR0oOGH4MSFTsNRNf4pm1nn3jSP5le8_EeGhULLhKzTL1iZPol_duRBi_WU-4iaNVV8vZD1oHSt2aInQA7o5VlC_LldqP3UXF6OYcnDwre3HQHgD2JDSEDrGs5GMA4cDUfjP-MrmoO1QkEZqOhDNik09E"
+    },
+    {
+      "id": "28946777cd364d648648b8fd61fc9698",
+      "slug": "generator-narasi-xai-gemini",
+      "title": "Generator Narasi XAI Gemini",
+      "html_url": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1ZGExYTJhNzA4MzAwNTRjZmNiNDI1MzE1MDk4EgsSBxCPyt78jhEYAZIBIwoKcHJvamVjdF9pZBIVQhM1NzY5NTc1MjAzMTY4Njc1MzA5&filename=&opi=89354086",
+      "screenshot_url": "https://lh3.googleusercontent.com/aida/AEtjO1UyYZHabPmgm9rhxBgjUFx1lRyN2pfft1nMsXmELvNYh63CnWtpbP7o4VxUNm8W9IdDQqVDGuPDBvhORC1pfdcHA5IHQQWo_Dmh8fTxbWY06ttqrD8YKUNdm29T_xse1y5JQY66i2Gy7LNNR1bSEcNbcppGpRxYkjM54TI3xEdsPCjPRekgRFTDajM0BAQARBVgim2VmFwZyBxeNr-O3cf7lVKmuXi6jxS01uhgdEK5D4X5DTq8RQPuHf8"
+    },
+    {
+      "id": "9221d7809c7b4798b1037128a7594c84",
+      "slug": "pengesahan-berita-acara-lurah",
+      "title": "Pengesahan Berita Acara & Penetapan Lurah",
+      "html_url": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzhjYTEzNzI4ZjYxODQyZDA5NmE2MTQ3ZTQ3MGI5MzkzEgsSBxCPyt78jhEYAZIBIwoKcHJvamVjdF9pZBIVQhM1NzY5NTc1MjAzMTY4Njc1MzA5&filename=&opi=96797242",
+      "screenshot_url": "https://lh3.googleusercontent.com/aida/AEtjO1XQbb1CfZHBq-H3MoB5hnlYgxY0TYA1tDlric8bPUsj0YHVu57td6x5iqCRN3VLHJT2HKg6gCR9rGui61BcbqMJ08JYN0ZtVKaWjc_Tuua7CXQmG8sSOkAzWnUqLmYEl0hsHAHU9ZSF0YldzyXFkQUGer8lEhhikuZQwqEwLbgMnAkzdUibPT9y3ueXMOCcmcK87ZtEdHVG6pS7NqP53Htxa76bOnKIIqJKYVHxIwCyRJa_InekCDVvNns"
+    }
+  ]
+}

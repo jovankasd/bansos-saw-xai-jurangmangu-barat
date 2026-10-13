@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+
+<html class="light" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>EDSS Bansos JUBAR - Executive Administration Dashboard</title>
+<!-- Typography & Material Icons -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..900;1,300..900&amp;family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS with Official Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "status-review-fg": "#92400E",
+            "surface-subtle": "#F1F5F9",
+            "surface-bright": "#f8f9ff",
+            "secondary-fixed-dim": "#b0c9e8",
+            "border-subtle": "#E2E8F0",
+            "xai-weight-negative": "#E11D48",
+            "inverse-surface": "#233144",
+            "on-error-container": "#93000a",
+            "inverse-primary": "#99d3ba",
+            "background": "#f8f9ff",
+            "tertiary": "#00332e",
+            "on-surface": "#0d1c2e",
+            "on-secondary-container": "#4b637e",
+            "tertiary-fixed-dim": "#6bd8cb",
+            "secondary-container": "#c7dfff",
+            "primary-fixed": "#b4efd6",
+            "on-primary": "#ffffff",
+            "status-review-bg": "#FFFBEB",
+            "status-approved-bg": "#ECFDF5",
+            "on-secondary-fixed": "#011d35",
+            "outline": "#707974",
+            "primary": "#003426",
+            "on-tertiary-container": "#52c1b4",
+            "tertiary-fixed": "#89f5e7",
+            "tertiary-container": "#004c45",
+            "outline-variant": "#bfc9c3",
+            "xai-confidence": "#0284C7",
+            "on-background": "#0d1c2e",
+            "on-secondary-fixed-variant": "#314863",
+            "surface-canvas": "#F8FAFC",
+            "error-container": "#ffdad6",
+            "xai-weight-positive": "#059669",
+            "surface-container-lowest": "#ffffff",
+            "inverse-on-surface": "#eaf1ff",
+            "status-rejected-fg": "#991B1B",
+            "on-primary-fixed": "#002117",
+            "status-approved-fg": "#065F46",
+            "surface-container-high": "#dce9ff",
+            "on-tertiary-fixed-variant": "#005049",
+            "surface-container": "#e6eeff",
+            "on-primary-fixed-variant": "#15503e",
+            "on-error": "#ffffff",
+            "surface-dim": "#ccdbf3",
+            "secondary": "#49607c",
+            "status-rejected-bg": "#FEF2F2",
+            "on-tertiary": "#ffffff",
+            "error": "#ba1a1a",
+            "surface-variant": "#d5e3fc",
+            "on-surface-variant": "#404944",
+            "surface-container-highest": "#d5e3fc",
+            "surface-container-low": "#eff4ff",
+            "primary-container": "#0f4c3a",
+            "surface-tint": "#306855",
+            "on-primary-container": "#82bba4",
+            "primary-fixed-dim": "#99d3ba",
+            "on-secondary": "#ffffff",
+            "border-strong": "#CBD5E1",
+            "surface": "#f8f9ff",
+            "secondary-fixed": "#d1e4ff",
+            "on-tertiary-fixed": "#00201d"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "gutter-mobile": "0.75rem",
+            "space-xl": "2.25rem",
+            "margin-mobile": "1rem",
+            "space-xs": "0.25rem",
+            "gutter": "1.25rem",
+            "space-sm": "0.5rem",
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "margin": "2rem"
+          },
+          "fontFamily": {
+            "headline-sm": ["Hanken Grotesk"],
+            "body-sm": ["Hanken Grotesk"],
+            "body-md": ["Hanken Grotesk"],
+            "headline-md": ["Hanken Grotesk"],
+            "label-md": ["JetBrains Mono"],
+            "headline-xl": ["Hanken Grotesk"],
+            "label-lg": ["JetBrains Mono"],
+            "headline-xl-mobile": ["Hanken Grotesk"],
+            "body-lg": ["Hanken Grotesk"],
+            "label-sm": ["JetBrains Mono"],
+            "headline-lg": ["Hanken Grotesk"]
+          },
+          "fontSize": {
+            "headline-sm": ["18px", { "lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "headline-md": ["22px", { "lineHeight": "30px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "label-md": ["11px", { "lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "500" }],
+            "headline-xl": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+            "label-lg": ["13px", { "lineHeight": "18px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+            "headline-xl-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.06em", "fontWeight": "500" }],
+            "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "600" }]
+          }
+        }
+      }
+    };
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body class="bg-surface-canvas text-on-surface antialiased min-h-screen flex flex-col font-body-md text-body-md select-none">
+<!-- ========================================================================= -->
+<!-- 1. PERSISTENT SIDE NAVIGATION (SHARED COMPONENT: SideNavBar)             -->
+<!-- ========================================================================= -->
+<aside class="fixed top-0 left-0 h-screen w-64 z-40 bg-primary border-r border-border-subtle flex flex-col justify-between p-4 shadow-none">
+<div class="flex flex-col gap-5">
+<!-- Municipal Authority Header -->
+<div class="flex items-center gap-3 pb-3 border-b border-primary-container">
+<div class="w-10 h-10 rounded-lg bg-surface-container-lowest flex items-center justify-center p-1.5 shadow-sm border border-border-subtle shrink-0">
+<img alt="Lambang Daerah Kota Tangerang Selatan Kelurahan Jurangmangu Barat" class="w-full h-full object-contain" data-alt="Official municipal crest of Tangerang Selatan and Kelurahan Jurangmangu Barat in crisp vector graphics, displaying gold and green civic motifs under balanced clean studio lighting with corporate institutional authority." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLCc3ilYT5DZInkPNtQpmcJUcemlrV9-L_0MQyxvuGQa6iNtVpVHj3nPV913MLpce7ghIY0F9WvOCB-BJOkDIfhyuYLUGsvgUcue-noCXzVcYbcba8QBx7gv_w99sD56jGXQkc03b-Em-XU-DIjXPrijKM5h2WJFw-qMXmncIAkHKOkPYtHgbIjnmER3LrAWKMCAwef4os-eQcA8wqWAtCq5zLZQj_0keTDOp4WFfEsvPHleolHRhQYAZNI2-JS4rb_-ZomCr3tEE"/>
+</div>
+<div class="overflow-hidden">
+<h1 class="text-headline-sm font-headline-sm font-bold text-on-primary tracking-tight truncate">EDSS Bansos JUBAR</h1>
+<p class="text-label-sm font-label-sm text-primary-fixed opacity-80 truncate">Kel. Jurangmangu Barat v2.4</p>
+</div>
+</div>
+<!-- Quick Batch SAW Action Button -->
+<button class="w-full bg-primary-container hover:bg-opacity-90 text-on-primary font-headline-sm text-body-sm py-2 px-3 rounded-lg border border-primary-fixed-dim/30 flex items-center justify-center gap-2 transition-all active:scale-95 shadow-none">
+<span class="material-symbols-outlined text-[18px]">bolt</span>
+<span>Eksekusi Batch SAW</span>
+</button>
+<!-- Main Navigation Menu -->
+<nav class="flex flex-col gap-1">
+<div class="text-label-sm font-label-sm text-primary-fixed-dim uppercase px-3 py-1 opacity-70">Menu Keputusan</div>
+<!-- Active Nav Tab: Dashboard Adjudikasi (Mapped from JSON) -->
+<a class="bg-primary-container text-on-primary-container font-semibold rounded-lg px-3 py-2 flex items-center gap-3 transition-colors" href="#dashboard">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="text-label-md font-label-md">Dashboard Adjudikasi</span>
+</a>
+<!-- Inactive Tabs (Exact JSON Labels) -->
+<a class="text-surface-variant hover:text-on-primary font-normal rounded-lg px-3 py-2 flex items-center gap-3 transition-colors hover:bg-primary-container hover:text-on-primary-container" href="#dossier">
+<span class="material-symbols-outlined text-[20px]">how_to_reg</span>
+<span class="text-label-md font-label-md">Dossier &amp; Seleksi SAW</span>
+</a>
+<a class="text-surface-variant hover:text-on-primary font-normal rounded-lg px-3 py-2 flex items-center gap-3 transition-colors hover:bg-primary-container hover:text-on-primary-container" href="#xai">
+<span class="material-symbols-outlined text-[20px]">psychology</span>
+<span class="text-label-md font-label-md">XAI Model Explainability</span>
+</a>
+<a class="text-surface-variant hover:text-on-primary font-normal rounded-lg px-3 py-2 flex items-center gap-3 transition-colors hover:bg-primary-container hover:text-on-primary-container" href="#wilayah">
+<span class="material-symbols-outlined text-[20px]">map</span>
+<span class="text-label-md font-label-md">Distribusi Wilayah RT/RW</span>
+</a>
+<a class="text-surface-variant hover:text-on-primary font-normal rounded-lg px-3 py-2 flex items-center gap-3 transition-colors hover:bg-primary-container hover:text-on-primary-container" href="#audit">
+<span class="material-symbols-outlined text-[20px]">history_edu</span>
+<span class="text-label-md font-label-md">Audit Log &amp; Integritas</span>
+</a>
+<a class="text-surface-variant hover:text-on-primary font-normal rounded-lg px-3 py-2 flex items-center gap-3 transition-colors hover:bg-primary-container hover:text-on-primary-container" href="#konfigurasi">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+<span class="text-label-md font-label-md">Konfigurasi Bobot SAW</span>
+</a>
+</nav>
+</div>
+<!-- Sidebar Bottom Utilities & Operator Profile Card -->
+<div class="flex flex-col gap-3 pt-3 border-t border-primary-container">
+<div class="flex flex-col gap-1">
+<a class="text-surface-variant hover:text-on-primary font-normal rounded-lg px-3 py-1.5 flex items-center gap-2.5 text-body-sm transition-colors" href="#api">
+<span class="material-symbols-outlined text-[16px]">menu_book</span>
+<span class="text-label-sm font-label-sm">Dokumentasi API</span>
+</a>
+<a class="text-surface-variant hover:text-on-primary font-normal rounded-lg px-3 py-1.5 flex items-center gap-2.5 text-body-sm transition-colors" href="#panduan">
+<span class="material-symbols-outlined text-[16px]">contact_support</span>
+<span class="text-label-sm font-label-sm">Panduan Operator</span>
+</a>
+</div>
+<!-- Kasi Kesos Profile Badge -->
+<div class="p-2.5 bg-tertiary-container/60 rounded-lg flex items-center justify-between border border-border-subtle/10">
+<div class="flex items-center gap-2.5 overflow-hidden">
+<div class="w-8 h-8 rounded-lg bg-primary-fixed text-on-primary-fixed font-headline-sm font-bold flex items-center justify-center shrink-0 border border-on-primary-container">
+            BH
+          </div>
+<div class="truncate">
+<p class="text-body-sm font-headline-sm font-semibold text-on-primary truncate">Budi Hartono, S.STP</p>
+<p class="text-label-sm font-label-sm text-primary-fixed truncate">Kasi Kesos Kelurahan</p>
+</div>
+</div>
+<button class="text-surface-variant hover:text-on-primary p-1 rounded transition-colors active:scale-95" title="Keluar Akun">
+<span class="material-symbols-outlined text-[18px]">logout</span>
+</button>
+</div>
+</div>
+</aside>
+<!-- ========================================================================= -->
+<!-- 2. DOCKED TOP NAVIGATION BAR (SHARED COMPONENT: TopNavBar)                -->
+<!-- ========================================================================= -->
+<header class="docked full-width top sticky top-0 z-30 bg-surface border-b border-border-subtle shadow-none pl-64 w-full">
+<div class="flex justify-between items-center w-full px-6 py-2.5">
+<!-- Search Input & Breadcrumbs Section -->
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2 text-label-md font-label-md text-on-surface-variant">
+<span class="text-primary font-semibold">EDSS JUBAR</span>
+<span class="text-outline-variant">/</span>
+<span class="text-on-surface font-headline-sm font-semibold text-body-md">Batch Tahap I 2026</span>
+</div>
+<div class="relative w-80">
+<span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-outline">
+<span class="material-symbols-outlined text-[18px]">search</span>
+</span>
+<input class="w-full bg-surface-container-lowest border border-border-strong rounded-lg pl-9 pr-12 py-1.5 text-body-sm text-on-surface placeholder-outline focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all" placeholder="Cari NIK Masked, Nama KPM, RT/RW..." type="text"/>
+<span class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none">
+<kbd class="px-1.5 py-0.5 text-label-sm font-label-sm text-on-surface-variant bg-surface-subtle border border-border-subtle rounded">⌘K</kbd>
+</span>
+</div>
+</div>
+<!-- Trailing Status Badges, Celery Heartbeat, and Action Cluster -->
+<div class="flex items-center gap-4">
+<!-- Celery Worker Heartbeat Pulse -->
+<div class="flex items-center gap-2 px-2.5 py-1 rounded bg-status-approved-bg border border-border-subtle text-status-approved-fg text-label-md font-label-md">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-xai-weight-positive opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-xai-weight-positive"></span>
+</span>
+<span>Celery: 4 Workers Operational</span>
+</div>
+<!-- Active Batch Dropdown Selection -->
+<div class="flex items-center gap-1.5 px-3 py-1 rounded bg-surface-container-lowest border border-border-strong text-body-sm font-headline-sm">
+<span class="material-symbols-outlined text-[16px] text-primary">event_available</span>
+<span class="font-semibold text-on-surface">Batch Aktif: 2026-Q1 Bansos</span>
+<span class="material-symbols-outlined text-[16px] text-outline">expand_more</span>
+</div>
+<!-- Trailing System Actions -->
+<div class="flex items-center gap-2 border-l border-border-subtle pl-4">
+<button class="bg-primary hover:bg-primary-container text-on-primary text-label-md font-label-md px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-none transition-colors active:scale-95">
+<span class="material-symbols-outlined text-[16px]">sync</span>
+<span>Sinkronisasi DTKS</span>
+</button>
+<button class="bg-surface-container-lowest hover:bg-surface-subtle text-on-surface border border-border-strong text-label-md font-label-md px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors active:scale-95">
+<span class="material-symbols-outlined text-[16px]">file_download</span>
+<span>Audit Export</span>
+</button>
+<!-- Trailing Icon Actions from JSON -->
+<button class="text-on-surface-variant hover:text-on-surface p-1.5 rounded transition-colors" title="Notifikasi Pelanggaran">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-on-surface p-1.5 rounded transition-colors" title="Penyesuaian Model">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+</button>
+<button class="text-on-surface-variant hover:text-on-surface p-1.5 rounded transition-colors" title="Profil Administrator">
+<span class="material-symbols-outlined text-[20px]">account_circle</span>
+</button>
+</div>
+</div>
+</div>
+</header>
+<!-- ========================================================================= -->
+<!-- MAIN WORKBENCH CANVAS                                                     -->
+<!-- ========================================================================= -->
+<main class="ml-64 p-6 space-y-6 flex-1 bg-surface-canvas">
+<!-- ----------------------------------------------------------------------- -->
+<!-- SECTION A: HERO EXECUTIVE KPI CARDS (Bento Grid)                       -->
+<!-- ----------------------------------------------------------------------- -->
+<section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+<!-- KPI Card 1: Total Usulan -->
+<div class="bg-surface-container-lowest border border-border-subtle rounded-lg p-4 shadow-sm flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div>
+<span class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider">Total Usulan Warga</span>
+<div class="text-headline-lg font-headline-lg font-bold text-on-surface mt-1">120 <span class="text-body-md font-normal text-on-surface-variant">KPM</span></div>
+</div>
+<span class="p-2 rounded bg-surface-subtle text-primary border border-border-subtle">
+<span class="material-symbols-outlined text-[20px]">group</span>
+</span>
+</div>
+<div class="mt-3 pt-3 border-t border-surface-subtle flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-status-approved-fg font-semibold">114 Memenuhi Syarat</span>
+<span class="text-status-rejected-fg">6 Diskualifikasi TMS</span>
+</div>
+</div>
+<!-- KPI Card 2: Kuota Penerima -->
+<div class="bg-surface-container-lowest border border-border-subtle rounded-lg p-4 shadow-sm flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div>
+<span class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider">Kuota Penerima Alokasi (N)</span>
+<div class="text-headline-lg font-headline-lg font-bold text-primary mt-1">50 <span class="text-body-md font-normal text-on-surface-variant">KPM Target</span></div>
+</div>
+<span class="p-2 rounded bg-surface-subtle text-xai-confidence border border-border-subtle">
+<span class="material-symbols-outlined text-[20px]">assignment_turned_in</span>
+</span>
+</div>
+<div class="mt-3 pt-3 border-t border-surface-subtle flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-on-surface-variant font-medium">Kapasitas Pagu: 41.7%</span>
+<span class="text-primary font-bold bg-surface-subtle px-1.5 py-0.5 rounded border border-border-subtle">Ambang V_i: ≥ 0.7250</span>
+</div>
+</div>
+<!-- KPI Card 3: Pipeline Execution Status -->
+<div class="bg-surface-container-lowest border border-border-subtle rounded-lg p-4 shadow-sm flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div>
+<span class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider">Pipeline Engine Status</span>
+<div class="text-headline-lg font-headline-lg font-bold text-status-approved-fg mt-1">Tahap 4: Narrated</div>
+</div>
+<span class="p-2 rounded bg-status-approved-bg text-status-approved-fg border border-border-subtle">
+<span class="material-symbols-outlined text-[20px]">neurology</span>
+</span>
+</div>
+<div class="mt-3 pt-3 border-t border-surface-subtle flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-on-surface-variant">96/96 Narasi Model Siap</span>
+<span class="text-status-review-fg font-medium">Menunggu Otorisasi</span>
+</div>
+</div>
+<!-- KPI Card 4: XAI Fidelity Score -->
+<div class="bg-surface-container-lowest border border-border-subtle rounded-lg p-4 shadow-sm flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div>
+<span class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider">Fidelity Skor XAI</span>
+<div class="text-headline-lg font-headline-lg font-bold text-xai-confidence mt-1">97.8% <span class="text-label-sm font-label-sm text-status-approved-fg font-normal">▲ 1.4%</span></div>
+</div>
+<span class="p-2 rounded bg-surface-subtle text-xai-confidence border border-border-subtle">
+<span class="material-symbols-outlined text-[20px]">verified</span>
+</span>
+</div>
+<div class="mt-3 pt-3 border-t border-surface-subtle flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-status-approved-fg">0% Halusinasi Fakta</span>
+<span class="text-on-surface-variant">UU PDP 27/2022 Compliant</span>
+</div>
+</div>
+</section>
+<!-- ----------------------------------------------------------------------- -->
+<!-- SECTION B: 6-STEP STATE MACHINE LIFECYCLE & ADJUDICATION ACTIONS        -->
+<!-- ----------------------------------------------------------------------- -->
+<div class="bg-surface-container-lowest border border-border-subtle rounded-lg p-5 shadow-sm">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-border-subtle">
+<div>
+<h2 class="text-headline-sm font-headline-sm font-bold text-on-surface flex items-center gap-2">
+<span>Siklus Adjudikasi Bansos Sembako 2026-Q1</span>
+<span class="text-label-sm font-label-sm px-2 py-0.5 rounded bg-status-approved-bg text-status-approved-fg border border-border-subtle font-mono uppercase">Batch Frozen</span>
+</h2>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">Dossier terverifikasi matematis via Simple Additive Weighting (SAW) dan narasi justifikasi transparan via Gemini 2.5 Flash.</p>
+</div>
+<div class="flex items-center gap-3 shrink-0">
+<button class="bg-surface-container-lowest hover:bg-surface-subtle text-on-surface border border-border-strong text-label-md font-label-md px-3.5 py-2 rounded-lg flex items-center gap-2 transition-colors active:scale-95 shadow-none">
+<span class="material-symbols-outlined text-[18px]">find_in_page</span>
+<span>Uji Petik Narasi XAI</span>
+</button>
+<button class="bg-primary hover:bg-primary-container text-on-primary text-label-md font-label-md px-4 py-2 rounded-lg flex items-center gap-2 transition-colors active:scale-95 shadow-none">
+<span class="material-symbols-outlined text-[18px]">approval</span>
+<span>Kirim ke Lurah untuk Pengesahan</span>
+</button>
+</div>
+</div>
+<!-- 6-Step Visual Timeline -->
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-4">
+<!-- Step 1 -->
+<div class="flex flex-col gap-1 p-2 rounded bg-surface-subtle border border-border-subtle opacity-75">
+<div class="flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-outline font-mono">STEP 01</span>
+<span class="material-symbols-outlined text-[16px] text-status-approved-fg">check_circle</span>
+</div>
+<span class="text-body-sm font-headline-sm font-semibold text-on-surface">Ingest Data</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">120 KPM Masuk</span>
+</div>
+<!-- Step 2 -->
+<div class="flex flex-col gap-1 p-2 rounded bg-surface-subtle border border-border-subtle opacity-75">
+<div class="flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-outline font-mono">STEP 02</span>
+<span class="material-symbols-outlined text-[16px] text-status-approved-fg">check_circle</span>
+</div>
+<span class="text-body-sm font-headline-sm font-semibold text-on-surface">Verifikasi RT</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">6 TMS Dipangkas</span>
+</div>
+<!-- Step 3 -->
+<div class="flex flex-col gap-1 p-2 rounded bg-surface-subtle border border-border-subtle opacity-75">
+<div class="flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-outline font-mono">STEP 03</span>
+<span class="material-symbols-outlined text-[16px] text-status-approved-fg">check_circle</span>
+</div>
+<span class="text-body-sm font-headline-sm font-semibold text-on-surface">Engine SAW</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">Matriks V_i Selesai</span>
+</div>
+<!-- Step 4: ACTIVE STATE -->
+<div class="flex flex-col gap-1 p-2 rounded bg-primary text-on-primary border border-primary-container shadow-sm relative overflow-hidden">
+<div class="absolute -right-2 -top-2 opacity-10">
+<span class="material-symbols-outlined text-[48px]">psychology</span>
+</div>
+<div class="flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-primary-fixed font-mono font-bold">STEP 04 • AKTIF</span>
+<span class="material-symbols-outlined text-[16px] text-primary-fixed animate-pulse">radio_button_checked</span>
+</div>
+<span class="text-body-sm font-headline-sm font-bold text-on-primary">Narrated (XAI)</span>
+<span class="text-label-sm font-label-sm text-primary-fixed-dim">100% Siap Audit</span>
+</div>
+<!-- Step 5 -->
+<div class="flex flex-col gap-1 p-2 rounded bg-surface-subtle border border-border-subtle">
+<div class="flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-outline font-mono">STEP 05</span>
+<span class="material-symbols-outlined text-[16px] text-outline">hourglass_empty</span>
+</div>
+<span class="text-body-sm font-headline-sm font-medium text-on-surface">Otorisasi Lurah</span>
+<span class="text-label-sm font-label-sm text-outline">Menunggu TTD Digital</span>
+</div>
+<!-- Step 6 -->
+<div class="flex flex-col gap-1 p-2 rounded bg-surface-subtle border border-border-subtle">
+<div class="flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-outline font-mono">STEP 06</span>
+<span class="material-symbols-outlined text-[16px] text-outline">lock</span>
+</div>
+<span class="text-body-sm font-headline-sm font-medium text-on-surface">Final Publish</span>
+<span class="text-label-sm font-label-sm text-outline">Papan Transparansi</span>
+</div>
+</div>
+</div>
+<!-- ----------------------------------------------------------------------- -->
+<!-- SECTION C: PRIMARY CONTENT SPLIT (Left 2/3 Table, Right 1/3 Analytics) -->
+<!-- ----------------------------------------------------------------------- -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+<!-- LEFT 8-COLS: BORDERLINE CANDIDATES AUDIT WORKBENCH -->
+<section class="lg:col-span-8 space-y-4">
+<div class="bg-surface-container-lowest border border-border-subtle rounded-lg shadow-sm overflow-hidden">
+<!-- Table Toolbar and Segment Filters -->
+<div class="p-4 border-b border-border-subtle flex flex-col md:flex-row md:items-center justify-between gap-3">
+<div>
+<h3 class="text-headline-sm font-headline-sm font-bold text-on-surface flex items-center gap-2">
+<span>Zona Ambang Batas Kuota (Ranking 47 - 54)</span>
+<span class="bg-status-review-bg text-status-review-fg text-label-sm font-label-sm px-2 py-0.5 rounded border border-border-subtle">Critical Cutoff Zone</span>
+</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant">Evaluasi kandidat di perbatasan kuota 50 penerima dengan audit tie-breaker otomatis.</p>
+</div>
+<!-- Segmented Filter Buttons -->
+<div class="flex items-center bg-surface-subtle p-1 rounded-lg border border-border-subtle text-label-sm font-label-sm">
+<button class="px-2.5 py-1 rounded bg-surface-container-lowest text-on-surface font-semibold shadow-xs">Semua (114)</button>
+<button class="px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface">Lolos Kuota (50)</button>
+<button class="px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface">Di Bawah Kuota (64)</button>
+<button class="px-2.5 py-1 rounded text-status-rejected-fg hover:bg-status-rejected-bg">TMS (6)</button>
+</div>
+</div>
+<!-- High-Density Data Table -->
+<div class="overflow-x-auto custom-scroll">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-subtle text-outline text-label-md font-label-md border-b border-border-subtle uppercase">
+<th class="py-2.5 px-3 font-semibold text-center w-14">Rank</th>
+<th class="py-2.5 px-3 font-semibold">Masked NIK &amp; Nama KPM</th>
+<th class="py-2.5 px-3 font-semibold text-center">RT/RW</th>
+<th class="py-2.5 px-3 font-semibold text-right">Skor V_i (SAW)</th>
+<th class="py-2.5 px-3 font-semibold">Resolusi Tie-Break</th>
+<th class="py-2.5 px-3 font-semibold text-center">Status Pagu</th>
+<th class="py-2.5 px-3 font-semibold text-center">Explainable AI</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-subtle font-body-sm text-body-sm">
+<!-- Row #47 -->
+<tr class="hover:bg-surface-subtle transition-colors h-[44px]">
+<td class="px-3 text-center font-mono font-bold text-on-surface">#47</td>
+<td class="px-3">
+<div class="font-medium text-on-surface">Suparman T******</div>
+<div class="text-label-sm font-label-sm text-outline font-mono">367403******0018</div>
+</td>
+<td class="px-3 text-center font-mono text-on-surface-variant">RT 02/04</td>
+<td class="px-3 text-right font-mono font-bold text-on-surface">0.7310</td>
+<td class="px-3">
+<span class="text-label-sm font-label-sm text-on-surface-variant">Standard Ranking</span>
+</td>
+<td class="px-3 text-center">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-label-sm font-label-sm bg-status-approved-bg text-status-approved-fg font-semibold border border-status-approved-fg/20">
+<span class="w-1.5 h-1.5 rounded-full bg-status-approved-fg"></span> LOLOS KUOTA
+                    </span>
+</td>
+<td class="px-3 text-center">
+<button class="text-primary hover:text-primary-container font-headline-sm text-label-md font-label-md underline underline-offset-2" onclick="openModal('Suparman T******', '367403******0018', '0.7310', '#47', 'LOLOS KUOTA', 'Prioritas lansia tunggal dengan kondisi fisik sakit menahun tanpa penghasilan tetap.')">
+                      Lihat XAI
+                    </button>
+</td>
+</tr>
+<!-- Row #48 -->
+<tr class="hover:bg-surface-subtle transition-colors h-[44px]">
+<td class="px-3 text-center font-mono font-bold text-on-surface">#48</td>
+<td class="px-3">
+<div class="font-medium text-on-surface">Nurhayati S******</div>
+<div class="text-label-sm font-label-sm text-outline font-mono">367403******0112</div>
+</td>
+<td class="px-3 text-center font-mono text-on-surface-variant">RT 01/01</td>
+<td class="px-3 text-right font-mono font-bold text-on-surface">0.7295</td>
+<td class="px-3">
+<span class="text-label-sm font-label-sm text-on-surface-variant">Standard Ranking</span>
+</td>
+<td class="px-3 text-center">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-label-sm font-label-sm bg-status-approved-bg text-status-approved-fg font-semibold border border-status-approved-fg/20">
+<span class="w-1.5 h-1.5 rounded-full bg-status-approved-fg"></span> LOLOS KUOTA
+                    </span>
+</td>
+<td class="px-3 text-center">
+<button class="text-primary hover:text-primary-container font-headline-sm text-label-md font-label-md underline underline-offset-2" onclick="openModal('Nurhayati S******', '367403******0112', '0.7295', '#48', 'LOLOS KUOTA', 'Kepala keluarga wanita (single mother) menanggung 4 anak usia sekolah dan beban sewa bulanan.')">
+                      Lihat XAI
+                    </button>
+</td>
+</tr>
+<!-- Row #49 -->
+<tr class="hover:bg-surface-subtle transition-colors h-[44px]">
+<td class="px-3 text-center font-mono font-bold text-on-surface">#49</td>
+<td class="px-3">
+<div class="font-medium text-on-surface">Dedi Mulyana K******</div>
+<div class="text-label-sm font-label-sm text-outline font-mono">367403******0245</div>
+</td>
+<td class="px-3 text-center font-mono text-on-surface-variant">RT 04/02</td>
+<td class="px-3 text-right font-mono font-bold text-on-surface">0.7280</td>
+<td class="px-3">
+<span class="text-label-sm font-label-sm text-on-surface-variant">Standard Ranking</span>
+</td>
+<td class="px-3 text-center">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-label-sm font-label-sm bg-status-approved-bg text-status-approved-fg font-semibold border border-status-approved-fg/20">
+<span class="w-1.5 h-1.5 rounded-full bg-status-approved-fg"></span> LOLOS KUOTA
+                    </span>
+</td>
+<td class="px-3 text-center">
+<button class="text-primary hover:text-primary-container font-headline-sm text-label-md font-label-md underline underline-offset-2" onclick="openModal('Dedi Mulyana K******', '367403******0245', '0.7280', '#49', 'LOLOS KUOTA', 'Daya listrik 450VA bersubsidi, tidak memiliki aset produktif, terdaftar desil 1 DTKS Kemensos.')">
+                      Lihat XAI
+                    </button>
+</td>
+</tr>
+<!-- Row #50: EXACT CUTOFF THRESHOLD -->
+<tr class="bg-status-approved-bg/40 hover:bg-status-approved-bg/60 border-l-4 border-l-primary h-[44px]">
+<td class="px-3 text-center font-mono font-bold text-primary">#50</td>
+<td class="px-3">
+<div class="font-bold text-primary flex items-center gap-1">
+<span>Rochmat H******</span>
+<span class="text-[9px] bg-primary text-on-primary px-1 rounded uppercase">Penerima Terakhir</span>
+</div>
+<div class="text-label-sm font-label-sm text-outline font-mono">367403******0891</div>
+</td>
+<td class="px-3 text-center font-mono font-semibold text-primary">RT 03/05</td>
+<td class="px-3 text-right font-mono font-extrabold text-primary">0.7250</td>
+<td class="px-3">
+<span class="inline-flex items-center gap-1 text-label-sm font-label-sm font-semibold text-primary">
+<span class="material-symbols-outlined text-[14px]">priority_high</span> C1 Prioritas DTKS
+                    </span>
+</td>
+<td class="px-3 text-center">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-label-sm font-label-sm bg-status-approved-bg text-status-approved-fg font-bold border border-status-approved-fg">
+<span class="w-1.5 h-1.5 rounded-full bg-status-approved-fg"></span> LOLOS KUOTA (50)
+                    </span>
+</td>
+<td class="px-3 text-center">
+<button class="text-primary font-bold hover:underline font-headline-sm text-label-md font-label-md" onclick="openModal('Rochmat H******', '367403******0891', '0.7250', '#50 (Cutoff Boundary)', 'LOLOS KUOTA', 'Unggul pada C1 (Desil 1 DTKS) mengalahkan kandidat #51 pada skor imbang 0.7250.')">
+                      Lihat XAI
+                    </button>
+</td>
+</tr>
+<!-- CUTOFF LINE INDICATOR -->
+<tr class="bg-primary text-on-primary">
+<td class="py-1 px-4 text-center text-label-sm font-label-sm font-mono tracking-widest uppercase" colspan="7">
+                    ——— BATAS CUTOFF PAGU ANGGARAN KELURAHAN (KUOTA TERCAPAI 50 KPM) ———
+                  </td>
+</tr>
+<!-- Row #51: BORDERLINE EXCLUDED -->
+<tr class="bg-status-review-bg/30 hover:bg-status-review-bg/50 border-l-4 border-l-status-review-fg h-[44px]">
+<td class="px-3 text-center font-mono font-bold text-on-surface">#51</td>
+<td class="px-3">
+<div class="font-medium text-on-surface">Sumiyati B******</div>
+<div class="text-label-sm font-label-sm text-outline font-mono">367403******0934</div>
+</td>
+<td class="px-3 text-center font-mono text-on-surface-variant">RT 05/01</td>
+<td class="px-3 text-right font-mono font-bold text-status-review-fg">0.7250</td>
+<td class="px-3">
+<span class="text-label-sm font-label-sm text-status-review-fg font-medium">Tie-Break Kalah (C1: Desil 2)</span>
+</td>
+<td class="px-3 text-center">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-label-sm font-label-sm bg-status-review-bg text-status-review-fg font-semibold border border-status-review-fg/20">
+<span class="w-1.5 h-1.5 rounded-full bg-status-review-fg"></span> CADANGAN 1
+                    </span>
+</td>
+<td class="px-3 text-center">
+<button class="text-status-review-fg hover:underline font-headline-sm text-label-md font-label-md" onclick="openModal('Sumiyati B******', '367403******0934', '0.7250', '#51 (Cadangan)', 'BELUM LOLOS (CADANGAN)', 'Skor preferensi identik 0.7250, namun tergeser karena atribut kemiskinan C1 berada di Desil 2.')">
+                      Lihat XAI
+                    </button>
+</td>
+</tr>
+<!-- Row #52 -->
+<tr class="hover:bg-surface-subtle transition-colors h-[44px]">
+<td class="px-3 text-center font-mono font-bold text-on-surface">#52</td>
+<td class="px-3">
+<div class="font-medium text-on-surface">Wahyudi P******</div>
+<div class="text-label-sm font-label-sm text-outline font-mono">367403******0441</div>
+</td>
+<td class="px-3 text-center font-mono text-on-surface-variant">RT 06/03</td>
+<td class="px-3 text-right font-mono font-bold text-on-surface">0.7240</td>
+<td class="px-3">
+<span class="text-label-sm font-label-sm text-on-surface-variant">Standard Ranking</span>
+</td>
+<td class="px-3 text-center">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-label-sm font-label-sm bg-surface-subtle text-on-surface-variant font-medium border border-border-subtle">
+                      BELUM LOLOS
+                    </span>
+</td>
+<td class="px-3 text-center">
+<button class="text-on-surface-variant hover:text-on-surface font-headline-sm text-label-md font-label-md underline underline-offset-2" onclick="openModal('Wahyudi P******', '367403******0441', '0.7240', '#52', 'BELUM LOLOS', 'Beban tanggungan 1 orang, kondisi lantai rumah telah menggunakan keramik mandiri.')">
+                      Lihat XAI
+                    </button>
+</td>
+</tr>
+<!-- Row #53 -->
+<tr class="hover:bg-surface-subtle transition-colors h-[44px]">
+<td class="px-3 text-center font-mono font-bold text-on-surface">#53</td>
+<td class="px-3">
+<div class="font-medium text-on-surface">Endang S******</div>
+<div class="text-label-sm font-label-sm text-outline font-mono">367403******0710</div>
+</td>
+<td class="px-3 text-center font-mono text-on-surface-variant">RT 03/02</td>
+<td class="px-3 text-right font-mono font-bold text-on-surface">0.7215</td>
+<td class="px-3">
+<span class="text-label-sm font-label-sm text-on-surface-variant">Standard Ranking</span>
+</td>
+<td class="px-3 text-center">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-label-sm font-label-sm bg-surface-subtle text-on-surface-variant font-medium border border-border-subtle">
+                      BELUM LOLOS
+                    </span>
+</td>
+<td class="px-3 text-center">
+<button class="text-on-surface-variant hover:text-on-surface font-headline-sm text-label-md font-label-md underline underline-offset-2" onclick="openModal('Endang S******', '367403******0710', '0.7215', '#53', 'BELUM LOLOS', 'Pemasukan keluarga berada di ambang batas UMR sektor informal Tangsel.')">
+                      Lihat XAI
+                    </button>
+</td>
+</tr>
+<!-- Row #54 -->
+<tr class="hover:bg-surface-subtle transition-colors h-[44px]">
+<td class="px-3 text-center font-mono font-bold text-on-surface">#54</td>
+<td class="px-3">
+<div class="font-medium text-on-surface">Agus Santoso M******</div>
+<div class="text-label-sm font-label-sm text-outline font-mono">367403******0552</div>
+</td>
+<td class="px-3 text-center font-mono text-on-surface-variant">RT 02/05</td>
+<td class="px-3 text-right font-mono font-bold text-on-surface">0.7190</td>
+<td class="px-3">
+<span class="text-label-sm font-label-sm text-on-surface-variant">Standard Ranking</span>
+</td>
+<td class="px-3 text-center">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-label-sm font-label-sm bg-surface-subtle text-on-surface-variant font-medium border border-border-subtle">
+                      BELUM LOLOS
+                    </span>
+</td>
+<td class="px-3 text-center">
+<button class="text-on-surface-variant hover:text-on-surface font-headline-sm text-label-md font-label-md underline underline-offset-2" onclick="openModal('Agus Santoso M******', '367403******0552', '0.7190', '#54', 'BELUM LOLOS', 'Kepemilikan sepeda motor tahun muda dan daya listrik 900VA nonsubsidi.')">
+                      Lihat XAI
+                    </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer Pagination and Legend -->
+<div class="p-3 bg-surface-subtle border-t border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between text-label-sm font-label-sm text-on-surface-variant gap-2">
+<div class="flex items-center gap-4">
+<span>Menampilkan baris 47 - 54 dari 114 calon KPM terverifikasi</span>
+<span class="hidden md:inline">|</span>
+<span class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded bg-primary"></span> Garis Kuota Alokasi Pagu
+              </span>
+</div>
+<div class="flex items-center gap-1">
+<button class="px-2 py-1 bg-surface-container-lowest border border-border-strong rounded hover:bg-surface-subtle">« Sebelumnya</button>
+<button class="px-2 py-1 bg-primary text-on-primary rounded font-mono">Halaman 7</button>
+<button class="px-2 py-1 bg-surface-container-lowest border border-border-strong rounded hover:bg-surface-subtle">Selanjutnya »</button>
+</div>
+</div>
+</div>
+</section>
+<!-- RIGHT 4-COLS: COMPACT TELEMETRY, DISTRIBUTION & AUDIT WIDGETS -->
+<section class="lg:col-span-4 space-y-4">
+<!-- Widget 1: Distribusi Wilayah RT -->
+<div class="bg-surface-container-lowest border border-border-subtle rounded-lg p-4 shadow-sm">
+<div class="flex items-center justify-between pb-2 border-b border-border-subtle">
+<h4 class="text-body-md font-headline-sm font-bold text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-primary">map</span>
+<span>Distribusi Kuota per RT</span>
+</h4>
+<span class="text-label-sm font-label-sm text-on-surface-variant">50 Lolos / 120 Usulan</span>
+</div>
+<div class="space-y-3 mt-3">
+<!-- RT 01 -->
+<div>
+<div class="flex justify-between text-label-sm font-label-sm mb-1">
+<span class="font-medium text-on-surface">RT 01 / RW 01 (Kampung Utan)</span>
+<span class="font-mono text-primary font-bold">11 / 18 KPM</span>
+</div>
+<div class="w-full h-1.5 bg-surface-subtle rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 61%;"></div>
+</div>
+</div>
+<!-- RT 02 -->
+<div>
+<div class="flex justify-between text-label-sm font-label-sm mb-1">
+<span class="font-medium text-on-surface">RT 02 / RW 02 (Pondok Jati)</span>
+<span class="font-mono text-primary font-bold">9 / 22 KPM</span>
+</div>
+<div class="w-full h-1.5 bg-surface-subtle rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 41%;"></div>
+</div>
+</div>
+<!-- RT 03 -->
+<div>
+<div class="flex justify-between text-label-sm font-label-sm mb-1">
+<span class="font-medium text-on-surface">RT 03 / RW 03 (Puskesmas Lama)</span>
+<span class="font-mono text-primary font-bold">8 / 15 KPM</span>
+</div>
+<div class="w-full h-1.5 bg-surface-subtle rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 53%;"></div>
+</div>
+</div>
+<!-- RT 04 -->
+<div>
+<div class="flex justify-between text-label-sm font-label-sm mb-1">
+<span class="font-medium text-on-surface">RT 04 / RW 04 (Masjid Al-Barkah)</span>
+<span class="font-mono text-primary font-bold">10 / 24 KPM</span>
+</div>
+<div class="w-full h-1.5 bg-surface-subtle rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 42%;"></div>
+</div>
+</div>
+<!-- RT 05 -->
+<div>
+<div class="flex justify-between text-label-sm font-label-sm mb-1">
+<span class="font-medium text-on-surface">RT 05 / RW 05 (Jalan Gelora)</span>
+<span class="font-mono text-primary font-bold">7 / 21 KPM</span>
+</div>
+<div class="w-full h-1.5 bg-surface-subtle rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 33%;"></div>
+</div>
+</div>
+<!-- RT 06 -->
+<div>
+<div class="flex justify-between text-label-sm font-label-sm mb-1">
+<span class="font-medium text-on-surface">RT 06 / RW 06 (Perbatasan Jurbar)</span>
+<span class="font-mono text-primary font-bold">5 / 20 KPM</span>
+</div>
+<div class="w-full h-1.5 bg-surface-subtle rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 25%;"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Widget 2: Telemetri Worker & XAI Engine -->
+<div class="bg-surface-container-lowest border border-border-subtle rounded-lg p-4 shadow-sm">
+<div class="flex items-center justify-between pb-2 border-b border-border-subtle">
+<h4 class="text-body-md font-headline-sm font-bold text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-xai-confidence">neurology</span>
+<span>Telemetri Model XAI</span>
+</h4>
+<span class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-surface-subtle border border-border-subtle text-primary font-mono font-semibold">Gemini 2.5 Flash</span>
+</div>
+<div class="grid grid-cols-2 gap-2 mt-3 text-label-sm font-label-sm">
+<div class="p-2 rounded bg-surface-subtle border border-border-subtle">
+<span class="text-on-surface-variant block">API Calls Sukses</span>
+<span class="text-body-md font-bold text-on-surface font-mono">94 / 96</span>
+<span class="text-[10px] text-status-approved-fg block">Latency avg: 412ms</span>
+</div>
+<div class="p-2 rounded bg-surface-subtle border border-border-subtle">
+<span class="text-on-surface-variant block">Fallback Deterministik</span>
+<span class="text-body-md font-bold text-status-review-fg font-mono">2 Kasus</span>
+<span class="text-[10px] text-on-surface-variant block">Trigger: Rate Limit</span>
+</div>
+</div>
+<div class="mt-3 p-2 bg-status-approved-bg rounded border border-status-approved-fg/20 flex items-start gap-2 text-label-sm font-label-sm text-status-approved-fg">
+<span class="material-symbols-outlined text-[16px] shrink-0 mt-0.5">verified_user</span>
+<span>Zero PII Leakage: NIK dan Nama lengkap di-masking sebelum request dikirim ke endpoint LLM.</span>
+</div>
+</div>
+<!-- Widget 3: Audit Log & Integritas Kriptografis -->
+<div class="bg-surface-container-lowest border border-border-subtle rounded-lg p-4 shadow-sm">
+<div class="flex items-center justify-between pb-2 border-b border-border-subtle">
+<h4 class="text-body-md font-headline-sm font-bold text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-primary">history_edu</span>
+<span>Audit Trail Kriptografis</span>
+</h4>
+<span class="material-symbols-outlined text-[16px] text-status-approved-fg">lock</span>
+</div>
+<div class="mt-3 space-y-2 text-label-sm font-label-sm">
+<div class="p-2 rounded bg-surface-subtle border border-border-subtle font-mono text-[10px]">
+<div class="text-outline flex justify-between">
+<span>SHA-256 BATCH DIGEST</span>
+<span>09:41 WIB</span>
+</div>
+<div class="text-primary truncate font-bold mt-0.5">
+                e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+              </div>
+</div>
+<div class="flex items-start gap-2 text-body-sm text-on-surface pt-1">
+<span class="material-symbols-outlined text-[16px] text-primary shrink-0 mt-0.5">commit</span>
+<div>
+<p class="font-medium text-[11px] leading-tight">Batch status shifted to 'Narrated'</p>
+<p class="text-[10px] text-on-surface-variant">Oleh Budi Hartono (Kasi Kesos) • IP 192.168.10.14</p>
+</div>
+</div>
+<div class="flex items-start gap-2 text-body-sm text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-outline shrink-0 mt-0.5">commit</span>
+<div>
+<p class="font-medium text-[11px] leading-tight">Matriks Normalisasi SAW terkunci</p>
+<p class="text-[10px] text-on-surface-variant">Verifikasi Integritas Bobot C1=0.35, C2=0.25</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- ========================================================================= -->
+<!-- 4. OFFICIAL MUNICIPAL FOOTER                                             -->
+<!-- ========================================================================= -->
+<footer class="ml-64 bg-surface-container-lowest border-t border-border-subtle py-3 px-6 text-label-sm font-label-sm text-on-surface-variant flex flex-col md:flex-row md:items-center justify-between gap-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary">apartment</span>
+<span>© 2026 Pemerintah Kelurahan Jurangmangu Barat, Pondok Aren, Kota Tangerang Selatan</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-[14px]">shield</span>
+<span>Enkripsi AES-256-GCM At-Rest</span>
+</span>
+<span>•</span>
+<span class="flex items-center gap-1 text-status-approved-fg">
+<span class="material-symbols-outlined text-[14px]">verified</span>
+<span>Kepatuhan UU PDP No. 27/2022 Terverifikasi</span>
+</span>
+</div>
+</footer>
+<!-- ========================================================================= -->
+<!-- 5. INTERACTIVE XAI EXPLANATION MODAL (Micro-Interaction)                  -->
+<!-- ========================================================================= -->
+<div class="fixed inset-0 z-50 bg-[#0F172A66] backdrop-blur-[4px] hidden items-center justify-center p-4" id="xaiModal">
+<div class="bg-surface-container-lowest border border-border-strong rounded-lg max-w-xl w-full shadow-2xl overflow-hidden transition-all transform scale-100 animate-in fade-in zoom-in duration-150">
+<!-- Modal Header -->
+<div class="p-4 bg-primary text-on-primary flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[22px] text-primary-fixed">psychology</span>
+<div>
+<h3 class="text-headline-sm font-headline-sm font-bold text-on-primary">Dekomposisi Penjelasan Model XAI</h3>
+<p class="text-label-sm font-label-sm text-primary-fixed-dim">Engine: Gemini 2.5 Flash + Atribut Rekurensi SAW</p>
+</div>
+</div>
+<button class="text-primary-fixed hover:text-on-primary p-1 rounded transition-colors" onclick="closeModal()">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- Modal Body -->
+<div class="p-5 space-y-4 font-body-sm text-body-sm">
+<!-- Citizen Identity Snippet -->
+<div class="p-3 bg-surface-subtle border border-border-subtle rounded-lg flex items-center justify-between">
+<div>
+<span class="text-label-sm font-label-sm text-on-surface-variant uppercase">Kandidat KPM</span>
+<div class="text-headline-sm font-headline-sm font-bold text-on-surface" id="modalName">Suparman T******</div>
+<div class="text-label-sm font-label-sm font-mono text-outline" id="modalNIK">367403******0018</div>
+</div>
+<div class="text-right">
+<span class="text-label-sm font-label-sm text-on-surface-variant uppercase">Peringkat &amp; Skor</span>
+<div class="text-headline-sm font-headline-sm font-mono font-bold text-primary" id="modalRank">#47 (0.7310)</div>
+<span class="inline-block text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-status-approved-bg text-status-approved-fg border border-border-subtle mt-0.5" id="modalStatusBadge">LOLOS KUOTA</span>
+</div>
+</div>
+<!-- Diverging Feature Weight Attribution Chart -->
+<div>
+<span class="text-label-sm font-label-sm text-on-surface-variant uppercase font-semibold block mb-2">Bobot Kontribusi Kriteria (Diverging Impact)</span>
+<div class="space-y-2 text-label-sm font-label-sm">
+<!-- C1: Status Ekonomi DTKS -->
+<div>
+<div class="flex justify-between mb-0.5">
+<span class="font-medium text-on-surface">C1: Desil DTKS (Desil 1 Sangat Miskin)</span>
+<span class="font-mono text-xai-weight-positive font-bold">+0.350 (Mendorong Lolos)</span>
+</div>
+<div class="w-full bg-surface-subtle h-2 rounded overflow-hidden flex">
+<div class="w-1/2 bg-surface-subtle"></div>
+<div class="bg-xai-weight-positive h-full" style="width: 48%;"></div>
+</div>
+</div>
+<!-- C2: Jumlah Tanggungan -->
+<div>
+<div class="flex justify-between mb-0.5">
+<span class="font-medium text-on-surface">C2: Tanggungan Keluarga (4 Jiwa)</span>
+<span class="font-mono text-xai-weight-positive font-bold">+0.220 (Mendorong Lolos)</span>
+</div>
+<div class="w-full bg-surface-subtle h-2 rounded overflow-hidden flex">
+<div class="w-1/2 bg-surface-subtle"></div>
+<div class="bg-xai-weight-positive h-full" style="width: 32%;"></div>
+</div>
+</div>
+<!-- C3: Kondisi Daya Listrik -->
+<div>
+<div class="flex justify-between mb-0.5">
+<span class="font-medium text-on-surface">C3: Golongan Listrik (450VA Subsidi)</span>
+<span class="font-mono text-xai-weight-positive font-bold">+0.140 (Mendorong Lolos)</span>
+</div>
+<div class="w-full bg-surface-subtle h-2 rounded overflow-hidden flex">
+<div class="w-1/2 bg-surface-subtle"></div>
+<div class="bg-xai-weight-positive h-full" style="width: 20%;"></div>
+</div>
+</div>
+<!-- C4: Penalti Kepemilikan Kendaraan -->
+<div>
+<div class="flex justify-between mb-0.5">
+<span class="font-medium text-on-surface">C4: Aset Bergerak (Motor Tua 2011)</span>
+<span class="font-mono text-xai-weight-negative font-bold">-0.050 (Faktor Pengurang)</span>
+</div>
+<div class="w-full bg-surface-subtle h-2 rounded overflow-hidden flex justify-end">
+<div class="bg-xai-weight-negative h-full" style="width: 12%;"></div>
+<div class="w-1/2 bg-surface-subtle"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Plain Language Civic Rationale -->
+<div class="p-3 bg-status-approved-bg rounded-lg border border-status-approved-fg/20">
+<div class="flex items-center gap-1.5 text-label-sm font-label-sm text-status-approved-fg font-bold uppercase mb-1">
+<span class="material-symbols-outlined text-[16px]">record_voice_over</span>
+<span>Justifikasi Naratif Warga (Civic Plain Language)</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface leading-relaxed" id="modalRationale">
+            Prioritas lansia tunggal dengan kondisi fisik sakit menahun tanpa penghasilan tetap. Indikator DTKS Memenuhi Syarat Kategori Desil 1 secara valid.
+          </p>
+</div>
+</div>
+<!-- Modal Footer -->
+<div class="p-3 bg-surface-subtle border-t border-border-subtle flex justify-between items-center text-label-sm font-label-sm">
+<span class="text-outline font-mono">HASH: 9a7b21...4ff1</span>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1.5 bg-surface-container-lowest border border-border-strong rounded text-on-surface hover:bg-surface-subtle" onclick="closeModal()">Tutup</button>
+<button class="px-3 py-1.5 bg-primary text-on-primary rounded hover:bg-primary-container" onclick="alert('Salinan narasi berhasil diekspor ke clipboard dalam format berita acara RT.')">Salin Narasi Resmi</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Inline Vanilla JavaScript for Modal Handling -->
+<script>
+    function openModal(name, nik, score, rank, status, rationale) {
+      document.getElementById('modalName').innerText = name;
+      document.getElementById('modalNIK').innerText = nik;
+      document.getElementById('modalRank').innerText = rank + " (" + score + ")";
+      document.getElementById('modalStatusBadge').innerText = status;
+      document.getElementById('modalRationale').innerText = rationale;
+      
+      const modal = document.getElementById('xaiModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('xaiModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    // Close on escape key
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    });
+  </script>
+</body></html>

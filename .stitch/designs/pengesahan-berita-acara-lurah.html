@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+
+<html class="light" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>EDSS Bansos JUBAR - Pengesahan &amp; Penerbitan Berita Acara Batch 2026</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Hanken Grotesk & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..900;1,300..900&amp;family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "xai-weight-positive": "#059669",
+            "on-surface": "#0d1c2e",
+            "tertiary-fixed": "#89f5e7",
+            "on-error-container": "#93000a",
+            "secondary": "#49607c",
+            "secondary-fixed": "#d1e4ff",
+            "status-approved-bg": "#ECFDF5",
+            "status-rejected-fg": "#991B1B",
+            "on-secondary-fixed": "#011d35",
+            "outline-variant": "#bfc9c3",
+            "secondary-fixed-dim": "#b0c9e8",
+            "surface": "#f8f9ff",
+            "outline": "#707974",
+            "xai-weight-negative": "#E11D48",
+            "border-strong": "#CBD5E1",
+            "status-review-bg": "#FFFBEB",
+            "on-primary-fixed": "#002117",
+            "border-subtle": "#E2E8F0",
+            "tertiary-container": "#004c45",
+            "status-rejected-bg": "#FEF2F2",
+            "on-secondary-container": "#4b637e",
+            "on-tertiary-container": "#52c1b4",
+            "surface-container": "#e6eeff",
+            "surface-canvas": "#F8FAFC",
+            "error-container": "#ffdad6",
+            "on-tertiary-fixed-variant": "#005049",
+            "on-background": "#0d1c2e",
+            "background": "#f8f9ff",
+            "inverse-primary": "#99d3ba",
+            "error": "#ba1a1a",
+            "surface-subtle": "#F1F5F9",
+            "surface-container-high": "#dce9ff",
+            "on-surface-variant": "#404944",
+            "surface-dim": "#ccdbf3",
+            "surface-tint": "#306855",
+            "primary": "#003426",
+            "status-approved-fg": "#065F46",
+            "primary-fixed": "#b4efd6",
+            "on-tertiary": "#ffffff",
+            "surface-container-lowest": "#ffffff",
+            "on-error": "#ffffff",
+            "on-secondary": "#ffffff",
+            "on-primary-container": "#82bba4",
+            "primary-fixed-dim": "#99d3ba",
+            "on-primary-fixed-variant": "#15503e",
+            "xai-confidence": "#0284C7",
+            "status-review-fg": "#92400E",
+            "inverse-on-surface": "#eaf1ff",
+            "surface-container-low": "#eff4ff",
+            "primary-container": "#0f4c3a",
+            "on-primary": "#ffffff",
+            "inverse-surface": "#233144",
+            "tertiary": "#00332e",
+            "surface-bright": "#f8f9ff",
+            "on-tertiary-fixed": "#00201d",
+            "surface-container-highest": "#d5e3fc",
+            "secondary-container": "#c7dfff",
+            "on-secondary-fixed-variant": "#314863",
+            "tertiary-fixed-dim": "#6bd8cb",
+            "surface-variant": "#d5e3fc"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "gutter": "1.25rem",
+            "space-sm": "0.5rem",
+            "margin-mobile": "1rem",
+            "gutter-mobile": "0.75rem",
+            "space-lg": "1.5rem",
+            "space-xl": "2.25rem",
+            "margin": "2rem",
+            "space-md": "1rem",
+            "space-xs": "0.25rem"
+          },
+          "fontFamily": {
+            "label-md": ["JetBrains Mono"],
+            "label-lg": ["JetBrains Mono"],
+            "headline-lg": ["Hanken Grotesk"],
+            "body-sm": ["Hanken Grotesk"],
+            "label-sm": ["JetBrains Mono"],
+            "headline-sm": ["Hanken Grotesk"],
+            "body-md": ["Hanken Grotesk"],
+            "headline-md": ["Hanken Grotesk"],
+            "body-lg": ["Hanken Grotesk"],
+            "headline-xl-mobile": ["Hanken Grotesk"],
+            "headline-xl": ["Hanken Grotesk"]
+          },
+          "fontSize": {
+            "label-md": ["11px", { "lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "500" }],
+            "label-lg": ["13px", { "lineHeight": "18px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+            "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.06em", "fontWeight": "500" }],
+            "headline-sm": ["18px", { "lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "headline-md": ["22px", { "lineHeight": "30px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "headline-xl-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "headline-xl": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.025em", "fontWeight": "700" }]
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-surface-canvas text-on-surface antialiased font-body-md text-body-md min-h-screen">
+<!-- ========================================================================= -->
+<!-- 1. LEFT SIDEBAR NAVIGATION (SHARED COMPONENT ANCHOR)                      -->
+<!-- ========================================================================= -->
+<aside class="fixed top-0 left-0 h-screen w-64 z-40 bg-primary border-r border-border-subtle flex flex-col justify-between p-4">
+<!-- Header: Municipal Authority Brand -->
+<div>
+<div class="flex items-center gap-3 pb-4 mb-4 border-b border-white/10">
+<div class="w-10 h-10 rounded-lg bg-primary-container border border-primary-fixed/20 flex items-center justify-center p-1.5 shadow-sm">
+<img alt="Lambang Daerah Kota Tangerang Selatan Kelurahan Jurangmangu Barat" class="w-full h-full object-contain" data-alt="A stylized official municipal emblem of Kota Tangerang Selatan featuring sharp geometric heraldry, deep civic emerald green and warm gold accents against a clean solid background in crisp corporate administrative vector design style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTLq4AozOR8F88rWVybMQfmTwO7GjRHN0QiV4MipNSvvVh4ExpZU2CQgI91WU1jQEb1n-qIRdY24REOvF5rAZT5iey36CEDh3Ahc-hRvsbuMJhTQ66n62NJMPT460ELddqIykryDjCZo8tBQyRQo4jbEHemKYR9Mck0DY2lud8vKXJlmSc7CAL-NdLYHj_HGKj4dPPaRmVsMTtJc8fk3fdlyiGbr4MSBeqMK6J7_V6R1rb7T-DeMjY1nL4qHQGUSl-QXBS3bCr89c"/>
+</div>
+<div>
+<h1 class="text-headline-sm font-headline-sm font-bold text-on-primary tracking-tight">EDSS Bansos JUBAR</h1>
+<p class="text-label-sm font-label-sm text-on-primary-container tracking-wider">Kel. Jurangmangu Barat v2.4</p>
+</div>
+</div>
+<!-- Navigation Menu -->
+<nav class="space-y-1">
+<!-- 1. Dashboard Adjudikasi -->
+<a class="text-surface-variant hover:text-on-primary hover:bg-primary-container hover:text-on-primary-container font-normal rounded-lg px-3 py-2 flex items-center gap-3 transition-colors active:scale-95 duration-150" href="#dashboard">
+<span class="material-symbols-outlined text-[18px]">dashboard</span>
+<span class="text-body-sm font-body-sm">Dashboard Adjudikasi</span>
+</a>
+<!-- 2. Dossier & Seleksi SAW -->
+<a class="text-surface-variant hover:text-on-primary hover:bg-primary-container hover:text-on-primary-container font-normal rounded-lg px-3 py-2 flex items-center gap-3 transition-colors active:scale-95 duration-150" href="#dossier">
+<span class="material-symbols-outlined text-[18px]">how_to_reg</span>
+<span class="text-body-sm font-body-sm">Dossier &amp; Seleksi SAW</span>
+</a>
+<!-- 3. XAI Model Explainability -->
+<a class="text-surface-variant hover:text-on-primary hover:bg-primary-container hover:text-on-primary-container font-normal rounded-lg px-3 py-2 flex items-center gap-3 transition-colors active:scale-95 duration-150" href="#xai">
+<span class="material-symbols-outlined text-[18px]">psychology</span>
+<span class="text-body-sm font-body-sm">XAI Model Explainability</span>
+</a>
+<!-- 4. Distribusi Wilayah RT/RW -->
+<a class="text-surface-variant hover:text-on-primary hover:bg-primary-container hover:text-on-primary-container font-normal rounded-lg px-3 py-2 flex items-center gap-3 transition-colors active:scale-95 duration-150" href="#wilayah">
+<span class="material-symbols-outlined text-[18px]">map</span>
+<span class="text-body-sm font-body-sm">Distribusi Wilayah RT/RW</span>
+</a>
+<!-- 5. Audit Log & Integritas (Active Tab: Mapped to Decree & Adjudication Approval) -->
+<a class="bg-primary-container text-on-primary font-semibold rounded-lg px-3 py-2 flex items-center justify-between gap-3 shadow-sm border border-emerald-500/30" href="#pengesahan">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[18px] text-primary-fixed" style="font-variation-settings: 'FILL' 1;">history_edu</span>
+<span class="text-body-sm font-body-sm text-white">Audit Log &amp; Integritas</span>
+</div>
+<span class="bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[9px] font-label-sm px-1.5 py-0.5 rounded">Perlu Tindakan</span>
+</a>
+<!-- 6. Konfigurasi Bobot SAW -->
+<a class="text-surface-variant hover:text-on-primary hover:bg-primary-container hover:text-on-primary-container font-normal rounded-lg px-3 py-2 flex items-center gap-3 transition-colors active:scale-95 duration-150" href="#bobot">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+<span class="text-body-sm font-body-sm">Konfigurasi Bobot SAW</span>
+</a>
+</nav>
+<!-- Batch Action CTA button from Shared Specs -->
+<div class="mt-4 pt-3 border-t border-white/10">
+<button class="w-full bg-emerald-800/80 hover:bg-emerald-700 text-primary-fixed border border-emerald-600/40 font-label-md text-label-md py-2 px-3 rounded-lg flex items-center justify-center gap-2 transition-all">
+<span class="material-symbols-outlined text-[16px]">play_circle</span>
+<span>Eksekusi Batch SAW</span>
+</button>
+</div>
+</div>
+<!-- Sidebar Footer: Profile identity card for Lurah and GovTech Docs -->
+<div class="space-y-3 pt-3 border-t border-white/10">
+<div class="flex items-center justify-between px-1">
+<a class="text-on-primary-container hover:text-white text-label-sm font-label-sm flex items-center gap-1.5 transition-colors" href="#api">
+<span class="material-symbols-outlined text-[14px]">menu_book</span>
+<span>Dokumentasi API</span>
+</a>
+<a class="text-on-primary-container hover:text-white text-label-sm font-label-sm flex items-center gap-1.5 transition-colors" href="#operator">
+<span class="material-symbols-outlined text-[14px]">contact_support</span>
+<span>Panduan Operator</span>
+</a>
+</div>
+<!-- Identity Badge: H. Ahmad Syarif, M.Si -->
+<div class="bg-black/30 p-2.5 rounded-lg border border-white/10 flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<div class="relative">
+<div class="w-8 h-8 rounded-full bg-primary-container border border-primary-fixed/40 flex items-center justify-center text-primary-fixed font-semibold text-xs">
+              AS
+            </div>
+<div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-primary"></div>
+</div>
+<div>
+<div class="flex items-center gap-1">
+<span class="text-body-sm font-body-sm font-semibold text-white tracking-tight leading-tight">H. Ahmad Syarif, M.Si</span>
+<span class="material-symbols-outlined text-emerald-400 text-[13px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<span class="text-label-sm font-label-sm text-primary-fixed/80">Lurah Jurangmangu Barat</span>
+</div>
+</div>
+<button class="text-surface-variant hover:text-red-400 transition-colors p-1" title="Keluar dari sesi">
+<span class="material-symbols-outlined text-[18px]">logout</span>
+</button>
+</div>
+</div>
+</aside>
+<!-- ========================================================================= -->
+<!-- 2. TOP NAV BAR (SHARED COMPONENT ANCHOR)                                  -->
+<!-- ========================================================================= -->
+<header class="docked full-width top sticky top-0 z-30 bg-surface border-b border-border-subtle flex justify-between items-center w-full px-6 py-2.5 pl-72">
+<!-- Search Bar on Left & Breadcrumbs -->
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2 text-label-md font-label-md text-secondary">
+<span class="material-symbols-outlined text-[16px] text-outline">account_balance</span>
+<span>Tata Kelola</span>
+<span class="text-outline">/</span>
+<span>Pengesahan Batch</span>
+<span class="text-outline">/</span>
+<span class="text-primary font-semibold">Tahap I 2026</span>
+</div>
+<!-- Search Audit Input -->
+<div class="relative w-64 hidden xl:block">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-[16px] text-outline">search</span>
+<input class="w-full bg-white border border-border-strong rounded-lg pl-8 pr-3 py-1 text-body-sm font-body-sm placeholder:text-outline focus:outline-none focus:border-primary" placeholder="Cari NIK, Nama KPM, atau Hash Dokumen..." type="text"/>
+</div>
+</div>
+<!-- Metadata Tags & Actions -->
+<div class="flex items-center gap-3">
+<!-- Batch & Celery Worker Indicator -->
+<div class="flex items-center gap-2">
+<span class="bg-surface-subtle border border-border-strong text-secondary text-label-sm font-label-sm px-2 py-1 rounded flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          Batch Aktif: 2025-Q1 Bansos
+        </span>
+<span class="bg-surface-subtle border border-border-strong text-secondary text-label-sm font-label-sm px-2 py-1 rounded flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[13px] text-emerald-600">dns</span>
+          Celery: 4 Workers Operational
+        </span>
+</div>
+<!-- Trailing Action Buttons -->
+<button class="bg-white hover:bg-surface-subtle border border-border-strong text-secondary px-2.5 py-1 text-label-md font-label-md rounded flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-[14px]">sync</span>
+        Sinkronisasi DTKS
+      </button>
+<button class="bg-white hover:bg-surface-subtle border border-border-strong text-secondary px-2.5 py-1 text-label-md font-label-md rounded flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-[14px]">download</span>
+        Audit Export
+      </button>
+<!-- Trailing Icon Actions -->
+<div class="flex items-center gap-1 pl-2 border-l border-border-subtle">
+<button class="p-1.5 text-secondary hover:text-on-surface hover:bg-surface-subtle rounded transition-colors relative" title="Notifikasi Sistem">
+<span class="material-symbols-outlined text-[18px]">notifications</span>
+<span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+</button>
+<button class="p-1.5 text-secondary hover:text-on-surface hover:bg-surface-subtle rounded transition-colors" title="Konfigurasi">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-on-surface hover:bg-surface-subtle rounded transition-colors" title="Profil Administrator">
+<span class="material-symbols-outlined text-[18px]">account_circle</span>
+</button>
+</div>
+</div>
+</header>
+<!-- ========================================================================= -->
+<!-- 3. MAIN WORKBENCH CANVAS                                                  -->
+<!-- ========================================================================= -->
+<main class="pl-72 pr-6 py-6 max-w-[1720px] mx-auto space-y-6">
+<!-- 3.1 HERO SECTION & EXECUTIVE GOVERNANCE BANNER -->
+<section class="bg-surface-container-lowest border border-border-subtle rounded-lg p-5 shadow-sm">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-border-subtle">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="bg-status-approved-bg text-status-approved-fg border border-emerald-300 text-label-sm font-label-sm px-2 py-0.5 rounded font-semibold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-status-approved-fg"></span>
+              Status: Narrated (Siap Disahkan)
+            </span>
+<span class="bg-secondary-fixed text-on-secondary-fixed border border-secondary-fixed-dim text-label-sm font-label-sm px-2 py-0.5 rounded font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">verified_user</span>
+              TTE BSrE Ready
+            </span>
+<span class="text-label-sm font-label-sm text-secondary">ID Batch: BANSOS-JB-2026-T1</span>
+</div>
+<h2 class="text-headline-lg font-headline-lg text-primary tracking-tight">Pengesahan &amp; Penerbitan Berita Acara Penetapan KPM Bansos</h2>
+<p class="text-body-md font-body-md text-secondary">
+            Peninjauan rekapitulasi matematis SAW, uji petik integritas XAI Gemini, dan penandatanganan Berita Acara resmi Tahun Anggaran 2026.
+          </p>
+</div>
+<!-- Action Toolbar -->
+<div class="flex flex-wrap items-center gap-2 shrink-0">
+<button class="bg-white hover:bg-red-50 text-status-rejected-fg border border-red-200 px-3 py-2 rounded-lg text-label-md font-label-md flex items-center gap-1.5 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[16px]">history</span>
+            Kembalikan ke Kasi Kesos (Minta Revisi)
+          </button>
+<button class="bg-white hover:bg-surface-subtle text-secondary border border-border-strong px-3 py-2 rounded-lg text-label-md font-label-md flex items-center gap-1.5 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[16px]">download</span>
+            Download Draf Dokumen PDF
+          </button>
+<button class="bg-primary hover:bg-primary-container text-white px-4 py-2 rounded-lg text-label-md font-label-md font-semibold flex items-center gap-2 transition-all shadow border border-emerald-900 active:scale-95">
+<span class="material-symbols-outlined text-[18px]">fingerprint</span>
+            Sahkan &amp; Terbitkan Berita Acara (Digital Signature / TTE)
+          </button>
+</div>
+</div>
+<!-- KPI Executive Metrics Bar -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
+<!-- KPI 1 -->
+<div class="bg-surface-canvas p-3 rounded-lg border border-border-subtle">
+<span class="text-label-sm font-label-sm text-secondary uppercase tracking-wider block">Total Usulan Dinilai</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-headline-md font-headline-md font-bold text-on-surface">120 KPM</span>
+<span class="text-label-sm font-label-sm text-status-approved-fg bg-status-approved-bg px-1.5 py-0.5 rounded">114 MS</span>
+<span class="text-label-sm font-label-sm text-status-rejected-fg bg-status-rejected-bg px-1.5 py-0.5 rounded">6 TMS</span>
+</div>
+<span class="text-body-sm font-body-sm text-secondary block mt-1">100% tervalidasi via Dukcapil &amp; DTKS</span>
+</div>
+<!-- KPI 2 -->
+<div class="bg-surface-canvas p-3 rounded-lg border border-border-subtle">
+<span class="text-label-sm font-label-sm text-secondary uppercase tracking-wider block">Kuota Ditetapkan</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-headline-md font-headline-md font-bold text-primary">50 KPM</span>
+<span class="text-label-sm font-label-sm text-secondary">Ambang Cutoff V<sub>i</sub>: 0.7250</span>
+</div>
+<span class="text-body-sm font-body-sm text-status-approved-fg font-medium block mt-1">Alokasi Anggaran APBD 100% Terserap</span>
+</div>
+<!-- KPI 3 -->
+<div class="bg-surface-canvas p-3 rounded-lg border border-border-subtle">
+<span class="text-label-sm font-label-sm text-secondary uppercase tracking-wider block">Skor Fidelity XAI (Gemini)</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-headline-md font-headline-md font-bold text-xai-weight-positive">100.0%</span>
+<span class="text-label-sm font-label-sm text-status-approved-fg bg-status-approved-bg px-1.5 py-0.5 rounded">Zero Hallucination</span>
+</div>
+<span class="text-body-sm font-body-sm text-secondary block mt-1">50/50 narasi terverifikasi grounding</span>
+</div>
+<!-- KPI 4 -->
+<div class="bg-surface-canvas p-3 rounded-lg border border-border-subtle">
+<span class="text-label-sm font-label-sm text-secondary uppercase tracking-wider block">Hash Integritas Batch</span>
+<div class="mt-1">
+<span class="text-label-md font-label-md text-primary font-mono block truncate" title="SHA-256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855">
+              SHA-256: e3b0c44298fc1c149afbf4c8...
+            </span>
+</div>
+<div class="flex items-center gap-1 mt-1 text-label-sm font-label-sm text-emerald-700">
+<span class="material-symbols-outlined text-[13px]">lock</span>
+<span>Ledger Rantai Hash Tak Terubah</span>
+</div>
+</div>
+</div>
+</section>
+<!-- 3.2 TWO-COLUMN GOVERNANCE & AUDIT WORKBENCH -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+<!-- ===================================================================== -->
+<!-- LEFT COLUMN: DIGITAL PREVIEW OF OFFICIAL BERITA ACARA (7 COLS / 58%) -->
+<!-- ===================================================================== -->
+<section class="lg:col-span-7 bg-surface-container-lowest border border-border-subtle rounded-lg shadow-sm p-6 space-y-6">
+<div class="flex items-center justify-between pb-3 border-b border-border-subtle">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">description</span>
+<h3 class="text-headline-sm font-headline-sm text-on-surface">Pratinjau Berita Acara Resmi (Formulir BA-BANSOS-01)</h3>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-label-sm font-label-sm bg-surface-subtle text-secondary px-2 py-1 rounded border border-border-strong">
+              A4 Format • Scaled Preview
+            </span>
+<button class="text-secondary hover:text-primary p-1" title="Perbesar Layar">
+<span class="material-symbols-outlined text-[18px]">fullscreen</span>
+</button>
+</div>
+</div>
+<!-- AUTHENTIC PARCHMENT / PAPER CONTAINER -->
+<div class="bg-white border-2 border-border-subtle rounded shadow-sm p-8 max-w-2xl mx-auto space-y-5 text-on-surface font-body-sm leading-relaxed relative">
+<!-- WATERMARK STATUS -->
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none select-none opacity-5 rotate-[-25deg]">
+<span class="text-headline-xl font-bold text-primary uppercase text-[64px] tracking-widest">DRAF RESMI</span>
+</div>
+<!-- OFFICIAL MUNICIPAL LETTERHEAD (KOP SURAT) -->
+<div class="flex items-center gap-4 pb-2 border-b-2 border-on-surface">
+<div class="w-16 h-16 shrink-0 flex items-center justify-center p-1">
+<img alt="Lambang Daerah Kota Tangerang Selatan" class="w-full h-full object-contain" data-alt="Official governmental crest of South Tangerang City displayed in sharp high-contrast municipal seal format with regional shield symbols and ceremonial ribbons rendered with clean archival precision." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5B716gkt0wieH3b1fIAYQAaFSXyYRO7pJj4fqTsIJnaQ4r7i9VfPI5WLP04iM4ghE9raW66tnCuB10XYi3Ygzw_j_b3cXV9pV0J6PpAgJboAODk-dYEVGW6bH4WTdMtH8dO281d_uahKxwVe1xik6QEv380zx0zcyLAHD_ANF8HimKIKuS155aPj-SkLM7slxlIljUsZnRI4ay9tDzru3VQTqQS4G0Or0dCQ_dc17MOZttTLuQDfV4m5wSA-ON9AWnOR1VT8oD34"/>
+</div>
+<div class="text-center flex-1">
+<h4 class="text-[14px] font-bold tracking-wider leading-tight">PEMERINTAH KOTA TANGERANG SELATAN</h4>
+<h4 class="text-[13px] font-bold tracking-wider leading-tight">KECAMATAN PONDOK AREN</h4>
+<h3 class="text-[16px] font-extrabold tracking-wide text-primary leading-tight">KELURAHAN JURANGMANGU BARAT</h3>
+<p class="text-[10px] font-label-md text-secondary mt-0.5">
+                Jl. Jurang Mangu Barat No. 1, Kec. Pondok Aren, Kota Tangerang Selatan, Banten 15223
+              </p>
+<p class="text-[9px] font-label-md text-secondary">
+                Laman: jurangmangubarat.tangerangselatankota.go.id • Pos-el: kesos.jurangmangubarat@tangerangselatankota.go.id
+              </p>
+</div>
+</div>
+<!-- DOUBLE DIVIDER BORDER -->
+<div class="border-t border-black -mt-4 mb-2"></div>
+<!-- DOCUMENT TITLE & NUMBER -->
+<div class="text-center space-y-1">
+<h4 class="text-[13px] font-bold underline tracking-wide">
+              BERITA ACARA PENETAPAN KELUARGA PENERIMA MANFAAT (KPM)<br/>BANTUAN SOSIAL SEMBAKO TAHAP I TAHUN ANGGARAN 2026
+            </h4>
+<p class="text-label-md font-label-md text-secondary">Nomor: 460/082-Kesos/JB/2026</p>
+</div>
+<!-- KONSIDERANS PARAGRAPH -->
+<p class="text-justify text-[11px] leading-relaxed">
+            Pada hari ini, <strong>Jumat</strong> tanggal <strong>Tiga Puluh</strong> bulan <strong>Januari</strong> tahun <strong>Dua Ribu Dua Puluh Enam</strong>, bertempat di Kantor Kelurahan Jurangmangu Barat, Kecamatan Pondok Aren, Kota Tangerang Selatan, telah dilaksanakan Sidang Pleno Penetapan Akhir KPM Bantuan Sosial Sembako Tahap I berdasarkan luaran komputasi <em>Executive Decision Support System</em> (EDSS) dengan metode matematis <strong>Simple Additive Weighting (SAW)</strong> terbobot baku serta audit integritas naratif kecerdasan buatan.
+          </p>
+<!-- SUMMARY MATRIX TABLE WITH CUTOFF BOUNDARY -->
+<div class="space-y-1.5">
+<div class="flex items-center justify-between text-label-sm font-label-sm">
+<span class="font-bold text-primary">REKAPITULASI PEMERINGKATAN &amp; AMBANG BATAS CUT-OFF (KUOTA: 50 KPM)</span>
+<span class="text-secondary font-mono">Metode: SAW Model Deterministik</span>
+</div>
+<div class="border border-border-strong rounded overflow-hidden">
+<table class="w-full text-[11px] text-left border-collapse">
+<thead>
+<tr class="bg-surface-subtle font-label-md text-secondary text-[10px] border-b border-border-strong">
+<th class="py-1 px-2 text-center w-10">Rank</th>
+<th class="py-1 px-2">NIK / Nama KPM</th>
+<th class="py-1 px-2 text-center">Wilayah</th>
+<th class="py-1 px-2 text-right">Nilai Akhir (V<sub>i</sub>)</th>
+<th class="py-1 px-2 text-center">Rekomendasi</th>
+<th class="py-1 px-2 text-left">Catatan Adjudikasi</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-subtle font-body-sm">
+<!-- Rank 48 -->
+<tr class="hover:bg-slate-50">
+<td class="py-1 px-2 text-center font-mono font-medium">#48</td>
+<td class="py-1 px-2">
+<div class="font-medium">Nurhayati S******</div>
+<div class="font-mono text-[9px] text-secondary">3674035804790001</div>
+</td>
+<td class="py-1 px-2 text-center font-mono text-[10px]">RT 04/RW 02</td>
+<td class="py-1 px-2 text-right font-mono font-semibold">0.7295</td>
+<td class="py-1 px-2 text-center">
+<span class="bg-emerald-100 text-emerald-800 text-[9px] font-label-sm px-1 rounded">Lolos Kuota</span>
+</td>
+<td class="py-1 px-2 text-[10px] text-secondary">Kondisi Fisik Lansia Tunggal</td>
+</tr>
+<!-- Rank 49 -->
+<tr class="hover:bg-slate-50">
+<td class="py-1 px-2 text-center font-mono font-medium">#49</td>
+<td class="py-1 px-2">
+<div class="font-medium">Dedi Mulyana K******</div>
+<div class="font-mono text-[9px] text-secondary">3674031208820004</div>
+</td>
+<td class="py-1 px-2 text-center font-mono text-[10px]">RT 02/RW 01</td>
+<td class="py-1 px-2 text-right font-mono font-semibold">0.7280</td>
+<td class="py-1 px-2 text-center">
+<span class="bg-emerald-100 text-emerald-800 text-[9px] font-label-sm px-1 rounded">Lolos Kuota</span>
+</td>
+<td class="py-1 px-2 text-center text-[10px] text-secondary">Tanggungan 4 Jiwa, Buruh Harian</td>
+</tr>
+<!-- Rank 50 (FINAL QUOTA WINNER) -->
+<tr class="bg-emerald-50/60 font-semibold text-emerald-950">
+<td class="py-1 px-2 text-center font-mono">#50</td>
+<td class="py-1 px-2">
+<div class="font-bold text-emerald-900">Rochmat H******</div>
+<div class="font-mono text-[9px] text-emerald-700">3674032511730002</div>
+</td>
+<td class="py-1 px-2 text-center font-mono text-[10px]">RT 07/RW 03</td>
+<td class="py-1 px-2 text-right font-mono text-primary font-bold">0.7250</td>
+<td class="py-1 px-2 text-center">
+<span class="bg-emerald-600 text-white text-[9px] font-label-sm px-1 rounded">Penerima Terakhir</span>
+</td>
+<td class="py-1 px-2 text-[10px] text-emerald-800">Menang Tie-Break: C1 Pendapatan Terendah (Desil 1)</td>
+</tr>
+<!-- CUTOFF BOUNDARY LINE -->
+<tr class="bg-red-500 text-white font-label-sm text-[9px] tracking-wider text-center">
+<td class="py-1 font-bold" colspan="6">
+                      ⛔ AMBANG BATAS KUOTA 50 KPM (V_i ≥ 0.7250) • TIDAK DAPAT DILAMPAUI BERDASARKAN DPA KELURAHAN ⛔
+                    </td>
+</tr>
+<!-- Rank 51 (NEAR MISS CADANGAN 1) -->
+<tr class="bg-amber-50/50">
+<td class="py-1 px-2 text-center font-mono text-secondary">#51</td>
+<td class="py-1 px-2">
+<div class="font-medium text-amber-950">Sumiyati B******</div>
+<div class="font-mono text-[9px] text-secondary">3674036901850003</div>
+</td>
+<td class="py-1 px-2 text-center font-mono text-[10px]">RT 03/RW 02</td>
+<td class="py-1 px-2 text-right font-mono font-semibold text-amber-900">0.7250</td>
+<td class="py-1 px-2 text-center">
+<span class="bg-amber-200 text-amber-900 text-[9px] font-label-sm px-1 rounded">Cadangan 1</span>
+</td>
+<td class="py-1 px-2 text-[10px] text-amber-800">Kalah Tie-Break C1 (Desil 2), Status Antrean Utama</td>
+</tr>
+<!-- Rank 52 -->
+<tr class="hover:bg-slate-50 text-secondary">
+<td class="py-1 px-2 text-center font-mono">#52</td>
+<td class="py-1 px-2">
+<div>Wahyudi P******</div>
+<div class="font-mono text-[9px]">3674031904770007</div>
+</td>
+<td class="py-1 px-2 text-center font-mono text-[10px]">RT 05/RW 01</td>
+<td class="py-1 px-2 text-right font-mono">0.7240</td>
+<td class="py-1 px-2 text-center">
+<span class="bg-slate-100 text-slate-700 text-[9px] font-label-sm px-1 rounded">Belum Lolos</span>
+</td>
+<td class="py-1 px-2 text-[10px]">Daya Listrik 900VA, Bukan Sasaran Prioritas</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- LAMPIRAN DISKUALIFIKASI TMS TABLE SNIPPET (FR-02) -->
+<div class="space-y-1">
+<span class="font-bold text-primary text-[10px] block">RINGKASAN ANULIR ADMINISTRATIF / TIDAK MEMENUHI SYARAT (TMS - 6 KPM):</span>
+<div class="bg-surface-subtle p-2 rounded border border-border-subtle text-[10px] flex flex-wrap gap-2 text-secondary">
+<span class="bg-white border border-red-200 px-1.5 py-0.5 rounded text-red-700">1. Bambang S. (Terdeteksi Anggota TNI Aktif)</span>
+<span class="bg-white border border-red-200 px-1.5 py-0.5 rounded text-red-700">2. Ratna W. (Duplikasi Penerima PKH Kemensos)</span>
+<span class="bg-white border border-red-200 px-1.5 py-0.5 rounded text-red-700">3. Hendra T. (Pindah Domisili ke Kab. Serang)</span>
+<span class="bg-white border border-red-200 px-1.5 py-0.5 rounded text-red-700">4. Supardi (Meninggal Dunia Tanpa Ahli Waris)</span>
+<span class="bg-white border border-red-200 px-1.5 py-0.5 rounded text-red-700">5. Eni K. (Kepemilikan Kendaraan Roda 4)</span>
+<span class="bg-white border border-red-200 px-1.5 py-0.5 rounded text-red-700">6. Agus B. (Terdaftar ASN Kemendikbud)</span>
+</div>
+</div>
+<!-- DIGITAL INTEGRITY & UU PDP VERIFICATION STAMP -->
+<div class="p-2 bg-emerald-50/50 border border-emerald-200 rounded flex items-center justify-between text-[10px]">
+<div class="flex items-center gap-2">
+<div class="w-12 h-12 bg-white border border-border-strong rounded p-1 flex items-center justify-center">
+<!-- Visual simulation of dynamic QR code -->
+<span class="material-symbols-outlined text-[34px] text-primary">qr_code_2</span>
+</div>
+<div class="space-y-0.5">
+<span class="font-bold text-emerald-950 block">Verifikasi Publik Keabsahan Dokumen Digital</span>
+<p class="font-mono text-[9px] text-secondary">Digest: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</p>
+<p class="text-[9px] text-emerald-800">Kepatuhan UU No. 27/2022 (PDP): Seluruh NIK &amp; PII disamarkan secara sah.</p>
+</div>
+</div>
+<div class="text-right">
+<span class="bg-emerald-700 text-white font-label-sm text-[8px] px-1.5 py-0.5 rounded font-mono uppercase">BSrE BSSN SEALED</span>
+</div>
+</div>
+<!-- OFFICIAL DUAL DIGITAL SIGNATURE BLOCK -->
+<div class="grid grid-cols-2 gap-6 pt-3 border-t border-border-subtle text-center text-[11px]">
+<!-- Kiri: Kasi Kesos -->
+<div class="space-y-1 flex flex-col items-center">
+<span>Disusun &amp; Diverifikasi oleh,</span>
+<span class="font-semibold text-secondary">Kasi Kesejahteraan Sosial</span>
+<div class="my-1.5 p-1 bg-emerald-50 border border-emerald-300 rounded flex items-center gap-1.5 px-3">
+<span class="material-symbols-outlined text-emerald-700 text-[18px]">verified</span>
+<div class="text-left">
+<div class="font-bold text-[9px] text-emerald-900 leading-none">TERVERIFIKASI TTE</div>
+<div class="font-mono text-[8px] text-emerald-700">2026-01-30 09:14:22 WIB</div>
+</div>
+</div>
+<div class="font-bold text-on-surface underline">BUDI HARTONO, S.Sos</div>
+<div class="text-[9px] font-mono text-secondary">NIP. 19820415 200801 1 008</div>
+</div>
+<!-- Kanan: Lurah Jurangmangu Barat -->
+<div class="space-y-1 flex flex-col items-center">
+<span>Mengetahui &amp; Mengesahkan,</span>
+<span class="font-semibold text-primary">Lurah Jurangmangu Barat</span>
+<!-- Waiting for Lurah Signature Action -->
+<div class="my-1.5 p-1.5 bg-amber-50 border border-dashed border-amber-400 rounded flex items-center justify-center gap-1 px-4 text-amber-800">
+<span class="material-symbols-outlined text-[16px] text-amber-600">draw</span>
+<span class="font-label-sm text-[9px] font-semibold">MENUNGGU OTORISASI TTE</span>
+</div>
+<div class="font-bold text-on-surface underline">H. AHMAD SYARIF, M.Si</div>
+<div class="text-[9px] font-mono text-secondary">NIP. 19740912 199903 1 004</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ===================================================================== -->
+<!-- RIGHT COLUMN: AUDIT & INSPECTION WORKBENCH (5 COLS / 42%)             -->
+<!-- ===================================================================== -->
+<section class="lg:col-span-5 space-y-6">
+<!-- PANEL 1: UJI PETIK TRANSPARANSI NARASI XAI (GEMINI FLASH) -->
+<div class="bg-surface-container-lowest border border-border-subtle rounded-lg shadow-sm p-4 space-y-3">
+<div class="flex items-center justify-between pb-2 border-b border-border-subtle">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">psychology</span>
+<h4 class="text-headline-sm font-headline-sm text-on-surface text-[15px]">Uji Petik Transparansi Narasi XAI</h4>
+</div>
+<span class="bg-emerald-50 text-emerald-800 border border-emerald-200 text-label-sm font-label-sm px-2 py-0.5 rounded font-mono">
+              Gemini 1.5 Flash
+            </span>
+</div>
+<!-- Selector Tabs -->
+<div class="grid grid-cols-3 gap-1 bg-surface-subtle p-1 rounded-lg">
+<button class="bg-white text-on-surface shadow-sm font-label-sm text-label-sm py-1 rounded text-center border border-border-strong font-medium">
+              Rank #1 (Top)
+            </button>
+<button class="text-secondary hover:text-on-surface font-label-sm text-label-sm py-1 rounded text-center font-medium bg-emerald-100/60 text-emerald-900 border border-emerald-300">
+              Rank #50 (Cutoff)
+            </button>
+<button class="text-secondary hover:text-on-surface font-label-sm text-label-sm py-1 rounded text-center font-medium">
+              Rank #51 (Cadangan)
+            </button>
+</div>
+<!-- Active Sample XAI Attribution: Case Rochmat H (#50) -->
+<div class="bg-surface-canvas border border-border-subtle rounded-lg p-3 space-y-3">
+<div class="flex items-start justify-between">
+<div>
+<span class="text-label-sm font-label-sm text-secondary uppercase">Studi Kasus Penentu Kelulusan (Tie-Break Win)</span>
+<h5 class="text-headline-sm font-headline-sm text-on-surface text-[14px]">Rochmat H****** (Penerima #50)</h5>
+<span class="text-label-sm font-label-sm text-primary font-mono">Skor V<sub>i</sub>: 0.7250 • RT 07/RW 03</span>
+</div>
+<span class="bg-status-approved-bg text-status-approved-fg text-label-sm font-label-sm px-1.5 py-0.5 rounded font-semibold">
+                Lolos Kuota
+              </span>
+</div>
+<!-- Diverging Micro-bars for Feature Attribution -->
+<div class="space-y-1.5 pt-1">
+<span class="text-label-sm font-label-sm text-secondary font-mono block">Dekomposisi Pembobotan Kriteria:</span>
+<!-- Factor 1 -->
+<div class="space-y-0.5">
+<div class="flex justify-between text-body-sm font-body-sm text-[11px]">
+<span>C1: Tingkat Pendapatan (Rp 850rb/bln)</span>
+<span class="font-mono text-xai-weight-positive font-bold">+0.285 (Penentu Menang)</span>
+</div>
+<div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+<div class="bg-xai-weight-positive h-full rounded-full" style="width: 95%"></div>
+</div>
+</div>
+<!-- Factor 2 -->
+<div class="space-y-0.5">
+<div class="flex justify-between text-body-sm font-body-sm text-[11px]">
+<span>C2: Jumlah Tanggungan (4 Jiwa)</span>
+<span class="font-mono text-xai-weight-positive font-bold">+0.220</span>
+</div>
+<div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+<div class="bg-xai-weight-positive h-full rounded-full" style="width: 78%"></div>
+</div>
+</div>
+<!-- Factor 3 -->
+<div class="space-y-0.5">
+<div class="flex justify-between text-body-sm font-body-sm text-[11px]">
+<span>C3: Kondisi Dinding Rumah (Semi Permanen)</span>
+<span class="font-mono text-xai-weight-positive font-bold">+0.150</span>
+</div>
+<div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+<div class="bg-xai-weight-positive h-full rounded-full" style="width: 60%"></div>
+</div>
+</div>
+<!-- Factor 4 (Penalizing factor) -->
+<div class="space-y-0.5">
+<div class="flex justify-between text-body-sm font-body-sm text-[11px]">
+<span>C4: Daya Listrik Rumah Tangga (900 VA)</span>
+<span class="font-mono text-xai-weight-negative font-bold">-0.070 (Faktor Pengurang)</span>
+</div>
+<div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+<div class="bg-xai-weight-negative h-full rounded-full" style="width: 35%"></div>
+</div>
+</div>
+</div>
+<!-- Plain-Language Civic Rationale Generated by LLM -->
+<div class="bg-white p-2.5 rounded border border-border-strong text-[11px] leading-relaxed text-secondary space-y-1">
+<div class="flex items-center gap-1 font-semibold text-primary">
+<span class="material-symbols-outlined text-[14px]">chat_bubble_outline</span>
+<span>Narasi Rationale Resmi untuk Arsip Warga:</span>
+</div>
+<p>
+                "KPM Rochmat H ditetapkan menerima bansos pada peringkat ke-50 setelah memenangkan prosedur tie-breaker atas KPM Sumiyati B yang memiliki nilai SAW serupa (0.7250). Sesuai Perwal Tangsel No. 14/2023 Pasal 9, pembobotan diprioritaskan pada C1 (pendapatan per kapita Desil 1 terendah). Rekomendasi: Usulkan program PKH rutin APBN untuk siklus semester II."
+              </p>
+</div>
+<!-- Fidelity & Hallucination Check -->
+<div class="flex items-center justify-between pt-1 border-t border-border-subtle text-label-sm font-label-sm">
+<span class="text-secondary">Fidelity Grounding Check:</span>
+<span class="text-emerald-700 font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">check_circle</span>
+                100% Cocok dengan Fakta DB
+              </span>
+</div>
+</div>
+</div>
+<!-- PANEL 2: REKAPITULASI KUOTA PER RT (PEMERATAAN WILAYAH) -->
+<div class="bg-surface-container-lowest border border-border-subtle rounded-lg shadow-sm p-4 space-y-3">
+<div class="flex items-center justify-between pb-2 border-b border-border-subtle">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">share_location</span>
+<h4 class="text-headline-sm font-headline-sm text-on-surface text-[15px]">Rekapitulasi Kuota per RT (Pemerataan KPM)</h4>
+</div>
+<span class="bg-blue-50 text-blue-800 border border-blue-200 text-label-sm font-label-sm px-2 py-0.5 rounded font-mono">
+              Fairness: 94.2%
+            </span>
+</div>
+<p class="text-body-sm font-body-sm text-secondary">
+            Distribusi alokasi 50 KPM terpilih di seluruh lingkungan RW 01, RW 02, dan RW 03 Kelurahan Jurangmangu Barat:
+          </p>
+<div class="border border-border-strong rounded overflow-hidden">
+<table class="w-full text-[11px] text-left border-collapse">
+<thead>
+<tr class="bg-surface-subtle font-label-md text-secondary text-[10px] border-b border-border-strong">
+<th class="py-1 px-2.5">Wilayah Rukun Tetangga</th>
+<th class="py-1 px-2 text-center">Usulan</th>
+<th class="py-1 px-2 text-center font-bold text-primary">Lolos (KPM)</th>
+<th class="py-1 px-2.5 text-right">Rasio Penerimaan</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-subtle font-body-sm">
+<tr>
+<td class="py-1 px-2.5 font-medium">RT 01 / RW 01 (Kampung Utan)</td>
+<td class="py-1 px-2 text-center font-mono text-secondary">14</td>
+<td class="py-1 px-2 text-center font-mono font-bold text-primary">6</td>
+<td class="py-1 px-2.5 text-right font-mono">42.8%</td>
+</tr>
+<tr>
+<td class="py-1 px-2.5 font-medium">RT 02 / RW 01 (Ceger Barat)</td>
+<td class="py-1 px-2 text-center font-mono text-secondary">12</td>
+<td class="py-1 px-2 text-center font-mono font-bold text-primary">5</td>
+<td class="py-1 px-2.5 text-right font-mono">41.6%</td>
+</tr>
+<tr>
+<td class="py-1 px-2.5 font-medium">RT 03 / RW 02 (Pondok Betung Hilir)</td>
+<td class="py-1 px-2 text-center font-mono text-secondary">16</td>
+<td class="py-1 px-2 text-center font-mono font-bold text-primary">7</td>
+<td class="py-1 px-2.5 text-right font-mono">43.7%</td>
+</tr>
+<tr>
+<td class="py-1 px-2.5 font-medium">RT 04 / RW 02 (Puri Jurang Mangu)</td>
+<td class="py-1 px-2 text-center font-mono text-secondary">11</td>
+<td class="py-1 px-2 text-center font-mono font-bold text-primary">4</td>
+<td class="py-1 px-2.5 text-right font-mono">36.3%</td>
+</tr>
+<tr>
+<td class="py-1 px-2.5 font-medium">RT 07 / RW 03 (Masjid Al-Barkah)</td>
+<td class="py-1 px-2 text-center font-mono text-secondary">18</td>
+<td class="py-1 px-2 text-center font-mono font-bold text-primary">8</td>
+<td class="py-1 px-2.5 text-right font-mono">44.4%</td>
+</tr>
+<tr class="bg-surface-subtle font-semibold text-[10px]">
+<td class="py-1 px-2.5 font-bold">Wilayah Lainnya (5 RT Gabungan)</td>
+<td class="py-1 px-2 text-center font-mono text-secondary">49</td>
+<td class="py-1 px-2 text-center font-mono font-bold text-primary">20</td>
+<td class="py-1 px-2.5 text-right font-mono">40.8%</td>
+</tr>
+</tbody>
+</table>
+</div>
+<span class="text-[10px] text-secondary font-label-md block">
+            *Tidak ditemukan anomali konsentrasi kuota pada satu wilayah tertentu (Gini Koefisien Alokasi: 0.12 - Sangat Merata).
+          </span>
+</div>
+<!-- PANEL 3: INTEGRITAS ALGORITMIK & KEPATUHAN HUKUM -->
+<div class="bg-surface-container-lowest border border-border-subtle rounded-lg shadow-sm p-4 space-y-3">
+<div class="flex items-center justify-between pb-2 border-b border-border-subtle">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">verified</span>
+<h4 class="text-headline-sm font-headline-sm text-on-surface text-[15px]">Integritas Algoritmik &amp; Kepatuhan Hukum</h4>
+</div>
+<span class="bg-status-approved-bg text-status-approved-fg border border-emerald-300 text-label-sm font-label-sm px-1.5 py-0.5 rounded font-mono">
+              PASS AUDIT
+            </span>
+</div>
+<div class="space-y-2">
+<!-- Checklist Item 1 -->
+<div class="p-2 rounded bg-surface-subtle border border-border-subtle flex items-start gap-2.5">
+<span class="material-symbols-outlined text-emerald-600 text-[18px] shrink-0">check_box</span>
+<div>
+<span class="font-bold text-[12px] text-on-surface block">Snapshot Bobot Kriteria Terkunci</span>
+<p class="text-[11px] text-secondary">
+                  Total bobot matematis: <code class="font-mono text-primary font-bold">∑ w_j = 1.000</code>. Konfigurasi tidak dapat diubah pasca-eksekusi batch tanpa audit trail lurah.
+                </p>
+</div>
+</div>
+<!-- Checklist Item 2 -->
+<div class="p-2 rounded bg-surface-subtle border border-border-subtle flex items-start gap-2.5">
+<span class="material-symbols-outlined text-emerald-600 text-[18px] shrink-0">check_box</span>
+<div>
+<span class="font-bold text-[12px] text-on-surface block">Validasi SAW Deterministik</span>
+<p class="text-[11px] text-secondary">
+                  Akurasi replikasi 100.0% terhadap perhitungan manual lembar kerja verifikator (Zero Deviation).
+                </p>
+</div>
+</div>
+<!-- Checklist Item 3 -->
+<div class="p-2 rounded bg-surface-subtle border border-border-subtle flex items-start gap-2.5">
+<span class="material-symbols-outlined text-emerald-600 text-[18px] shrink-0">check_box</span>
+<div>
+<span class="font-bold text-[12px] text-on-surface block">Protokol Hierarchical Tie-Breaker (FR-03)</span>
+<p class="text-[11px] text-secondary">
+                  Penyelesaian nilai seri pada rank #50 &amp; #51 diselesaikan secara otomatis berdasarkan kriteria prioritas kemiskinan ekstrem C1.
+                </p>
+</div>
+</div>
+<!-- Checklist Item 4 -->
+<div class="p-2 rounded bg-surface-subtle border border-border-subtle flex items-start gap-2.5">
+<span class="material-symbols-outlined text-emerald-600 text-[18px] shrink-0">check_box</span>
+<div>
+<span class="font-bold text-[12px] text-on-surface block">Enkripsi AES-256-GCM &amp; Kepatuhan UU PDP (No. 27/2022)</span>
+<p class="text-[11px] text-secondary">
+                  Seluruh NIK KPM dan data keluarga terenkripsi di rest dan dimasking dalam visualisasi publik serta pratinjau cetak.
+                </p>
+</div>
+</div>
+<!-- Checklist Item 5 -->
+<div class="p-2 rounded bg-surface-subtle border border-border-subtle flex items-start gap-2.5">
+<span class="material-symbols-outlined text-emerald-600 text-[18px] shrink-0">check_box</span>
+<div>
+<span class="font-bold text-[12px] text-on-surface block">Celery Asynchronous Tasks Clean</span>
+<p class="text-[11px] text-secondary">
+                  120/120 tasks terselesaikan tanpa error timeout, retry count = 0, memory heap normal.
+                </p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- ========================================================================= -->
+<!-- 4. OFFICIAL STATUTORY FOOTER                                              -->
+<!-- ========================================================================= -->
+<footer class="pt-6 border-t border-border-subtle text-secondary space-y-2 pb-12">
+<div class="flex flex-col md:flex-row items-center justify-between text-body-sm font-body-sm gap-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-emerald-700 text-[16px]">assured_workload</span>
+<span>© 2026 Pemerintah Kota Tangerang Selatan • Kelurahan Jurangmangu Barat, Pondok Aren.</span>
+</div>
+<div class="flex items-center gap-4 text-label-sm font-label-sm font-mono">
+<span>SPBE Level 4.2 Verified</span>
+<span>•</span>
+<span>BSrE Digital Certificate Registered</span>
+<span>•</span>
+<span>BSSN GovTech Standard</span>
+</div>
+</div>
+<p class="text-[10px] text-secondary text-center md:text-left leading-relaxed">
+        Pemberitahuan Kepatuhan Hukum: Keputusan penetapan KPM Bansos ini dihasilkan melalui sistem pendukung keputusan matematis transparan dan dapat diakses untuk uji petik keterbukaan informasi publik sesuai ketentuan UU KIP No. 14/2008 dan Peraturan Walikota Tangerang Selatan terkait Tata Kelola Bansos Kelurahan.
+      </p>
+</footer>
+</main>
+</body></html>
