@@ -2,87 +2,79 @@
 
 Platform **Explainable Decision Support System (EDSS)** berbasis web untuk seleksi Keluarga Penerima Manfaat (KPM) Bantuan Sosial di **Kelurahan Jurangmangu Barat, Kecamatan Pondok Aren, Kota Tangerang Selatan**.
 
-Sistem ini menggabungkan perhitungan matematis deterministik **Simple Additive Weighting (SAW)** + **Hierarchical Tie-Breaker** dengan **Google Gemini Flash API** sebagai *Explainer Layer* berbahasa Indonesia, dilengkapi pelindungan kriptografi **AES-256-GCM & HMAC-SHA256** sesuai **UU PDP No. 27 Tahun 2022**.
+---
+
+## Dokumentasi Branch: `chore/fase-0-preflight` (Fase 0 — Pre-Flight Check & Environment Hardening)
+
+### Mengapa Fase Ini Dibutuhkan (*Context & Why*)
+Sebelum model basis data dan layanan kriptografi dibangun, aplikasi harus memiliki fondasi keamanan *fail-closed* agar kesalahan konfigurasi `.env` tidak pernah meloloskan kunci lemah ke produksi atau membocorkan 16 digit NIK ke log server (kepatuhan **UU PDP No. 27 Tahun 2022** dan **OWASP Top 10 A02/A05/A07**).
+
+### Changelog Fase 0
+
+#### Added
+- **Konfigurasi Template Environment:** Menambahkan [`.env.example`](./.env.example), [`backend/.env.example`](./backend/.env.example), dan [`frontend/.env.example`](./frontend/.env.example) sebagai kontrak variabel lingkungan tanpa menyimpan rahasia di Git.
+- **Pengaturan Inti Django 5.x:** Mengonfigurasi [`backend/config/settings.py`](./backend/config/settings.py) dengan `Argon2PasswordHasher`, SimpleJWT, Django-Q2 worker, dan pemuatan `.env` otomatis.
+- **Suite Pengujian Guardrails:** Menambahkan 5 pengujian otomatis di [`backend/tests/test_security_guardrails.py`](./backend/tests/test_security_guardrails.py).
+
+#### Security
+- **Validasi Kunci Kriptografi & *Key Separation* ([`backend/config/security.py`](./backend/config/security.py)):**
+  - `parse_aes_256_key()` memvalidasi `NIK_AES_KEY` wajib tepat 32 byte (256-bit).
+  - `validate_secret_management()` menghentikan *startup* aplikasi jika `NIK_AES_KEY`, `NIK_HMAC_PEPPER`, dan `DJANGO_SECRET_KEY` menggunakan nilai yang sama, atau jika *wildcard* CORS (`*`) diaktifkan.
+- **Guardrail Autentikasi (`validate_auth_guardrails()`):** Menolak izin global `AllowAny` pada DRF dan membatasi masa berlaku *access token* JWT maksimal 60 menit dengan rotasi *refresh token*.
+- **Sanitasi Log Server (`ZeroPiiLogFilter`):** Menyensor otomatis 16 digit NIK (`[REDACTED_NIK_16]`) dan token `Bearer` JWT (`[REDACTED_JWT]`) sebelum ditulis ke konsol/log.
+- **Audit Dependensi ([`backend/requirements.txt`](./backend/requirements.txt)):** Memastikan seluruh 70 paket di dalam `backend/.venv` terinstal dengan 0 kerentanan pada `pip-audit`.
+
+### Daftar File Utama Fase 0
+
+| File | Peran & Tanggung Jawab |
+| :--- | :--- |
+| [`backend/config/security.py`](./backend/config/security.py) | Validator *fail-closed* untuk kunci 32-byte AES, *Key Separation*, SimpleJWT, CORS, dan `ZeroPiiLogFilter`. |
+| [`backend/config/settings.py`](./backend/config/settings.py) | Konfigurasi Django 5.x yang memanggil validator keamanan saat *startup*. |
+| [`backend/.env.example`](./backend/.env.example) | Dokumentasi variabel lingkungan kriptografi, JWT, CORS, Gemini API, dan rate-limiter. |
+| [`backend/requirements.txt`](./backend/requirements.txt) | Daftar dependensi terkunci (*pinned versions*) yang telah diaudit dengan `pip-audit`. |
+| [`backend/tests/test_security_guardrails.py`](./backend/tests/test_security_guardrails.py) | Pengujian otomatis untuk memverifikasi seluruh guardrail keamanan Fase 0. |
+
+### Hasil Verifikasi Fase 0
+
+```text
+$ backend\.venv\Scripts\python.exe -m pytest backend/tests/test_security_guardrails.py -v
+
+backend/tests/test_security_guardrails.py::test_env_example_files_exist_and_contain_required_placeholders PASSED
+backend/tests/test_security_guardrails.py::test_parse_aes_256_key_strictly_enforces_32_bytes PASSED
+backend/tests/test_security_guardrails.py::test_secret_management_enforces_key_separation_and_blocks_wildcard_cors PASSED
+backend/tests/test_security_guardrails.py::test_auth_guardrails_reject_allow_any_and_unbounded_jwt PASSED
+backend/tests/test_security_guardrails.py::test_zero_pii_log_filter_redacts_16_digit_nik_and_bearer_jwt PASSED
+
+5 passed in 0.48s
+```
 
 ---
 
-## Fitur Utama
+## Quick Start (Fase 0)
 
-1. **Manajemen Kriteria & Snapshot (`FR-01`):** Pengaturan bobot kriteria $C_1$–$C_4$ dengan validasi $\sum w_j = 1.00$ dan pembekuan bobot otomatis ke tabel `BATCH_CRITERIA` saat kalkulasi dimulai.
-2. **Ingest Data RT & Gerbang Filter TMS (`FR-02`):** Input manual per individu dan *batch import* Excel (`.xlsx`) oleh Ketua RT, dilengkapi gerbang diskualifikasi administratif (Tidak Memenuhi Syarat / TMS: ASN/TNI/Polri, PKH Ganda, Pindah, Meninggal) agar tidak mendistorsi matriks normalisasi SAW.
-3. **Engine SAW & Hierarchical Tie-Breaker (`FR-03`):** Perhitungan matriks normalisasi $R_{ij}$ dan preferensi $V_i$ yang 100% identik dengan hitungan manual Excel, disertai *tie-breaker* bertingkat ($C_1 \rightarrow C_2 \rightarrow \text{Tanggungan Riil} \rightarrow \text{Timestamp}$).
-4. **Zero-PII Asynchronous XAI & Fallback Deterministik (`FR-04`, `FR-05`):** Pembangkitan narasi penjelasan *counterfactual* menggunakan Gemini Flash di latar belakang (*background worker*) tanpa mengirim data identitas warga (100% *PII-masked*), serta *fallback* otomatis berbasis aturan (`deterministic_fallback.py`) jika API mengalami *rate-limit* atau *offline*.
-5. **Portal Publik Anti-Bot (`/cek-bansos` — `FR-06`):** Pengecekan mandiri oleh warga tanpa registrasi akun menggunakan 16 digit NIK + 4 digit terakhir No KK + CAPTCHA, dilindungi *rate limit* 5 req/menit/IP dan *lockout* 15 menit setelah 5 kegagalan per NIK.
-6. **Pelaporan Resmi & Modul Evaluasi Skripsi (`FR-07`, `FR-08`):** Cetak PDF Berita Acara berkode QR + lampiran warga TMS, serta dasbor pengujian ilmiah (*SAW Accuracy*, *Fidelity Score* $\ge 95\%$, *Hallucination Rate* $0\%$, dan ekspor kuesioner SUS).
-7. **Desain Responsif 3 Ukuran Layar (*Civic Precision*):** Fleksibel dibuka di **Handphone/Mobile (`< 768px`)**, **Tablet (`768px–1023px`)**, dan **Browser/Desktop (`>= 1024px`)**.
-
----
-
-## Quick Start
-
-### Prasyarat
-- Python 3.11+
-- Node.js 20+ & npm
-- Kunci API Google Gemini (`GEMINI_API_KEY` — opsional saat pengembangan karena sistem memiliki `deterministic_fallback.py`)
-
-### 1. Setup Backend (Django 5 + DRF)
 ```powershell
 cd backend
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 
-# Salin konfigurasi environment (.env)
+# Salin template environment lokal
 Copy-Item .env.example .env
 
-# Jalankan migrasi dan pengisian data awal (C1-C4, Crips 1-5, akun demo staf)
-python manage.py migrate
-python manage.py seed_initial_data
-
-# Jalankan server pengembangan backend
-python manage.py runserver
-```
-
-### 2. Setup Frontend (React + Vite + Tailwind CSS)
-```powershell
-cd frontend
-npm install
-npm run dev
+# Jalankan verifikasi security guardrails
+pytest tests/test_security_guardrails.py -v
 ```
 
 ---
 
-## Daftar Perintah (Commands)
+## Arsitektur & Architecture Decision Records (ADRs)
 
-| Perintah | Direktori | Deskripsi |
-| :--- | :--- | :--- |
-| `python manage.py runserver` | `backend/` | Menjalankan server REST API Django di `http://localhost:8000` |
-| `pytest -v` | `backend/` | Menjalankan seluruh *unit & integration test* backend (Kriptografi, SAW, Tie-Breaker, XAI, API) |
-| `python manage.py qcluster` | `backend/` | Menjalankan *asynchronous task worker* untuk pemrosesan *batch* XAI Gemini |
-| `npm run dev` | `frontend/` | Menjalankan server pengembangan Vite di `http://localhost:5173` |
-| `npm test -- --run` | `frontend/` | Menjalankan pengujian komponen & responsivitas UI dengan Vitest |
-| `npm run build` | `frontend/` | Membangun *bundle* produksi frontend |
-
----
-
-## Arsitektur & Dokumen Keputusan Arsitektur (ADRs)
-
-Dokumentasi spesifikasi dan alasan di balik keputusan teknis utama tersimpan di:
-- **Spesifikasi Utama (PRD Final v3.0):** [PRD_Sistem_Bansos_Jurangmangu_Barat_Final.md](file:///d:/Kuliah/SKRIPSI/BANSOS_SAW+LLM/PRD_Sistem_Bansos_Jurangmangu_Barat_Final.md)
-- **Aturan Konteks Agen & Protokol Desain (`.stitch`):** [AGENTS.md](file:///d:/Kuliah/SKRIPSI/BANSOS_SAW+LLM/AGENTS.md)
-- **Rencana Implementasi Langkah demi Langkah:** [2026-10-13-sistem-bansos-saw-xai-implementation.md](file:///d:/Kuliah/SKRIPSI/BANSOS_SAW+LLM/docs/superpowers/plans/2026-10-13-sistem-bansos-saw-xai-implementation.md)
-
-### Daftar Architecture Decision Records (`docs/decisions/`)
-1. **[ADR-001](file:///d:/Kuliah/SKRIPSI/BANSOS_SAW+LLM/docs/decisions/ADR-001-hybrid-saw-xai-with-deterministic-fallback.md):** Arsitektur EDSS Hibrida — Komputasi Deterministik SAW dengan Layer XAI Gemini Flash Terkendali dan Fallback Berbasis Aturan.
-2. **[ADR-002](file:///d:/Kuliah/SKRIPSI/BANSOS_SAW+LLM/docs/decisions/ADR-002-dual-layer-nik-crypto-and-zero-pii-xai.md):** Proteksi Kriptografi Dua Lapis untuk NIK (`AES-256-GCM` + `HMAC-SHA256`) dan Sanitasi Zero-PII ke API Eksternal.
-3. **[ADR-003](file:///d:/Kuliah/SKRIPSI/BANSOS_SAW+LLM/docs/decisions/ADR-003-immutable-criteria-snapshot-tms-gate-and-tie-breaker.md):** Pembekuan Bobot Kriteria (`BATCH_CRITERIA`), Gerbang Pra-Normalisasi TMS, dan *Hierarchical Tie-Breaker*.
-4. **[ADR-004](file:///d:/Kuliah/SKRIPSI/BANSOS_SAW+LLM/docs/decisions/ADR-004-async-xai-queue-and-passwordless-public-portal.md):** Antrean Worker Asinkron untuk Batch XAI dan Portal Publik Tanpa Akun dengan Proteksi Anti-Bot Dua Lapis.
-5. **[ADR-005](file:///d:/Kuliah/SKRIPSI/BANSOS_SAW+LLM/docs/decisions/ADR-005-responsive-ui-architecture-and-stitch-review-gate.md):** Arsitektur UI Responsif 3-Tier (Mobile, Tablet, Desktop) dan Gerbang Review Desain `.stitch`.
-
----
-
-## Catatan Penting (Known Gotchas)
-
-- **Jangan Pernah Menyimpan NIK Plaintext:** Gunakan `Citizen.objects.create_with_nik(raw_nik=..., ...)` yang otomatis mengisi `nik_hash`, `nik_encrypted`, dan `nik_masked`.
-- **Jangan Membaca `Criteria.weight` Setelah Batch Dihitung:** Setelah status batch mencapai `Calculated`, seluruh modul (termasuk XAI dan kalkulator *Fidelity Score*) **wajib** membaca `BatchCriteria.frozen_weight` milik batch tersebut.
-- **Jangan Menyalin Mentah HTML `.stitch`:** Selalu lakukan review desain bersama pengguna dan gunakan `<AppShell />` responsif (Off-Canvas Drawer untuk Mobile/Tablet, Fixed Sidebar untuk Desktop).
+- **Spesifikasi Utama (PRD Final v3.0):** [`PRD_Sistem_Bansos_Jurangmangu_Barat_Final.md`](./PRD_Sistem_Bansos_Jurangmangu_Barat_Final.md)
+- **Aturan Konteks Agen & Protokol UI (`.stitch`):** [`AGENTS.md`](./AGENTS.md)
+- **Rencana Implementasi:** [`docs/superpowers/plans/2026-10-13-sistem-bansos-saw-xai-implementation.md`](./docs/superpowers/plans/2026-10-13-sistem-bansos-saw-xai-implementation.md)
+- **Daftar ADR:**
+  1. [ADR-001: Hybrid SAW + XAI & Deterministic Fallback](./docs/decisions/ADR-001-hybrid-saw-xai-with-deterministic-fallback.md)
+  2. [ADR-002: Dual-Layer NIK Crypto & Zero-PII XAI](./docs/decisions/ADR-002-dual-layer-nik-crypto-and-zero-pii-xai.md)
+  3. [ADR-003: Immutable Criteria Snapshot, TMS Gate, & Tie-Breaker](./docs/decisions/ADR-003-immutable-criteria-snapshot-tms-gate-and-tie-breaker.md)
+  4. [ADR-004: Async XAI Queue & Passwordless Public Portal](./docs/decisions/ADR-004-async-xai-queue-and-passwordless-public-portal.md)
+  5. [ADR-005: Responsive UI Architecture & Stitch Review Gate](./docs/decisions/ADR-005-responsive-ui-architecture-and-stitch-review-gate.md)
