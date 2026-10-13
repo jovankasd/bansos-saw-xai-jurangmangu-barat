@@ -87,7 +87,11 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "django_q",
+    "core",
 ]
+
+# Custom user model (StaffUser with role + rt_number)
+AUTH_USER_MODEL = "core.StaffUser"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -102,6 +106,22 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
+
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ],
+        },
+    },
+]
 
 DATABASES = {
     "default": {
@@ -138,7 +158,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "30/min",
         "user": "120/min",
-        "auth_login": os.environ.get("AUTH_LOGIN_RATE_LIMIT", "10/15m"),
+        "auth_login": os.environ.get("AUTH_LOGIN_RATE_LIMIT", "10/min"),
     },
 }
 

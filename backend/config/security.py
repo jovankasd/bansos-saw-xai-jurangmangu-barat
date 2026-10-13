@@ -31,8 +31,10 @@ FORBIDDEN_PLACEHOLDER_PREFIXES = (
 )
 
 # Regex patterns for redacting PII (16-digit NIK) and Bearer tokens from server logs
-NIK_LOG_REGEX = re.compile(r"\b\d{16}\b")
+# Uses negative hex lookbehind/lookahead so 'nik_3674031208850002' is redacted while 64-char hex hashes are preserved.
+NIK_LOG_REGEX = re.compile(r"(?<![0-9a-fA-F])\d{16}(?![0-9a-fA-F])", re.ASCII)
 BEARER_TOKEN_REGEX = re.compile(r"(Bearer\s+)[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+", re.IGNORECASE)
+_B64_KEY_PATTERN = re.compile(r"^[A-Za-z0-9_\-+/]+={0,2}$", re.ASCII)
 
 
 def parse_aes_256_key(raw_key: str) -> bytes:
@@ -63,8 +65,8 @@ def parse_aes_256_key(raw_key: str) -> bytes:
     if len(utf8_bytes) == 32:
         return utf8_bytes
 
-    # 3. Check base64 encoded 32-byte key
-    if len(cleaned) in (43, 44):
+    # 3. Check base64 encoded 32-byte key (strictly valid base64 chars)
+    if len(cleaned) in (43, 44) and _B64_KEY_PATTERN.match(cleaned):
         try:
             padded = cleaned + "=" * (-len(cleaned) % 4)
             decoded = base64.urlsafe_b64decode(padded.encode("ascii"))
@@ -201,20 +203,18 @@ class ZeroPiiLogFilter(logging.Filter):
     """
     Logging filter that prevents accidental leakage of 16-digit plaintext NIKs
     or JWT Bearer tokens into application logs (UU PDP No. 27/2022 compliance).
+    Formats and scrubs the full message so Exception/int/dict args cannot bypass redaction.
     """
 
     def filter(self, record: logging.LogRecord) -> bool:
-        if isinstance(record.msg, str):
-            record.msg = scrub_sensitive_text(record.msg)
-        if record.args:
-            if isinstance(record.args, dict):
-                record.args = {
-                    k: scrub_sensitive_text(v) if isinstance(v, str) else v
-                    for k, v in record.args.items()
-                }
-            elif isinstance(record.args, tuple):
-                record.args = tuple(
-                    scrub_sensitive_text(arg) if isinstance(arg, str) else arg
-                    for arg in record.args
-                )
+        try:
+            rendered = record.getMessage()
+            record.msg = scrub_sensitive_text(rendered)
+            record.args = ()
+        except Exception:
+            if isinstance(record.msg, str):
+                record.msg = scrub_sensitive_text(record.msg)
+        if getattr(record, "exc_text", None) and isinstance(record.exc_text, str):
+            record.exc_text = scrub_sensitive_text(record.exc_text)
         return True
+

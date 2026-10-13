@@ -148,3 +148,20 @@ def test_zero_pii_log_filter_redacts_16_digit_nik_and_bearer_jwt():
     assert "[REDACTED_NIK_16]" in record.msg
     assert "eyJhbGciOiJIUzI1NiJ9" not in record.msg
     assert "Bearer [REDACTED_JWT]" in record.msg
+
+    # Also redact when NIK is inside an Exception arg or prefixed with 'nik_'
+    exc_record = logging.LogRecord(
+        name="bansos.audit",
+        level=logging.ERROR,
+        pathname=__file__,
+        lineno=20,
+        msg="Exception during lookup for key=nik_3674031208850002: %s",
+        args=(ValueError("Failed on NIK 3674031208859999"),),
+        exc_info=None,
+    )
+    assert log_filter.filter(exc_record) is True
+    rendered = exc_record.getMessage()
+    assert "3674031208850002" not in rendered
+    assert "3674031208859999" not in rendered
+    assert rendered.count("[REDACTED_NIK_16]") == 2
+

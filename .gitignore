@@ -51,3 +51,11 @@ frontend/.env.*
 *.swo
 .DS_Store
 Thumbs.db
+
+# Graphify local cache and host-specific files (preserve graph.json, graph.html, GRAPH_REPORT.md)
+graphify-out/cache/
+graphify-out/2026-*/
+graphify-out/.graphify_python
+graphify-out/.graphify_root
+graphify-out/.graphify_analysis.json
+
