@@ -246,7 +246,7 @@ def generate_xai_for_evaluation(
             try:
                 from google import genai
 
-                client = genai.Client(api_key=api_key)
+                client = genai.Client(api_key=api_key, http_options={"timeout": 10.0})
             except Exception as exc:
                 logger.warning("Gagal menginisialisasi Google GenAI Client: %s", exc)
                 client = None
