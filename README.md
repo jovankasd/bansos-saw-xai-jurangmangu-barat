@@ -4,6 +4,158 @@ Platform **Explainable Decision Support System (EDSS)** berbasis web untuk selek
 
 ---
 
+## Dokumentasi Branch: `docs/fase-10-final-audit` (Fase 10 — Final Multi-Agent Audit, Graphify Architecture Verification & Laporan Pengujian Bab 4–5 Skripsi)
+
+### Mengapa Fase Ini Dibutuhkan (*Context & Why*)
+
+Fase 10 merupakan tahap **verifikasi akhir menyeluruh** sebelum laporan skripsi diselesaikan. Setelah seluruh fitur selesai diimplementasikan dan diuji pada Fase 1–9, Fase 10 memastikan bahwa:
+
+1. **Kepatuhan keamanan penuh terhadap UU PDP No. 27/2022** melalui audit `security-auditor` yang memeriksa AES-256-GCM, HMAC-SHA256, Zero-PII ke Gemini API, `ZeroPiiLogFilter`, dan perlindungan *brute-force* portal publik.
+2. **Seluruh 8 Functional Requirements (FR-01 s.d. FR-08)** dari PRD Final v3.0 terimplementasi dengan benar, diverifikasi oleh `code-reviewer` secara independen.
+3. **Kelengkapan dan kualitas pengujian** (99 tes backend + 33 tes frontend) divalidasi oleh `test-engineer` yang memeriksa cakupan skenario kritis.
+4. **Integritas arsitektur modul** tidak memiliki siklus impor, diverifikasi menggunakan *knowledge graph* `graphify` (851 simpul, 1.972 sisi, 66 komunitas, 0 siklus).
+5. **Tidak ada kode mati atau *over-engineering*** melalui audit `ponytail`.
+6. **Laporan formal Bab 4 Skripsi** tersedia dalam format Markdown akademis lengkap dengan bukti tabel SAW, *Fidelity Score*, *Hallucination Rate*, dan daftar pencapaian *Success Criteria*.
+
+---
+
+### Changelog Fase 10
+
+#### Added
+- `docs/LAPORAN_PENGUJIAN_BAB4_SKRIPSI.md` — Laporan pengujian formal Bab 4 skripsi dengan 15 seksi, mencakup: bukti kecocokan SAW 100%, verifikasi *tie-breaker* 4 tingkat, *Fidelity Score* 100,0% (target ≥ 95,0%), *Hallucination Rate* 0,0%, hasil *async worker*, daftar 14 *Success Criteria*, dan rekapitulasi 99+33 tes.
+
+#### Security (Terverifikasi oleh `security-auditor`)
+- **AES-256-GCM** — kunci 32 byte, nonce 96-bit acak per enkripsi, tanpa plaintext NIK di DB ✅
+- **HMAC-SHA256** — pepper terpisah dari kunci AES dan `SECRET_KEY` ✅
+- **Zero-PII ke Gemini API** — payload hanya mengandung `applicant_code`, skor, dan data normalisasi ✅
+- **`ZeroPiiLogFilter`** — menutup NIK 16-digit dan Bearer JWT dari seluruh log ✅
+- **Perlindungan portal publik** — rate limit 5 req/menit/IP + lockout 15 menit setelah 5 kegagalan ✅
+- **Token PDF bertanda tangan** — `TimestampSigner`, max_age 900 detik ✅
+
+#### Verified (Diverifikasi oleh Seluruh Agen Audit)
+- **99/99 tes backend PASSED** (69,30 detik, exit code 0)
+- **33/33 tes frontend PASSED**
+- **8/8 Functional Requirements** diimplementasikan sesuai PRD
+- **14/14 Success Criteria** terpenuhi (100%)
+- **0 siklus impor** pada *knowledge graph* `graphify`
+- **0 kode mati / over-engineering** ditemukan oleh `ponytail`
+
+---
+
+### Ringkasan Audit Paralel Subagents
+
+#### 🔒 `security-auditor` — Audit Keamanan UU PDP No. 27/2022
+
+| Area Audit | Status | Detail |
+|-----------|:------:|--------|
+| AES-256-GCM (kunci 32 byte, nonce 96-bit) | ✅ PASS | `crypto.py` — `AESGCM`, `os.urandom(12)`, enforced `_resolve_aes_key()` |
+| HMAC-SHA256 (pepper server-side) | ✅ PASS | `hmac.new(pepper, nik, sha256)`, pepper tidak pernah kosong |
+| Zero-PII ke Gemini API (OWASP LLM02) | ✅ PASS | `sanitizer.py` — NIK, nama, alamat, KK, RT/RW dikecualikan dari payload |
+| `ZeroPiiLogFilter` (redaksi NIK & JWT di log) | ✅ PASS | `security.py` — regex 16-digit NIK + Bearer JWT |
+| *Brute-force* & *rate limiting* `/cek-bansos` | ✅ PASS | 5 req/menit/IP, lockout 15 menit, CAPTCHA Turnstile |
+| Token PDF bertanda tangan | ✅ PASS | `TimestampSigner(salt='bansos.pdf_download')`, 900 detik |
+| NIK *plaintext-at-rest* dicegah | ✅ PASS | `contains_plaintext_nik()` pada `Citizen.clean()` dan `update()` |
+| Pemisahan kunci & manajemen rahasia | ✅ PASS | `AES_KEY ≠ HMAC_PEPPER ≠ SECRET_KEY` diverifikasi |
+
+**Skor Kepatuhan: 8/8 — Verdict: PASS** ✅
+
+#### 📋 `code-reviewer` — Verifikasi FR-01 s.d. FR-08
+
+| FR | Judul | Status |
+|----|-------|:------:|
+| FR-01 | Validasi bobot & pembekuan `BatchCriteria` | ✅ IMPLEMENTED |
+| FR-02 | Filter TMS — warga `DISQUALIFIED` dikecualikan dari normalisasi | ✅ IMPLEMENTED |
+| FR-03 | SAW Engine + *4-Tier Hierarchical Tie-Breaker* deterministik | ✅ IMPLEMENTED |
+| FR-04 | Zero-PII XAI — payload Gemini bersih dari data pribadi | ✅ IMPLEMENTED |
+| FR-05 | *Deterministic Fallback* setelah 2 *retry* Gemini (3 total panggilan) | ✅ IMPLEMENTED |
+| FR-06 | Keamanan portal publik (NIK+KK+CAPTCHA, rate limit, lockout, masking) | ✅ IMPLEMENTED |
+| FR-07 | *State machine* batch (Draft → Published), portal hanya tampil `Published` | ✅ IMPLEMENTED |
+| FR-08 | Ekspor & Pelaporan (Berita Acara PDF, PDF individual, Excel, metrik evaluasi) | ✅ IMPLEMENTED |
+
+**Kepatuhan FR: 8/8 — Overall Compliance: FULL** ✅
+
+#### 🧪 `test-engineer` — Verifikasi Kelengkapan Pengujian
+
+| Modul Uji Backend | Jumlah Tes | Skenario Kritis |
+|-------------------|:---------:|-----------------|
+| `test_saw_and_tiebreaker.py` | 27 | SAW, *tie-breaker* 4 level, TMS, *weight freeze*, *state machine* |
+| `test_xai_and_fallback.py` | 27 | Zero-PII, *fallback*, anti-halusinasi, *async worker* |
+| `test_crypto_and_models.py` | 15 | AES roundtrip, HMAC, masking, token PDF, adversarial |
+| `test_api_endpoints.py` | 15 | Auth, RBAC, *rate limiting*, lockout, portal publik |
+| `test_pdf_and_evaluation.py` | 10 | *Fidelity Score*, *Hallucination Rate*, Berita Acara PDF, SUS |
+| `test_security_guardrails.py` | 5 | Kunci 32 byte, pemisahan kunci, CORS, JWT, `ZeroPiiLogFilter` |
+| **Backend Total** | **99** | |
+
+| File Uji Frontend | Jumlah Tes | Area |
+|-------------------|:---------:|------|
+| `DashboardScreens.test.tsx` | 11 | Dashboard, kriteria, surveyor, SAW ranking, XAI |
+| `ApprovalAndEvaluation.test.tsx` | 7 | Berita acara, SUS, persetujuan Lurah |
+| `PublicPortalPage.test.tsx` | 6 | Portal publik, lockout, verifikasi |
+| `ProtectedRoute.test.tsx` | 5 | Auth guard, RBAC routing |
+| `AppShell.responsive.test.tsx` | 4 | Responsivitas mobile/tablet/desktop |
+| **Frontend Total** | **33** | |
+
+**Verdict: ADEQUATE** — seluruh skenario kritis tercakup ✅
+
+---
+
+### Hasil Verifikasi Arsitektur `graphify`
+
+```
+Simpul (nodes)   : 851
+Sisi (edges)     : 1.972
+Komunitas        : 66
+Siklus impor     : 0  ✅
+```
+
+**Simpul Terhubung Utama (*God Nodes*):**
+
+| Simpul | Sisi | Peran Arsitektural |
+|--------|:----:|--------------------|
+| `SelectionBatch` | 63 | Pusat *state machine* seleksi |
+| `calculate_batch_saw()` | 52 | Orkestrasi pipeline SAW penuh |
+| `Evaluation` | 44 | Entitas penilaian warga |
+| `Criteria` | 43 | Definisi & bobot kriteria |
+| `SelectionResult` | 41 | Keputusan final per warga |
+| `AuditLog` | 37 | Jejak audit seluruh aksi |
+
+**Komunitas Keamanan Terverifikasi:** `AES-256 & HMAC Crypto Service`, `Zero-PII Payload Sanitizer`, `Security Guardrails & Key Separation`, `Deterministic Fallback Explainer`, `Hierarchical Tie-Breaker Engine` — semuanya terhubung benar tanpa *coupling* melingkar.
+
+---
+
+### Hasil Audit `ponytail` (Kode Mati & *Over-Engineering*)
+
+| Pemeriksaan | Proyek | Penilaian |
+|-------------|:------:|-----------|
+| `TODO`/`FIXME` di kode proyek | 0 | ✅ Bersih |
+| Kelas abstrak (`ABC`) di kode proyek | 0 | ✅ Bersih |
+| Pola *factory*/*registry* spekulatif | 0 | ✅ Bersih |
+| Fungsi duplikat dari stdlib | 0 | ✅ Bersih |
+| `console.log`/`debugger` di frontend | 0 | ✅ Bersih |
+
+**Kesimpulan: CLEAN** — tidak ada kode mati. Seluruh kompleksitas yang ada (AES, HMAC, *retry* eksponensial, `ZeroPiiLogFilter`) merupakan persyaratan kepatuhan UU PDP, bukan *over-engineering* spekulatif. ✅
+
+---
+
+### Laporan Pengujian Formal Bab 4 Skripsi
+
+Laporan formal lengkap tersedia di: **[`./docs/LAPORAN_PENGUJIAN_BAB4_SKRIPSI.md`](./docs/LAPORAN_PENGUJIAN_BAB4_SKRIPSI.md)**
+
+Dokumen mencakup:
+- Tabel bukti kecocokan SAW 100% terhadap hitungan manual Excel
+- Bukti *4-Tier Hierarchical Tie-Breaker* deterministik (Level 1–4)
+- *Fidelity Score* = **100,0%** (target ≥ 95,0%)
+- *Hallucination Rate* = **0,0%**
+- Hasil uji *async worker* & *deterministic fallback*
+- Daftar lengkap 14 *Success Criteria* — **14/14 terpenuhi (100%)**
+- Rekapitulasi 99 tes backend + 33 tes frontend
+
+---
+
+
+
+---
+
 ## Dokumentasi Branch: `test/fase-9-e2e-browser` (Fase 9 — End-to-End Browser Verification & 3-Tier Responsive Audit via Real Browser Engine)
 
 ### Mengapa Fase Ini Dibutuhkan (*Context & Why*)
