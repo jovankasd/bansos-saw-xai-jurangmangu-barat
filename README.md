@@ -4,6 +4,111 @@ Platform **Explainable Decision Support System (EDSS)** berbasis web untuk selek
 
 ---
 
+## Dokumentasi Branch: `feat/m2-saw-tiebreaker` (Fase 2 / Task 2 — SAW Engine, Criteria Snapshot Freeze, TMS Filter, & 4-Level Tie-Breaker)
+
+### Mengapa Fase Ini Dibutuhkan (*Context & Why*)
+
+Fase 1 meletakkan pondasi kriptografi dan skema basis data. Fase 2 mengimplementasikan **inti algoritma keputusan** sesuai **PRD FR-01 hingga FR-03** dan **[ADR-003](./docs/decisions/ADR-003-immutable-criteria-snapshot-tms-gate-and-tie-breaker.md)**:
+
+1. **Pembekuan bobot kriteria (`BatchCriteria`)** secara idempoten agar perubahan `Criteria.weight` pasca-kalkulasi tidak merusak histori batch yang sudah dihitung.
+2. **Filter TMS (Tidak Memenuhi Syarat)** sebelum menghitung $\min/\max$ normalisasi SAW, sehingga warga `DISQUALIFIED` (ASN/TNI/Polri, PKH Ganda, Pindah, Meninggal) tidak mendistorsi matriks normalisasi.
+3. **Algoritma SAW** dengan presisi `Decimal`, rumus normalisasi Benefit/Cost, skor preferensi $V_i$, dan tie-breaker deterministik 4-level yang menjamin hasil seleksi dapat direproduksi secara konsisten.
+
+---
+
+### Changelog Fase 2 (Task 2)
+
+#### Added
+- **SAW Engine ([`backend/core/services/saw_engine.py`](./backend/core/services/saw_engine.py)):**
+  - `validate_criteria_weights()`: Menolak kalkulasi jika $\sum w_j \neq \text{Decimal}("1.00")$ dengan `ValidationError` bertanda `invalid_weight_sum`.
+  - `freeze_batch_criteria(batch)`: Snapshot idempoten (`update_or_create`) ke tabel `BatchCriteria`; mutasi `Criteria.weight` pasca-kalkulasi tidak mengubah `frozen_weight` batch lama.
+  - `calculate_batch_saw(batch_id, performed_by)`: Pipeline atomik (`transaction.atomic`) mencakup validasi → freeze → filter TMS → normalisasi → tie-breaker → tulis `SelectionResult` → transisi status → `AuditLog`.
+- **4-Level Tie-Breaker ([`backend/core/services/tie_breaker.py`](./backend/core/services/tie_breaker.py)):**
+  - `resolve_rankings_with_tie_breaker(candidates, quota)`: Pengurutan deterministik dengan kunci `(-V_i, -r_{C1}, -r_{C2}, -real\_dependents\_count, created\_at, id)` — tanpa `IndexError` pada `quota=0` atau `quota≥len(eligible)`.
+- **Suite Pengujian TDD + Edge-Case ([`backend/tests/test_saw_and_tiebreaker.py`](./backend/tests/test_saw_and_tiebreaker.py)):**
+  - 18 pengujian otomatis mencakup seluruh aturan bisnis FR-01–FR-03 beserta kasus batas.
+
+#### Security
+- **Snapshot Freeze Immutability:** `BatchCriteria.frozen_weight` tidak dapat berubah setelah kalkulasi meski `Criteria.weight` diubah oleh admin — terbukti oleh `test_post_calculation_weight_mutation_does_not_alter_frozen_snapshot`.
+- **State Machine Guard:** Kalkulasi ulang pada batch `Approved` atau `Published` langsung ditolak (`ValidationError`) — terbukti oleh `test_approved_batch_rejects_recalculation`.
+
+#### Changed
+- Dibangun di atas `feat/m1-crypto-models` — seluruh 15 pengujian Fase 1 tetap lulus tanpa modifikasi.
+
+---
+
+### Rumus Normalisasi SAW & 4-Level Tie-Breaker
+
+#### Normalisasi Matriks $R_{ij}$
+
+| Tipe Kriteria | Rumus Normalisasi |
+| :--- | :--- |
+| **Benefit** (C2: semakin tinggi semakin baik) | $r_{ij} = \dfrac{x_{ij}}{\max_i x_{ij}}$ |
+| **Cost** (C1, C3, C4: semakin rendah semakin baik) | $r_{ij} = \dfrac{\min_i x_{ij}}{x_{ij}}$ |
+
+#### Skor Preferensi $V_i$
+
+$$V_i = \sum_{j=1}^{4} w_j \cdot r_{ij}$$
+
+dimana $w_j$ adalah bobot beku dari `BatchCriteria.frozen_weight` (bukan `Criteria.weight` yang bisa berubah).
+
+#### 4-Level Tie-Breaker (FR-03)
+
+Ketika dua kandidat memiliki $V_i$ yang identik di batas kuota, urutan pemenang ditentukan secara deterministik bertingkat:
+
+| Level | Kriteria Tie-Break | Arah |
+| :---: | :--- | :--- |
+| **1** | Nilai normalisasi $r_{i, C1}$ (Pendapatan Keluarga) | ↑ Terbesar menang |
+| **2** | Nilai normalisasi $r_{i, C2}$ (Jumlah Tanggungan) | ↑ Terbesar menang |
+| **3** | `Evaluation.real_dependents_count` (Jumlah Tanggungan Riil) | ↑ Terbesar menang |
+| **4** | `Evaluation.created_at` (Timestamp pengusulan) + `id` ASC | ↓ Terlama menang |
+
+---
+
+### Daftar File Fase 2
+
+| File | Tanggung Jawab |
+| :--- | :--- |
+| [`./backend/core/services/__init__.py`](./backend/core/services/__init__.py) | Package marker untuk modul layanan |
+| [`./backend/core/services/saw_engine.py`](./backend/core/services/saw_engine.py) | Pipeline SAW atomik (validasi → freeze → filter TMS → normalisasi R_ij/V_i → tie-breaker → tulis hasil) |
+| [`./backend/core/services/tie_breaker.py`](./backend/core/services/tie_breaker.py) | Tie-breaker deterministik 4-level dengan penanganan `quota=0` dan `quota≥eligible` |
+| [`./backend/tests/test_saw_and_tiebreaker.py`](./backend/tests/test_saw_and_tiebreaker.py) | 18 pengujian TDD mencakup semua aturan bisnis FR-01–FR-03 dan kasus batas |
+
+---
+
+### Hasil Verifikasi Fase 2
+
+```text
+$ cd backend ; .\.venv\Scripts\python.exe -m pytest tests/test_saw_and_tiebreaker.py -v
+
+tests/test_saw_and_tiebreaker.py::test_saw_rejects_invalid_weight_sum PASSED
+tests/test_saw_and_tiebreaker.py::test_saw_accepts_valid_weight_sum PASSED
+tests/test_saw_and_tiebreaker.py::test_freeze_batch_criteria_is_idempotent PASSED
+tests/test_saw_and_tiebreaker.py::test_freeze_batch_criteria_captures_current_weights PASSED
+tests/test_saw_and_tiebreaker.py::test_post_calculation_weight_mutation_does_not_alter_frozen_snapshot PASSED
+tests/test_saw_and_tiebreaker.py::test_tms_disqualified_excluded_from_normalization PASSED
+tests/test_saw_and_tiebreaker.py::test_all_tms_batch_raises_validation_error PASSED
+tests/test_saw_and_tiebreaker.py::test_incomplete_criteria_raises_validation_error PASSED
+tests/test_saw_and_tiebreaker.py::test_saw_normalization_benefit_and_cost_formulas PASSED
+tests/test_saw_and_tiebreaker.py::test_saw_excludes_tms_freezes_weights_and_resolves_tie_breaks PASSED
+tests/test_saw_and_tiebreaker.py::test_tie_breaker_uses_real_dependents_count_at_level_3 PASSED
+tests/test_saw_and_tiebreaker.py::test_tie_breaker_uses_created_at_at_level_4 PASSED
+tests/test_saw_and_tiebreaker.py::test_quota_zero_no_index_error PASSED
+tests/test_saw_and_tiebreaker.py::test_quota_exceeds_eligible_all_pass PASSED
+tests/test_saw_and_tiebreaker.py::test_approved_batch_rejects_recalculation PASSED
+tests/test_saw_and_tiebreaker.py::test_published_batch_rejects_recalculation PASSED
+tests/test_saw_and_tiebreaker.py::test_calculate_batch_saw_transitions_status_to_calculated PASSED
+tests/test_saw_and_tiebreaker.py::test_calculate_batch_saw_creates_audit_log PASSED
+
+18 passed in 5.94s
+
+# Full suite (Fase 1 + Fase 2 + Security):
+$ .\.venv\Scripts\python.exe -m pytest tests/ -v
+38 passed in 7.12s
+```
+
+---
+
 ## Dokumentasi Branch: `feat/m1-crypto-models` (Fase 1 / Milestone 1 — Database Schema & UU PDP Cryptographic Layer)
 
 ### Mengapa Fase Ini Dibutuhkan (*Context & Why*)
