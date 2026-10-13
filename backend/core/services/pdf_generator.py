@@ -142,6 +142,7 @@ def generate_berita_acara_pdf(batch_id: int, performed_by: str = "system") -> by
         e for e in evaluations
         if e.eligibility_status == Evaluation.EligibilityStatus.DISQUALIFIED
     ]
+    tms_evals.sort(key=lambda x: (x.citizen.rt, x.citizen.full_name))
 
     # 2. Controlled NIK Decryption & Audit Logging (UU PDP No. 27/2022)
     # Perform decryption for official legal report
@@ -613,7 +614,7 @@ def generate_individual_result_pdf(evaluation_id: int) -> bytes:
         ],
         [
             Paragraph("Nomor Induk (NIK):", styles["CardLabel"]),
-            Paragraph(f"<code>{citizen.nik_masked}</code>", styles["CardValue"]),
+            Paragraph(f'<font name="Courier">{citizen.nik_masked}</font>', styles["CardValue"]),
             Paragraph("Pemeringkatan:", styles["CardLabel"]),
             Paragraph(rank_str, styles["CardValue"]),
         ],
@@ -662,10 +663,10 @@ def generate_individual_result_pdf(evaluation_id: int) -> bytes:
     ]
 
     if factors:
-        factor_items = "".join([f"<li>{str(f)}</li>" for f in factors])
+        factor_items = "<br/>".join([f"&bull; {str(f)}" for f in factors])
         narrative_paragraphs.extend([
             Spacer(1, 1 * mm),
-            Paragraph(f"<b>Faktor Penentu Utama:</b><ul>{factor_items}</ul>", styles["BodyText"]),
+            Paragraph(f"<b>Faktor Penentu Utama:</b><br/>{factor_items}", styles["BodyText"]),
         ])
 
     if full_narrative and full_narrative != summary_text:

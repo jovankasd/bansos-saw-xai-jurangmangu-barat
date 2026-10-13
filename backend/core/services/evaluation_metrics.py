@@ -40,7 +40,7 @@ CRITERION_CODE_PATTERN = re.compile(r"\bC\d+\b", re.IGNORECASE)
 FORBIDDEN_CRITERIA_TERMS = ["c99", "c5", "c6", "daya listrik", "900 va", "900va"]
 
 # Patterns for extracting Indonesian decimal comma numbers and percentages
-COMMA_DECIMAL_PATTERN = re.compile(r"\b0,\d+\b")
+COMMA_DECIMAL_PATTERN = re.compile(r"\b\d+,\d+\b")
 PERCENTAGE_PATTERN = re.compile(r"\b(\d+(?:[.,]\d+)?)\s*%\b")
 DECIMAL_DOT_PATTERN = re.compile(r"\b0\.\d+\b")
 RANK_PATTERN = re.compile(r"peringkat\s+(\d+)", re.IGNORECASE)
@@ -533,7 +533,7 @@ def export_thesis_evaluation_dataset(batch_id: int) -> dict[str, Any]:
             "explanation_source": res.explanation_source if res else "",
             "ai_primary_criterion": f_info.get("ai_primary_code", ""),
             "expected_primary_criterion": f_info.get("expected_primary_code", ""),
-            "fidelity_match": f_info.get("is_faithful", True if res and res.status == "LOLOS" else False),
+            "fidelity_match": None if eval_obj.eligibility_status == "DISQUALIFIED" else f_info.get("is_faithful", True if res and res.status == "LOLOS" else False),
             "hallucination_detected": h_info.get("has_hallucination", False),
             "hallucination_reasons": h_info.get("reasons", []),
         })
@@ -600,7 +600,7 @@ def export_thesis_evaluation_dataset_xlsx(batch_id: int) -> bytes:
             r["explanation_source"],
             r["ai_primary_criterion"] or "-",
             r["expected_primary_criterion"] or "-",
-            "YA" if r["fidelity_match"] else "TIDAK",
+            "-" if r["fidelity_match"] is None else ("YA" if r["fidelity_match"] else "TIDAK"),
             "TERDETEKSI" if r["hallucination_detected"] else "BERSIH",
             "; ".join(r["hallucination_reasons"]) if r["hallucination_reasons"] else "-"
         ]

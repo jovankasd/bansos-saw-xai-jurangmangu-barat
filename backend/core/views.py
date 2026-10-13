@@ -819,6 +819,18 @@ class PublicResultPdfView(APIView):
         return response
 
 
+from rest_framework.renderers import BaseRenderer, JSONRenderer
+
+
+class XlsxRenderer(BaseRenderer):
+    """Passthrough renderer to allow DRF format negotiation with ?format=xlsx."""
+    media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    format = "xlsx"
+
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        return data
+
+
 class SelectionEvaluationMetricsView(APIView):
     """
     GET /api/selection/{batch_id}/evaluation-metrics/
@@ -827,6 +839,7 @@ class SelectionEvaluationMetricsView(APIView):
     Supports ?format=xlsx to download the research testing workbook.
     """
     permission_classes = [IsAuthenticated, IsSuperAdminOrViewer]
+    renderer_classes = [JSONRenderer, XlsxRenderer]
 
     def get(self, request, batch_id: int):
         batch = SelectionBatch.objects.filter(pk=batch_id).first()

@@ -130,21 +130,22 @@ Fase 5 merealisasikan lapisan pelaporan resmi (*Official Reporting Layer*) dan i
 ```text
 $ backend/.venv/Scripts/python.exe -m pytest backend/tests/test_pdf_and_evaluation.py -v
 
-backend\tests\test_pdf_and_evaluation.py::test_fidelity_hallucination_metrics_and_signed_pdf_download PASSED [ 11%]
-backend\tests\test_pdf_and_evaluation.py::test_fidelity_score_formula_and_zero_division_guard PASSED [ 22%]
-backend\tests\test_pdf_and_evaluation.py::test_hallucination_rate_normalizes_indonesian_decimals_and_percentages PASSED [ 33%]
-backend\tests\test_pdf_and_evaluation.py::test_sus_questionnaire_template_and_export_dataset PASSED [ 44%]
-backend\tests\test_pdf_and_evaluation.py::test_berita_acara_pdf_generation_content_and_audit_log PASSED [ 55%]
-backend\tests\test_pdf_and_evaluation.py::test_individual_result_pdf_generation_masks_pii PASSED [ 66%]
-backend\tests\test_pdf_and_evaluation.py::test_berita_acara_pdf_api_endpoint_rbac PASSED [ 77%]
-backend\tests\test_pdf_and_evaluation.py::test_public_individual_pdf_endpoint_guards PASSED [ 88%]
-backend\tests\test_pdf_and_evaluation.py::test_evaluation_metrics_api_endpoint PASSED [100%]
+backend\tests\test_pdf_and_evaluation.py::test_fidelity_hallucination_metrics_and_signed_pdf_download PASSED [ 10%]
+backend\tests\test_pdf_and_evaluation.py::test_fidelity_score_formula_and_zero_division_guard PASSED [ 20%]
+backend\tests\test_pdf_and_evaluation.py::test_hallucination_rate_normalizes_indonesian_decimals_and_percentages PASSED [ 30%]
+backend\tests\test_pdf_and_evaluation.py::test_sus_questionnaire_template_and_export_dataset PASSED [ 40%]
+backend\tests\test_pdf_and_evaluation.py::test_berita_acara_pdf_generation_content_and_audit_log PASSED [ 50%]
+backend\tests\test_pdf_and_evaluation.py::test_individual_result_pdf_generation_masks_pii PASSED [ 60%]
+backend\tests\test_pdf_and_evaluation.py::test_berita_acara_pdf_api_endpoint_rbac PASSED [ 70%]
+backend\tests\test_pdf_and_evaluation.py::test_public_individual_pdf_endpoint_guards PASSED [ 80%]
+backend\tests\test_pdf_and_evaluation.py::test_evaluation_metrics_api_endpoint PASSED [ 90%]
+backend\tests\test_pdf_and_evaluation.py::test_evaluation_metrics_xlsx_export PASSED [100%]
 
-============================= 9 passed in 12.44s ==============================
+============================= 10 passed in 23.29s =============================
 
 # Verifikasi Regresi Keseluruhan Seluruh Suite Pengujian Backend (Task 1 s/d Task 5):
 $ backend/.venv/Scripts/python.exe -m pytest backend/ -v
-================== 98 passed, 1 warning in 90.44s (0:01:30) ===================
+================== 99 passed, 1 warning in 86.57s (0:01:26) ===================
 ```
 
 ---

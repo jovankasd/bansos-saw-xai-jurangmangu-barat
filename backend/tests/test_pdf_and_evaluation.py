@@ -458,3 +458,21 @@ def test_evaluation_metrics_api_endpoint(narrated_batch, superadmin_user, survey
     assert "sus_template" in data
     assert data["fidelity_score"] >= 95.0
     assert data["hallucination_rate"] == 0.0
+
+
+@pytest.mark.django_db
+def test_evaluation_metrics_xlsx_export(narrated_batch, superadmin_user):
+    """
+    GET /api/selection/{batch_id}/evaluation-metrics/?format=xlsx
+      - Exports multi-sheet Excel workbook
+      - Correct Content-Type and Content-Disposition headers
+    """
+    client = APIClient()
+    client.force_authenticate(user=superadmin_user)
+    res = client.get(f"/api/selection/{narrated_batch.id}/evaluation-metrics/?format=xlsx")
+    assert res.status_code == 200
+    assert res["Content-Type"] == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    assert "attachment" in res["Content-Disposition"]
+    assert "Dataset_Evaluasi_Skripsi_Batch" in res["Content-Disposition"]
+    assert len(res.content) > 1000
+
