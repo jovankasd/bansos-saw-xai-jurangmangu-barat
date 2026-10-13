@@ -4,162 +4,164 @@ Platform **Explainable Decision Support System (EDSS)** berbasis web untuk selek
 
 ---
 
-## Dokumentasi Branch: `feat/m4a-frontend-appshell` (Fase 6 / Task 6 — Frontend Scaffolding, Civic Precision Theme, & 3-Tier Responsive AppShell - Milestone 4A)
+## Dokumentasi Branch: `feat/m4b-public-portal` (Fase 7 / Task 7 — Public Citizen Portal `/cek-bansos`, Masking PII, CriteriaGapChart C1..C4, & Staff Login `/admin/login` - Milestone 4B)
 
 ### Mengapa Fase Ini Dibutuhkan (*Context & Why*)
 
-Fase 6 merealisasikan fondasi antarmuka pengguna web (*User Interface Scaffolding & Responsive Shell*) sesuai amanat **[AGENTS.md Bagian 2](./AGENTS.md)**, **[ADR-005](./docs/decisions/ADR-005-responsive-ui-architecture-and-stitch-review-gate.md)**, dan **PRD Bagian 3 & Bagian 12**:
+Fase 7 mengimplementasikan portal transparansi publik bagi warga pemohon bansos (`/cek-bansos`) serta gerbang masuk staf adjudikasi (`/admin/login`) dengan mematuhi prinsip akuntabilitas terbuka, keamanan data kependudukan (**UU PDP No. 27/2022**), dan arahan rancangan **Civic Precision**:
 
-1. **Penerapan Desain *Civic Precision*:**
-   - Membangun fondasi frontend modern menggunakan **React 18**, **Vite 6**, dan **Tailwind CSS v3.4** dengan palet resmi *Emerald Civic* (`#003426` Primary, `#0f4c3a` Primary Container, `#f8f9ff` Surface Canvas).
-   - Menerapkan tipografi dua pilar (*Dual-Typeface Rigor*): font **`Hanken Grotesk`** untuk teks naratif, judul otoritas institusional, dan navigasi; serta font monospace **`JetBrains Mono`** untuk data presisi teknis (NIK masked, ID KPM, skor desimal SAW, bobot kriteria beku, dan status kuota).
-2. **Kepatuhan Protokol Wajib Review Desain & Eliminasi Bug `.stitch`:**
-   - Mematuhi aturan ketat *Mandatory Design Review Gate*: prototipe mentah di `.stitch/designs/*.html` tidak disalin mentah-mentah (*no blind copy-paste*).
-   - Memperbaiki bug *clipping* pada Topbar: tombol aksi dan profil yang sebelumnya terpotong keluar layar pada prototipe `.stitch` diperbaiki menggunakan tata letak responsif bebas overflow.
-   - Menghapus fitur ilegal yang dilarang pada PRD Bagian 12, seperti tombol *"Sinkronisasi DTKS"* (sistem Bansos JUBAR beroperasi mandiri di tingkat kelurahan tanpa integrasi langsung API Kemensos).
-3. **Arsitektur Responsif 3-Tier (Mobile, Tablet, Desktop):**
-   - Menghadirkan komponen shell terpadu `<AppShell />` yang menjamin antarmuka dapat digunakan dengan nyaman oleh Ketua RT di lapangan menggunakan Handphone (`< 768px`) atau Tablet (`768px – 1023px`), maupun Kasi Kesos dan Lurah di kantor kelurahan menggunakan Desktop (`>= 1024px`).
-4. **Penegakan Role-Based Access Control (RBAC) pada Navigasi:**
-   - Mengintegrasikan navigasi berbasis hak akses staf:
-     - **`SUPER_ADMIN` (Kasi Kesejahteraan Sosial):** Memiliki akses penuh termasuk tombol mutasi *"Eksekusi Batch SAW"* dan menu *"Konfigurasi Bobot SAW"*.
-     - **`SURVEYOR` (Ketua RT):** Dibatasi hanya pada menu pendataan dan usulan warga di wilayah RT-nya, dilarang mengakses tombol mutasi SAW dan konfigurasi bobot.
-     - **`VIEWER` (Lurah Jurangmangu Barat):** Berperan sebagai peninjau dan pengesah Berita Acara, dilarang keras melihat tombol mutasi *"Eksekusi Batch SAW"* maupun menu konfigurasi bobot.
+1. **Akses Mandiri Passwordless untuk Warga (PRD Bagian 12.1):**
+   - Warga tidak dibebani akun pendaftaran, kata sandi, atau verifikasi email yang berpotensi menyulitkan warga lansia. Verifikasi dilakukan secara mandiri menggunakan kombinasi 16 digit NIK + 4 digit terakhir nomor KK + CAPTCHA Cloudflare Turnstile.
+2. **Perlindungan Privasi Berlapis & Zero-PII Display:**
+   - Seluruh identitas warga yang ditampilkan di layar publik wajib disamarkan secara visual: NIK disamarkan menjadi `367403******0002` dan nama kepala keluarga menjadi `Ahmad S******`.
+   - Hanya batch seleksi yang telah disahkan Lurah dan berstatus `Published` yang dapat diakses oleh publik. Permintaan status terhadap batch sebelum publikasi menghasilkan respons `404 Not Found` guna mencegah kebocoran ranking prematur.
+3. **Koreksi Deviasi Prototipe `.stitch` (Review Desain #2 & AGENTS.md Bagian 2):**
+   - **Penghapusan Form Sanggahan Dua Arah (PRD Bagian 12.2):** Prototipe mentah `.stitch` memuat form sanggahan dan pengaduan anonim interaktif di portal publik. Sesuai batasan sistem resmi (*Not Doing*), form tersebut dihapus total dan digantikan oleh *Kartu Edukasi Prosedur Advokasi Offline ke Ketua RT* untuk pemutakhiran data pada periode DTKS berikutnya.
+   - **Penyeragaman Kriteria $C_1$–$C_4$:** Mengoreksi teks kriteria ke-4 pada prototipe mentah ("Daya Listrik 900 VA") menjadi kriteria resmi **"Kepemilikan Aset"** ($C_4$, `COST`, Bobot 20%).
+   - **Tautan Unduh PDF Resmi Ber-Token:** Tombol unduh lembar hasil transparansi dihubungkan langsung ke endpoint bertanda tangan kriptografis (`/api/public/result-pdf/?token=${download_token}`) dengan QR Code verifikasi keabsahan.
+4. **Visualisasi Kesenjangan Kriteria Terbobot (`CriteriaGapChart.tsx`):**
+   - Menghadirkan bilah perbandingan horizontal yang intuitif bagi warga awam: membandingkan capaian nilai normalisasi pemohon ($r_{ij} \times 100$) terhadap rata-rata capaian keluarga yang berhasil lolos kuota ($\bar{r}_j^{\text{lolos}} \times 100$) lengkap dengan selisih poin ($\Delta$).
+5. **Autentikasi Staf Berbasis Peran (`LoginPage.tsx`):**
+   - Gerbang masuk staf kelurahan (Kasi Kesos / Super Admin, Surveyor RT, dan Lurah / Viewer) menggunakan SimpleJWT, penyimpanan token aman di context dan localStorage, serta pengalihan rute otomatis sesuai hak akses.
 
 ---
 
-### Changelog Fase 6 (Task 6)
+### Changelog Fase 7 (Task 7)
 
 #### Added
-- **Frontend Scaffolding & Configuration:**
-  - [`frontend/package.json`](./frontend/package.json): Dependensi inti React 18, React Router v6, Tailwind CSS, Lucide React, Axios, Vitest, dan React Testing Library.
-  - [`frontend/vite.config.ts`](./frontend/vite.config.ts): Konfigurasi build Vite, path alias `@/`, proxy backend `/api` ke `localhost:8000`, dan konfigurasi test runner Vitest jsdom.
-  - [`frontend/tailwind.config.js`](./frontend/tailwind.config.js): Konfigurasi palet warna *Civic Precision*, ekstensi font `Hanken Grotesk` dan `JetBrains Mono`, serta radius sudut terkalibrasi.
-  - [`frontend/src/index.css`](./frontend/src/index.css): Import font Google Fonts, utilitas scrollbar kustom, dan reset CSS kanvas.
-- **State Management & Klien API:**
-  - [`frontend/src/types/auth.ts`](./frontend/src/types/auth.ts): Definisi kontrak tipe TypeScript untuk `UserRole` (`SUPER_ADMIN`, `SURVEYOR`, `VIEWER`), objek `User`, dan token sesi.
-  - [`frontend/src/context/AuthContext.tsx`](./frontend/src/context/AuthContext.tsx): Context Provider untuk autentikasi staf, penyimpanan JWT token di localStorage, auto-login, dan mutasi logout.
-  - [`frontend/src/lib/api.ts`](./frontend/src/lib/api.ts): Klien Axios singleton dengan interceptor penyisipan otomatis header `Authorization: Bearer <token>` dan mekanisme refresh token.
-- **Komponen Tata Letak 3-Tier (<AppShell />):**
-  - [`frontend/src/components/layout/Sidebar.tsx`](./frontend/src/components/layout/Sidebar.tsx): Sidebar persisten (Desktop) dan slide-over drawer (Mobile/Tablet) dengan transisi mulus, penutup backdrop gelap, shortcut tombol keyboard Escape, kartu identitas staf, dan penyaringan menu RBAC otomatis.
-  - [`frontend/src/components/layout/Topbar.tsx`](./frontend/src/components/layout/Topbar.tsx): Topbar navigasi atas dengan tombol Hamburger ramah sentuhan (`min-h-[44px]`), breadcrumb hierarkis, indikator denyut Celery worker, badge peran staf, dan bebas clipping.
-  - [`frontend/src/components/layout/AppShell.tsx`](./frontend/src/components/layout/AppShell.tsx): Komponen pembungkus master layout yang mengintegrasikan Sidebar, Topbar, dan area kanvas konten utama dengan penyesuaian margin dinamis (`lg:pl-64`).
+- **Komponen Visualisasi Publik:**
+  - [`frontend/src/components/public/CriteriaGapChart.tsx`](./frontend/src/components/public/CriteriaGapChart.tsx): Modul grafik perbandingan kesenjangan kriteria $C_1$ s/d $C_4$ dengan progress bar komparatif (skor pemohon vs garis batas benchmark rata-rata penerima lolos), indikator selisih poin ($\Delta$), serta legenda terkalibrasi.
+- **Halaman Portal Publik Warga:**
+  - [`frontend/src/pages/PublicPortalPage.tsx`](./frontend/src/pages/PublicPortalPage.tsx): Antarmuka pencarian mandiri status KPM dengan formulir verifikasi 16 digit NIK + 4 digit KK, simulasi widget CAPTCHA, kartu dossier keputusan (LOLOS, TIDAK_LOLOS, DISKUALIFIKASI_TMS), 4 bagian narasi transparansi XAI (Ringkasan, Counterfactual, Pernyataan Sikap, Rekomendasi), jadwal zonasi resmi penyaluran per RW, dan kartu advokasi offline RT.
+- **Halaman Login Staf Kelurahan:**
+  - [`frontend/src/pages/LoginPage.tsx`](./frontend/src/pages/LoginPage.tsx): Antarmuka masuk staf bernuansa *Civic Card Shield*, input username dan password dengan fitur show/hide, penanganan error 401/403/429, serta integrasi role-based redirect ke `/admin/dashboard`, `/admin/surveyor`, atau `/admin/approval`.
+- **Tipe Data Kontrak Publik:**
+  - [`frontend/src/types/public.ts`](./frontend/src/types/public.ts): Definisi antarmuka TypeScript untuk `CriterionGapItem`, `ExplanationData`, `ApplicantMasked`, `SelectionResultPublic`, dan `PublicCheckStatusResponse`.
 - **Suite Pengujian TDD:**
-  - [`frontend/src/test-utils.tsx`](./frontend/src/test-utils.tsx): Helper `renderWithProviders` untuk membungkus pengujian komponen dalam `BrowserRouter` dan `AuthContext` dengan mocking peran pengguna dinamis.
-  - [`frontend/src/__tests__/AppShell.responsive.test.tsx`](./frontend/src/__tests__/AppShell.responsive.test.tsx): 4 skenario uji komprehensif menguji interaksi buka-tutup drawer mobile, penutupan via backdrop/tombol silang, penegakan isolasi aksi mutasi pada peran `VIEWER` (Lurah), ketersediaan modul lengkap untuk `SUPER_ADMIN`, dan pembatasan wilayah RT untuk peran `SURVEYOR`.
+  - [`frontend/src/__tests__/PublicPortalPage.test.tsx`](./frontend/src/__tests__/PublicPortalPage.test.tsx): 6 skenario pengujian komprehensif memvalidasi formulir verifikasi, kepatuhan batas "Not Doing" (ketiadaan form sanggahan dua arah), rendering dossier hasil dengan penyamaran PII, penanganan ragam status (LOLOS vs TIDAK_LOLOS), penanganan error keamanan (403, 429 lockout, 404), serta alur login staf.
+
+#### Security
+- **Perlindungan Anti-Enumerasi & PII Masking:**
+  - Nama dan NIK selalu ditampilkan dalam format masking (`Ahmad S******` & `367403******0002`).
+  - Respons 404 generik mencegah penyerang memetakan keberadaan NIK warga jika batch belum dipublikasikan atau nomor KK tidak cocok.
+- **Penanganan Lockout & Rate Limit:**
+  - Notifikasi antarmuka terstandarisasi saat IP melampaui 5 permintaan/menit atau NIK dikunci selama 15 menit akibat 5 kali kegagalan verifikasi nomor KK beruntun.
+- **Signed Download Token:**
+  - Tombol unduh lembar ketetapan PDF menggunakan token bertanda tangan `TimestampSigner`, mencegah pengunduhan acak tanpa otorisasi.
 
 #### Changed
-- **Topbar Action Grouping:** Menghilangkan potensi teks dan tombol terpotong pada layar tablet/kecil dengan pengelompokan fleksibel dan penghapusan tombol ilegal *"Sinkronisasi DTKS"*.
-- **Penyatuan Menu Navigasi:** Menyelaraskan seluruh label navigasi yang tidak konsisten pada file prototipe `.stitch` ke dalam skema terpadu yang mematuhi PRD.
+- **Pembaruan Rute Aplikasi ([`frontend/src/App.tsx`](./frontend/src/App.tsx)):**
+  - Mendaftarkan rute publik `/` dan `/cek-bansos` ke `<PublicPortalPage />`.
+  - Mendaftarkan rute otentikasi `/admin/login` ke `<LoginPage />`.
+- **Koreksi Deviasi Desain `.stitch`:**
+  - Menghapus komponen textarea dan tombol "Kirim Sanggahan Resmi" dari portal warga.
+  - Memperbarui label kriteria ke-4 menjadi "Kepemilikan Aset" ($C_4$).
 
 ---
 
-### Arsitektur Responsif 3-Tier `<AppShell />`
+### Arsitektur Alur Verifikasi Portal Publik & Proteksi Berlapis
 
 ```
   ┌────────────────────────────────────────────────────────────────────────┐
-  │                           TAMPILAN DESKTOP (>= 1024px)                 │
-  │  ┌───────────────┬──────────────────────────────────────────────────┐  │
-  │  │ SIDEBAR FIXED │ TOPBAR (Breadcrumbs, Batch Selector, Celery Pulse)│  │
-  │  │ (lg:w-64)     ├──────────────────────────────────────────────────┤  │
-  │  │               │                                                  │  │
-  │  │ - Logo & Brand│ MAIN WORKBENCH CANVAS (lg:pl-64)                 │  │
-  │  │ - Action SAW  │                                                  │  │
-  │  │ - Menu Navigasi│ - Bento Metric Cards (xl:grid-cols-4)            │  │
-  │  │ - Profil Staf │ - Master-Detail Tables & XAI Panel               │  │
-  │  │               │                                                  │  │
-  │  └───────────────┴──────────────────────────────────────────────────┘  │
+  │                   ALUR VERIFIKASI WARGA (/cek-bansos)                  │
   └────────────────────────────────────────────────────────────────────────┘
-
-  ┌────────────────────────────────────────────────────────────────────────┐
-  │                           TAMPILAN MOBILE (< 768px)                    │
-  │  ┌──────────────────────────────────────────────────────────────────┐  │
-  │  │ TOPBAR: [≡ Hamburger (44px)] EDSS JUBAR ... [Worker Ready] [Role]│  │
-  │  ├──────────────────────────────────────────────────────────────────┤  │
-  │  │ KONTEN UTAMA:                                                    │  │
-  │  │ - Reflow Vertikal: Grid 1 Kolom (grid-cols-1)                    │  │
-  │  │ - Tabel dengan Scroll Container Halus (Zero Horizontal Leak)     │  │
-  │  └──────────────────────────────────────────────────────────────────┘  │
-  │                                                                        │
-  │  Saat Hamburger ditekan:                                               │
-  │  [ BACKDROP GELAP (bg-black/60) ]                                      │
-  │    ┌────────────────────────┐                                          │
-  │    │ DRAWER SLIDE-OVER      │ ◄── Animasi slide dari kiri              │
-  │    │ [X Tutup] Logo EDSS    │                                          │
-  │    │ Navigasi Menu & Profil │                                          │
-  │    └────────────────────────┘                                          │
-  └────────────────────────────────────────────────────────────────────────┘
+                                     │
+                                     ▼
+        Input: [ NIK 16 Digit ] + [ 4 Digit KK ] + [ CAPTCHA Turnstile ]
+                                     │
+                                     ▼
+                 POST /api/public/check-status/
+                                     │
+           ┌─────────────────────────┴─────────────────────────┐
+           │                                                   │
+     [ HTTP 403 / 429 ]                                  [ HTTP 200 OK ]
+           │                                                   │
+  - Gagal CAPTCHA                                     - Batch Status: "Published"
+  - Rate limit (5 req/menit)                          - NIK Digest Valid & KK Cocok
+  - Lockout 15 menit (5x fail)                        - Reset Counter Kegagalan NIK
+           │                                                   │
+           ▼                                                   ▼
+  [ Alert Merah Informatif ]                          [ DOSSIER TRANSPARANSI ]
+                                                      - NIK Masked: 367403******0002
+                                                      - Nama Masked: Ahmad S******
+                                                      - Status: LOLOS / TIDAK_LOLOS / TMS
+                                                      - Skor Vi vs Ambang Cutoff
+                                                      - 4 Bagian Narasi XAI Gemini
+                                                      - CriteriaGapChart (C1..C4)
+                                                      - Unduh PDF Resmi (Signed Token)
+                                                      - Prosedur Pelaporan Offline ke RT
 ```
-
-#### Matriks Hak Akses Menu & Aksi Navigasi (RBAC)
-
-| Menu / Komponen | Rute Halaman | `SUPER_ADMIN` (Kasi Kesos) | `SURVEYOR` (Ketua RT) | `VIEWER` (Lurah) |
-| :--- | :--- | :---: | :---: | :---: |
-| **Tombol Eksekusi Batch SAW** | Action Mutasi | **Tampil** | **Disembunyikan** | **Disembunyikan** |
-| **Dashboard Adjudikasi** | `/admin/dashboard` | **Tampil** | Dashboard RT | **Tampil** |
-| **Data Warga & Import Excel** | `/admin/citizens` | **Tampil** (Semua RT) | **Tampil** (Khusus RT-nya) | **Disembunyikan** |
-| **Dossier & Seleksi SAW** | `/admin/selection` | **Tampil** (Edit & Hitung) | Status Usulan RT | **Tampil** (Mode Baca) |
-| **XAI Model Explainability** | `/admin/xai` | **Tampil** | **Disembunyikan** | **Tampil** |
-| **Pengesahan Berita Acara** | `/admin/berita-acara` | **Tampil** | **Disembunyikan** | **Tampil** (Unduh PDF) |
-| **Konfigurasi Bobot SAW** | `/admin/criteria` | **Tampil** | **Disembunyikan** | **Disembunyikan** |
-| **Evaluasi Skripsi** | `/admin/evaluation` | **Tampil** | **Disembunyikan** | **Disembunyikan** |
-| **Audit Log & Integritas** | `/admin/audit` | **Tampil** | **Disembunyikan** | **Tampil** |
 
 ---
 
-### Daftar File Fase 6
+### Daftar File Fase 7
 
 | File | Tanggung Jawab |
 | :--- | :--- |
-| [`./frontend/package.json`](./frontend/package.json) | Konfigurasi dependensi npm dan script eksekusi Vite/Vitest |
-| [`./frontend/vite.config.ts`](./frontend/vite.config.ts) | Konfigurasi build Vite, reverse proxy backend, dan setup Vitest jsdom |
-| [`./frontend/tailwind.config.js`](./frontend/tailwind.config.js) | Registrasi token desain *Civic Precision*, warna, font, dan radius |
-| [`./frontend/src/index.css`](./frontend/src/index.css) | Global stylesheet, import font Hanken Grotesk & JetBrains Mono |
-| [`./frontend/src/types/auth.ts`](./frontend/src/types/auth.ts) | Definisi tipe TypeScript peran pengguna (`SUPER_ADMIN`, `SURVEYOR`, `VIEWER`) |
-| [`./frontend/src/lib/api.ts`](./frontend/src/lib/api.ts) | Client HTTP Axios dengan interceptor JWT Bearer Token |
-| [`./frontend/src/context/AuthContext.tsx`](./frontend/src/context/AuthContext.tsx) | Provider context autentikasi staf, role switcher, dan mutasi logout |
-| [`./frontend/src/components/layout/Sidebar.tsx`](./frontend/src/components/layout/Sidebar.tsx) | Navigasi sidebar terpadu (Desktop) dan slide-over drawer (Mobile) dengan filter RBAC |
-| [`./frontend/src/components/layout/Topbar.tsx`](./frontend/src/components/layout/Topbar.tsx) | Navigasi atas dengan tombol hamburger, breadcrumb dinamis, dan role badge |
-| [`./frontend/src/components/layout/AppShell.tsx`](./frontend/src/components/layout/AppShell.tsx) | Shell pembungkus halaman dashboard dengan tata letak responsif 3-Tier |
-| [`./frontend/src/test-utils.tsx`](./frontend/src/test-utils.tsx) | Helper pengujian Vitest + RTL dengan pembungkus router dan context auth |
-| [`./frontend/src/__tests__/AppShell.responsive.test.tsx`](./frontend/src/__tests__/AppShell.responsive.test.tsx) | Suite pengujian TDD interaksi buka-tutup drawer mobile dan pengujian RBAC |
+| [`./frontend/src/types/public.ts`](./frontend/src/types/public.ts) | Definisi kontrak tipe TypeScript untuk respons status publik dan grafik komparasi |
+| [`./frontend/src/components/public/CriteriaGapChart.tsx`](./frontend/src/components/public/CriteriaGapChart.tsx) | Komponen grafik gap horizontal kriteria $C_1$–$C_4$ dengan penanda benchmark rata-rata |
+| [`./frontend/src/pages/PublicPortalPage.tsx`](./frontend/src/pages/PublicPortalPage.tsx) | Halaman portal transparansi bansos warga dengan formulir verifikasi dan dossier hasil |
+| [`./frontend/src/pages/LoginPage.tsx`](./frontend/src/pages/LoginPage.tsx) | Halaman autentikasi staf kelurahan (SimpleJWT) dengan pengalihan peran |
+| [`./frontend/src/App.tsx`](./frontend/src/App.tsx) | Konfigurasi rute aplikasi React Router untuk portal publik dan panel admin |
+| [`./frontend/src/__tests__/PublicPortalPage.test.tsx`](./frontend/src/__tests__/PublicPortalPage.test.tsx) | Suite pengujian TDD Vitest untuk alur portal publik dan login staf |
 
 ---
 
 ### Hasil Verifikasi Test
 
 ```text
-$ npm --prefix frontend test -- --run src/__tests__/AppShell.responsive.test.tsx
+$ npm --prefix frontend test -- --run
 
  RUN  v2.1.9 D:/Kuliah/SKRIPSI/BANSOS_SAW+LLM/frontend
 
- ✓ src/__tests__/AppShell.responsive.test.tsx (4 tests) 268ms
+ ✓ src/__tests__/AppShell.responsive.test.tsx (4 tests) 386ms
    ✓ toggles mobile drawer via hamburger button and closes via backdrop
    ✓ enforces RBAC: hides mutation actions from Viewer (Lurah) and displays approval menu
    ✓ enforces RBAC: allows Super Admin to see all governance modules including SAW execution and weight config
    ✓ enforces RBAC: scopes Surveyor (Ketua RT) strictly to RT operations
 
- Test Files  1 passed (1)
-      Tests  4 passed (4)
-   Start at  17:35:46
-   Duration  1.86s
+ ✓ src/__tests__/PublicPortalPage.test.tsx (6 tests) 436ms
+   ✓ renders NIK + 4-digit KK + CAPTCHA verification form and excludes prohibited two-way appeal form
+   ✓ submits verification and renders full dossier with masked PII, 4-part XAI narrative, and C1..C4 gap chart
+   ✓ renders LOLOS status correctly with approval badge
+   ✓ handles lockout and error scenarios (403, 429, 404)
+   ✓ renders login form and authenticates staff successfully
+   ✓ displays error banner on authentication failure
+
+ Test Files  2 passed (2)
+      Tests  10 passed (10)
+   Start at  17:53:31
+   Duration  2.12s
 
 # Verifikasi Kompilasi TypeScript & Build Produksi Vite:
 $ npm --prefix frontend run build
 
 vite v6.4.4 building for production...
 transforming...
-✓ 1585 modules transformed.
+✓ 1644 modules transformed.
 rendering chunks...
 computing gzip size...
 dist/index.html                   0.99 kB │ gzip:  0.55 kB
-dist/assets/index-BuKRZx9V.css   16.09 kB │ gzip:  3.87 kB
-dist/assets/index-6PmxP5Vj.js   184.65 kB │ gzip: 59.21 kB
-✓ built in 2.43s
+dist/assets/index-BLoSdA0E.css   25.48 kB │ gzip:  5.30 kB
+dist/assets/index-DN_S2L_Z.js   276.13 kB │ gzip: 87.56 kB
+✓ built in 2.38s
 ```
 
 ---
 
 ## Dokumentasi Branch Sebelumnya
+
+<details>
+<summary><strong>Fase 6: feat/m4a-frontend-appshell (Frontend Scaffolding, Civic Precision Theme, & 3-Tier Responsive AppShell - Milestone 4A)</strong></summary>
+
+### Mengapa Fase Ini Dibutuhkan
+Fase 6 merealisasikan fondasi antarmuka pengguna web (*User Interface Scaffolding & Responsive Shell*) sesuai amanat PRD Bagian 3 & 12, AGENTS.md Bagian 2, dan ADR-005:
+- Penerapan tema desain *Civic Precision* (React 18, Vite 6, Tailwind CSS, `#003426` Emerald Civic, font `Hanken Grotesk` & `JetBrains Mono`).
+- Penegakan tata letak responsif 3-Tier (`<AppShell />`): Off-Canvas Drawer pada Handphone (`< 768px`) dan Tablet (`768px - 1023px`), serta Sidebar tetap (`lg:w-64`) pada Desktop (`>= 1024px`).
+- Penegakan Role-Based Access Control (RBAC) pada menu navigasi: tombol mutasi SAW disembunyikan untuk Lurah (`VIEWER`) dan Surveyor RT.
+- Perbaikan bug *clipping* pada header Topbar dan eliminasi tombol ilegal *"Sinkronisasi DTKS"*.
+
+</details>
 
 <details>
 <summary><strong>Fase 5: feat/m5-pdf-reporting (PDF Berita Acara Generator with QR & TMS Appendix & Thesis Evaluation Metrics)</strong></summary>

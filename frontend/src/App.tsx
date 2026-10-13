@@ -2,6 +2,8 @@ import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { AppShell } from "./components/layout/AppShell";
+import { PublicPortalPage } from "./pages/PublicPortalPage";
+import { LoginPage } from "./pages/LoginPage";
 
 // Placeholder Dashboard View for Task 6 Verification
 const DashboardPlaceholder: React.FC = () => {
@@ -30,10 +32,11 @@ export const App: React.FC = () => {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="/" element={<Navigate to="/cek-bansos" replace />} />
+          <Route path="/cek-bansos" element={<PublicPortalPage />} />
+          <Route path="/admin/login" element={<LoginPage />} />
           <Route path="/admin/dashboard" element={<DashboardPlaceholder />} />
           <Route path="/admin/*" element={<DashboardPlaceholder />} />
-          <Route path="/cek-bansos" element={<div>Portal Publik Cek Bansos</div>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
