@@ -8,6 +8,8 @@ import { CriteriaManagementPage } from "./pages/dashboard/CriteriaManagementPage
 import { SurveyorInputPage } from "./pages/dashboard/SurveyorInputPage";
 import { SawRankingPage } from "./pages/dashboard/SawRankingPage";
 import { XaiGeneratorPage } from "./pages/dashboard/XaiGeneratorPage";
+import { LurahApprovalPage } from "./pages/dashboard/LurahApprovalPage";
+import { ThesisEvaluationPage } from "./pages/dashboard/ThesisEvaluationPage";
 
 export const App: React.FC = () => {
   return (
@@ -22,6 +24,8 @@ export const App: React.FC = () => {
           <Route path="/admin/citizens" element={<SurveyorInputPage />} />
           <Route path="/admin/selection" element={<SawRankingPage />} />
           <Route path="/admin/xai" element={<XaiGeneratorPage />} />
+          <Route path="/admin/berita-acara" element={<LurahApprovalPage />} />
+          <Route path="/admin/evaluation" element={<ThesisEvaluationPage />} />
           <Route path="/admin/*" element={<ExecutiveDashboardPage />} />
         </Routes>
       </BrowserRouter>
