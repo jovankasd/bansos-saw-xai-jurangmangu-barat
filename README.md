@@ -2,87 +2,134 @@
 
 Platform **Explainable Decision Support System (EDSS)** berbasis web untuk seleksi Keluarga Penerima Manfaat (KPM) Bantuan Sosial di **Kelurahan Jurangmangu Barat, Kecamatan Pondok Aren, Kota Tangerang Selatan**.
 
-Sistem ini menggabungkan perhitungan matematis deterministik **Simple Additive Weighting (SAW)** + **Hierarchical Tie-Breaker** dengan **Google Gemini Flash API** sebagai *Explainer Layer* berbahasa Indonesia, dilengkapi pelindungan kriptografi **AES-256-GCM & HMAC-SHA256** sesuai **UU PDP No. 27 Tahun 2022**.
+---
+
+## Dokumentasi Branch: `feat/m1-crypto-models` (Fase 1 / Milestone 1 — Database Schema & UU PDP Cryptographic Layer)
+
+### Mengapa Fase Ini Dibutuhkan (*Context & Why*)
+Sesuai **UU PDP No. 27 Tahun 2022** dan **[ADR-002](./docs/decisions/ADR-002-dual-layer-nik-crypto-and-zero-pii-xai.md)**, Nomor Induk Kependudukan (NIK) adalah data pribadi spesifik yang dilarang disimpan dalam bentuk *plaintext* di basis data maupun dikirim ke API eksternal. Namun, sistem tetap membutuhkan:
+1. **Pencarian warga instan ($O(1)$)** saat verifikasi di Portal Publik dan deduplikasi import Excel tanpa mendekripsi seluruh baris tabel (`HMAC-SHA256` di kolom `nik_hash`).
+2. **Dekripsi terkontrol** khusus saat pencetakan PDF Berita Acara resmi kelurahan (`AES-256-GCM` di kolom `nik_encrypted`).
+3. **Pembekuan bobot kriteria per batch** ([ADR-003](./docs/decisions/ADR-003-immutable-criteria-snapshot-tms-gate-and-tie-breaker.md)) pada tabel `BATCH_CRITERIA` agar perubahan bobot di masa depan tidak merusak histori seleksi lama.
 
 ---
 
-## Fitur Utama
+### Changelog Fase 1 (Milestone 1)
 
-1. **Manajemen Kriteria & Snapshot (`FR-01`):** Pengaturan bobot kriteria $C_1$–$C_4$ dengan validasi $\sum w_j = 1.00$ dan pembekuan bobot otomatis ke tabel `BATCH_CRITERIA` saat kalkulasi dimulai.
-2. **Ingest Data RT & Gerbang Filter TMS (`FR-02`):** Input manual per individu dan *batch import* Excel (`.xlsx`) oleh Ketua RT, dilengkapi gerbang diskualifikasi administratif (Tidak Memenuhi Syarat / TMS: ASN/TNI/Polri, PKH Ganda, Pindah, Meninggal) agar tidak mendistorsi matriks normalisasi SAW.
-3. **Engine SAW & Hierarchical Tie-Breaker (`FR-03`):** Perhitungan matriks normalisasi $R_{ij}$ dan preferensi $V_i$ yang 100% identik dengan hitungan manual Excel, disertai *tie-breaker* bertingkat ($C_1 \rightarrow C_2 \rightarrow \text{Tanggungan Riil} \rightarrow \text{Timestamp}$).
-4. **Zero-PII Asynchronous XAI & Fallback Deterministik (`FR-04`, `FR-05`):** Pembangkitan narasi penjelasan *counterfactual* menggunakan Gemini Flash di latar belakang (*background worker*) tanpa mengirim data identitas warga (100% *PII-masked*), serta *fallback* otomatis berbasis aturan (`deterministic_fallback.py`) jika API mengalami *rate-limit* atau *offline*.
-5. **Portal Publik Anti-Bot (`/cek-bansos` — `FR-06`):** Pengecekan mandiri oleh warga tanpa registrasi akun menggunakan 16 digit NIK + 4 digit terakhir No KK + CAPTCHA, dilindungi *rate limit* 5 req/menit/IP dan *lockout* 15 menit setelah 5 kegagalan per NIK.
-6. **Pelaporan Resmi & Modul Evaluasi Skripsi (`FR-07`, `FR-08`):** Cetak PDF Berita Acara berkode QR + lampiran warga TMS, serta dasbor pengujian ilmiah (*SAW Accuracy*, *Fidelity Score* $\ge 95\%$, *Hallucination Rate* $0\%$, dan ekspor kuesioner SUS).
-7. **Desain Responsif 3 Ukuran Layar (*Civic Precision*):** Fleksibel dibuka di **Handphone/Mobile (`< 768px`)**, **Tablet (`768px–1023px`)**, dan **Browser/Desktop (`>= 1024px`)**.
+#### Added
+- **Layanan Kriptografi UU PDP ([`backend/core/crypto.py`](./backend/core/crypto.py)):**
+  - `encrypt_nik()` & `decrypt_nik()`: Enkripsi *at-rest* `AES-256-GCM` dengan *assertion* ketat kunci 32-byte, *nonce* CSPRNG 12-byte (`os.urandom(12)`), dan validasi *canonical base64url* 60 karakter (44 byte: `12B nonce + 16B NIK + 16B GCM tag`).
+  - `hash_nik()`: Indeks pencarian deterministik 64 karakter hex berbasis `HMAC-SHA256` dengan *server-side pepper* (`NIK_HMAC_PEPPER`).
+  - `mask_nik()` & `mask_name()`: Masking visual identitas (`367403******0002`, `"Ahmad S******"` untuk nama multi-kata, `"Su*****"` untuk mononim).
+  - `sign_pdf_download_token()` & `verify_pdf_download_token()`: Token unduhan PDF individual bertanda tangan `TimestampSigner` dengan masa berlaku 15 menit (`max_age=900`).
+- **Model Basis Data 9 Tabel PRD + `StaffUser` ([`backend/core/models.py`](./backend/core/models.py)):**
+  - Implementasi penuh skema relasional PRD Bagian 9 beserta `UniqueConstraint` dan `AliasQuerySet` untuk kompatibilitas nama kolom PRD.
+- **Management Command Seeder ([`backend/core/management/commands/seed_initial_data.py`](./backend/core/management/commands/seed_initial_data.py)):**
+  - Pengisian idempoten kriteria `C1–C4`, sub-kriteria Crips `1–5`, akun staf demo (`SUPER_ADMIN`, `SURVEYOR`, `VIEWER`), dan periode awal.
+- **Suite Pengujian TDD & Adversarial ([`backend/tests/test_crypto_and_models.py`](./backend/tests/test_crypto_and_models.py)):**
+  - 15 pengujian otomatis yang mencakup roundtrip kriptografi, *tampered/malleable ciphertext*, digit Unicode non-ASCII, idempotensi upsert, dan proteksi ORM.
+
+#### Security
+- **Proteksi At-Rest Menyeluruh pada ORM (`Citizen.clean()` & `CitizenQuerySet`):** Menolak penyimpanan 16 digit NIK *plaintext* atau *ciphertext* tidak valid baik melalui `.save()`, `.bulk_create()`, maupun `QuerySet.update()`.
+- **Audit Trail Zero-PII (`AuditLog.clean()`):** Mencegah pencatatan NIK *plaintext* ke tabel `audit_log`.
+- **Audit Subagent `security-auditor`:** Lulus pemeriksaan kepatuhan UU PDP No. 27/2022 dengan **0 temuan Critical/High/Medium**.
+
+#### Changed
+- **Penyelarasan Atribut `C3` (Kondisi Tempat Tinggal):** Ditetapkan sebagai `COST` (bobot `0.25`) sesuai PRD Bagian 8.1, dengan urutan Crips `1` (*Tidak Layak/Darurat* $\rightarrow r = 1.00$) hingga Crips `5` (*Sangat Layak/Permanen* $\rightarrow r = 0.20$).
 
 ---
 
-## Quick Start
+### Arsitektur Skema Basis Data (9 Tabel PRD + `StaffUser`)
 
-### Prasyarat
-- Python 3.11+
-- Node.js 20+ & npm
-- Kunci API Google Gemini (`GEMINI_API_KEY` — opsional saat pengembangan karena sistem memiliki `deterministic_fallback.py`)
+| Model / Tabel | Tanggung Jawab Utama & Constraint |
+| :--- | :--- |
+| `StaffUser` (`staff_user`) | Akun internal kelurahan dengan RBAC (`SUPER_ADMIN`, `SURVEYOR` per RT, `VIEWER`). |
+| `Criteria` (`criteria`) | Master kriteria `C1–C4` (`COST` / `BENEFIT`) dan bobot aktif (`weight`). |
+| `SubCriteria` (`subcriteria`) | Definisi skala Crips `1..5` per kriteria (`uq_subcriteria_criteria_value`). |
+| `BatchCriteria` (`batch_criteria`) | Snapshot bobot beku (`frozen_weight`) per batch seleksi (`uq_batch_criteria`). |
+| `Citizen` (`citizen`) | Data warga terenkripsi (`nik_hash`, `nik_encrypted`, `nik_masked`, `kk_last4`, `full_name_masked`). |
+| `Period` (`period`) | Periode pelaksanaan seleksi bansos (Semester/Tahun). |
+| `SelectionBatch` (`selection_batch`) | *State machine* batch (`Draft -> Collecting -> Calculated -> Narrated -> Approved -> Published`). |
+| `Evaluation` (`evaluation`) | Penilaian warga per batch (`uq_evaluation_batch_citizen`), status TMS, & `real_dependents_count` (Tie-Breaker Level 3). |
+| `EvaluationDetail` (`evaluation_detail`) | Nilai mentah Crips (`1..5`) dan skor normalisasi `normalized_value` (`uq_evaluation_detail`). |
+| `SelectionResult` (`selection_result`) | Skor akhir SAW (`final_score_v`), `ranking`, `tie_break_level`, dan narasi XAI (`ai_narrative`). |
+| `AuditLog` (`audit_log`) | Jejak audit operasi sensitif (dekripsi PDF, kalkulasi SAW, pengesahan batch) bebas PII. |
 
-### 1. Setup Backend (Django 5 + DRF)
+### Konfigurasi Awal Kriteria (`seed_initial_data.py`)
+
+| Kode | Nama Kriteria | Tipe Atribut | Bobot (`w_j`) | Skala Crips `1` (Nilai Terendah) | Skala Crips `5` (Nilai Tertinggi) |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **`C1`** | Pendapatan Keluarga | `COST` | `0.30` | Sangat Rendah (`<= Rp 500.000/bln`) | Sangat Tinggi (`> Rp 4.000.000/bln`) |
+| **`C2`** | Jumlah Tanggungan | `BENEFIT` | `0.25` | Tidak ada tanggungan | `>= 7` orang tanggungan |
+| **`C3`** | Kondisi Tempat Tinggal | `COST` | `0.25` | Tidak Layak (Darurat / tanpa fasilitas) | Sangat Layak (Permanen, fasilitas lengkap) |
+| **`C4`** | Kepemilikan Aset | `COST` | `0.20` | Tidak memiliki aset produktif | Memiliki aset besar (mobil/usaha/properti) |
+
+---
+
+### Hasil Verifikasi Fase 1
+
+```text
+$ backend\.venv\Scripts\pytest.exe backend/tests/test_crypto_and_models.py backend/tests/test_security_guardrails.py -v
+
+backend/tests/test_crypto_and_models.py::test_nik_crypto_roundtrip_and_no_plaintext_at_rest PASSED
+backend/tests/test_crypto_and_models.py::test_invalid_nik_rejected PASSED
+backend/tests/test_crypto_and_models.py::test_citizen_upsert_idempotency PASSED
+backend/tests/test_crypto_and_models.py::test_seed_initial_data_creates_criteria PASSED
+backend/tests/test_crypto_and_models.py::test_citizen_blocks_plaintext_nik_at_rest_and_enforces_prd_schema_constraints PASSED
+backend/tests/test_crypto_and_models.py::test_adversarial_crypto_base64_malleability_and_override_settings PASSED
+backend/tests/test_crypto_and_models.py::test_adversarial_orm_queryset_aliases_and_null_tms_reason PASSED
+backend/tests/test_crypto_and_models.py::test_adversarial_citizen_at_rest_guards_on_hash_mask_update_and_bulk_create PASSED
+backend/tests/test_crypto_and_models.py::test_mask_nik_format PASSED
+backend/tests/test_crypto_and_models.py::test_mask_name_single_word PASSED
+backend/tests/test_crypto_and_models.py::test_mask_name_multi_word PASSED
+backend/tests/test_crypto_and_models.py::test_encrypt_nik_32byte_key_enforcement PASSED
+backend/tests/test_crypto_and_models.py::test_nik_hash_is_deterministic PASSED
+backend/tests/test_crypto_and_models.py::test_pdf_token_expired_raises PASSED
+backend/tests/test_crypto_and_models.py::test_security_audit_unicode_nik_and_tampered_ciphertext_rejected PASSED
+backend/tests/test_security_guardrails.py::test_env_example_files_exist_and_contain_required_placeholders PASSED
+backend/tests/test_security_guardrails.py::test_parse_aes_256_key_strictly_enforces_32_bytes PASSED
+backend/tests/test_security_guardrails.py::test_secret_management_enforces_key_separation_and_blocks_wildcard_cors PASSED
+backend/tests/test_security_guardrails.py::test_auth_guardrails_reject_allow_any_and_unbounded_jwt PASSED
+backend/tests/test_security_guardrails.py::test_zero_pii_log_filter_redacts_16_digit_nik_and_bearer_jwt PASSED
+
+20 passed in 1.56s
+```
+
+---
+
+## Quick Start (Fase 1)
+
 ```powershell
 cd backend
-python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
 
-# Salin konfigurasi environment (.env)
-Copy-Item .env.example .env
-
-# Jalankan migrasi dan pengisian data awal (C1-C4, Crips 1-5, akun demo staf)
+# Jalankan migrasi skema 9 tabel PRD + StaffUser
 python manage.py migrate
+
+# Isi data awal kriteria C1-C4, sub-kriteria Crips 1-5, dan akun staf demo
 python manage.py seed_initial_data
 
-# Jalankan server pengembangan backend
-python manage.py runserver
-```
-
-### 2. Setup Frontend (React + Vite + Tailwind CSS)
-```powershell
-cd frontend
-npm install
-npm run dev
+# Jalankan pengujian kriptografi & model
+pytest tests/test_crypto_and_models.py -v
 ```
 
 ---
 
-## Daftar Perintah (Commands)
+## Arsitektur & Architecture Decision Records (ADRs)
 
-| Perintah | Direktori | Deskripsi |
-| :--- | :--- | :--- |
-| `python manage.py runserver` | `backend/` | Menjalankan server REST API Django di `http://localhost:8000` |
-| `pytest -v` | `backend/` | Menjalankan seluruh *unit & integration test* backend (Kriptografi, SAW, Tie-Breaker, XAI, API) |
-| `python manage.py qcluster` | `backend/` | Menjalankan *asynchronous task worker* untuk pemrosesan *batch* XAI Gemini |
-| `npm run dev` | `frontend/` | Menjalankan server pengembangan Vite di `http://localhost:5173` |
-| `npm test -- --run` | `frontend/` | Menjalankan pengujian komponen & responsivitas UI dengan Vitest |
-| `npm run build` | `frontend/` | Membangun *bundle* produksi frontend |
-
----
-
-## Arsitektur & Dokumen Keputusan Arsitektur (ADRs)
-
-Dokumentasi spesifikasi dan alasan di balik keputusan teknis utama tersimpan di:
-- **Spesifikasi Utama (PRD Final v3.0):** [PRD_Sistem_Bansos_Jurangmangu_Barat_Final.md](file:///d:/Kuliah/SKRIPSI/BANSOS_SAW+LLM/PRD_Sistem_Bansos_Jurangmangu_Barat_Final.md)
-- **Aturan Konteks Agen & Protokol Desain (`.stitch`):** [AGENTS.md](file:///d:/Kuliah/SKRIPSI/BANSOS_SAW+LLM/AGENTS.md)
-- **Rencana Implementasi Langkah demi Langkah:** [2026-10-13-sistem-bansos-saw-xai-implementation.md](file:///d:/Kuliah/SKRIPSI/BANSOS_SAW+LLM/docs/superpowers/plans/2026-10-13-sistem-bansos-saw-xai-implementation.md)
-
-### Daftar Architecture Decision Records (`docs/decisions/`)
-1. **[ADR-001](file:///d:/Kuliah/SKRIPSI/BANSOS_SAW+LLM/docs/decisions/ADR-001-hybrid-saw-xai-with-deterministic-fallback.md):** Arsitektur EDSS Hibrida — Komputasi Deterministik SAW dengan Layer XAI Gemini Flash Terkendali dan Fallback Berbasis Aturan.
-2. **[ADR-002](file:///d:/Kuliah/SKRIPSI/BANSOS_SAW+LLM/docs/decisions/ADR-002-dual-layer-nik-crypto-and-zero-pii-xai.md):** Proteksi Kriptografi Dua Lapis untuk NIK (`AES-256-GCM` + `HMAC-SHA256`) dan Sanitasi Zero-PII ke API Eksternal.
-3. **[ADR-003](file:///d:/Kuliah/SKRIPSI/BANSOS_SAW+LLM/docs/decisions/ADR-003-immutable-criteria-snapshot-tms-gate-and-tie-breaker.md):** Pembekuan Bobot Kriteria (`BATCH_CRITERIA`), Gerbang Pra-Normalisasi TMS, dan *Hierarchical Tie-Breaker*.
-4. **[ADR-004](file:///d:/Kuliah/SKRIPSI/BANSOS_SAW+LLM/docs/decisions/ADR-004-async-xai-queue-and-passwordless-public-portal.md):** Antrean Worker Asinkron untuk Batch XAI dan Portal Publik Tanpa Akun dengan Proteksi Anti-Bot Dua Lapis.
-5. **[ADR-005](file:///d:/Kuliah/SKRIPSI/BANSOS_SAW+LLM/docs/decisions/ADR-005-responsive-ui-architecture-and-stitch-review-gate.md):** Arsitektur UI Responsif 3-Tier (Mobile, Tablet, Desktop) dan Gerbang Review Desain `.stitch`.
+- **Spesifikasi Utama (PRD Final v3.0):** [`PRD_Sistem_Bansos_Jurangmangu_Barat_Final.md`](./PRD_Sistem_Bansos_Jurangmangu_Barat_Final.md)
+- **Aturan Konteks Agen & Protokol UI (`.stitch`):** [`AGENTS.md`](./AGENTS.md)
+- **Rencana Implementasi:** [`docs/superpowers/plans/2026-10-13-sistem-bansos-saw-xai-implementation.md`](./docs/superpowers/plans/2026-10-13-sistem-bansos-saw-xai-implementation.md)
+- **Daftar ADR:**
+  1. [ADR-001: Hybrid SAW + XAI & Deterministic Fallback](./docs/decisions/ADR-001-hybrid-saw-xai-with-deterministic-fallback.md)
+  2. [ADR-002: Dual-Layer NIK Crypto & Zero-PII XAI](./docs/decisions/ADR-002-dual-layer-nik-crypto-and-zero-pii-xai.md)
+  3. [ADR-003: Immutable Criteria Snapshot, TMS Gate, & Tie-Breaker](./docs/decisions/ADR-003-immutable-criteria-snapshot-tms-gate-and-tie-breaker.md)
+  4. [ADR-004: Async XAI Queue & Passwordless Public Portal](./docs/decisions/ADR-004-async-xai-queue-and-passwordless-public-portal.md)
+  5. [ADR-005: Responsive UI Architecture & Stitch Review Gate](./docs/decisions/ADR-005-responsive-ui-architecture-and-stitch-review-gate.md)
 
 ---
 
 ## Catatan Penting (Known Gotchas)
 
-- **Jangan Pernah Menyimpan NIK Plaintext:** Gunakan `Citizen.objects.create_with_nik(raw_nik=..., ...)` yang otomatis mengisi `nik_hash`, `nik_encrypted`, dan `nik_masked`.
-- **Jangan Membaca `Criteria.weight` Setelah Batch Dihitung:** Setelah status batch mencapai `Calculated`, seluruh modul (termasuk XAI dan kalkulator *Fidelity Score*) **wajib** membaca `BatchCriteria.frozen_weight` milik batch tersebut.
-- **Jangan Menyalin Mentah HTML `.stitch`:** Selalu lakukan review desain bersama pengguna dan gunakan `<AppShell />` responsif (Off-Canvas Drawer untuk Mobile/Tablet, Fixed Sidebar untuk Desktop).
+- **Jangan Pernah Menyimpan NIK Plaintext:** Gunakan `Citizen.objects.create_or_update_with_nik(raw_nik=..., ...)` yang otomatis mengisi `nik_hash`, `nik_encrypted`, dan `nik_masked`.
+- **Gunakan Bobot Beku Setelah Kalkulasi:** Setelah status batch mencapai `Calculated`, seluruh modul hilir wajib membaca `BatchCriteria.frozen_weight` milik batch tersebut.

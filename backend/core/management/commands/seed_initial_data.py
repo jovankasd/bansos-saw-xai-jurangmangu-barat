@@ -4,7 +4,7 @@ management/commands/seed_initial_data.py
 Seeds the database with:
   - C1 Pendapatan Keluarga (COST, 0.30)
   - C2 Jumlah Tanggungan (BENEFIT, 0.25)
-  - C3 Kondisi Tempat Tinggal (BENEFIT, 0.25)
+  - C3 Kondisi Tempat Tinggal (COST, 0.25)
   - C4 Kepemilikan Aset (COST, 0.20)
   - SubCriteria (Crips 1–5) for each criterion
   - Demo staff accounts (SuperAdmin, Surveyor RT-003, Viewer/Lurah)
@@ -25,10 +25,10 @@ from core.models import AuditLog, Criteria, Period, SelectionBatch, StaffUser, S
 
 
 # ---------------------------------------------------------------------------
-# Criteria seed data (PRD §5 — AGENTS.md constraints, C1-C4)
-# For COST criteria (C1, C4), smaller Crips value (1) = lowest cost / highest
+# Criteria seed data (PRD §5 & §8.1 — AGENTS.md constraints, C1-C4)
+# For COST criteria (C1, C3, C4), smaller Crips value (1) = lowest cost / highest
 # social assistance priority so r_ij = min(X_j) / X_ij yields 1.00 for Crips 1.
-# For BENEFIT criteria (C2, C3), larger Crips value (5) = highest priority so
+# For BENEFIT criteria (C2), larger Crips value (5) = highest priority so
 # r_ij = X_ij / max(X_j) yields 1.00 for Crips 5.
 # ---------------------------------------------------------------------------
 
@@ -64,15 +64,15 @@ CRITERIA_DATA = [
     {
         "code": "C3",
         "name": "Kondisi Tempat Tinggal",
-        "criterion_type": "BENEFIT",
+        "criterion_type": "COST",
         "weight": Decimal("0.25"),
         "order": 3,
         "subcriteria": [
-            (1, "Sangat Layak (Permanen, fasilitas lengkap)", "Rumah permanen dengan fasilitas MCK lengkap dan air bersih"),
-            (2, "Layak (Semi-permanen, fasilitas memadai)", "Rumah semi-permanen dengan fasilitas cukup memadai"),
+            (1, "Tidak Layak (Darurat / tanpa fasilitas dasar)", "Gubuk atau bangunan darurat tanpa fasilitas dasar"),
+            (2, "Kurang Layak (Non-permanen, fasilitas minim)", "Rumah non-permanen dengan fasilitas sangat minim"),
             (3, "Cukup (Semi-permanen, fasilitas terbatas)", "Rumah semi-permanen dengan fasilitas terbatas"),
-            (4, "Kurang Layak (Non-permanen, fasilitas minim)", "Rumah non-permanen dengan fasilitas sangat minim"),
-            (5, "Tidak Layak (Darurat / tanpa fasilitas dasar)", "Gubuk atau bangunan darurat tanpa fasilitas dasar"),
+            (4, "Layak (Semi-permanen, fasilitas memadai)", "Rumah semi-permanen dengan fasilitas cukup memadai"),
+            (5, "Sangat Layak (Permanen, fasilitas lengkap)", "Rumah permanen dengan fasilitas MCK lengkap dan air bersih"),
         ],
     },
     {

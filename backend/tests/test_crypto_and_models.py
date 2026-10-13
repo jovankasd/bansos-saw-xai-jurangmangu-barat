@@ -160,7 +160,7 @@ def test_seed_initial_data_creates_criteria():
     assert criteria["C2"].criterion_type == "BENEFIT"
     assert criteria["C2"].weight == Decimal("0.25")
 
-    assert criteria["C3"].criterion_type == "BENEFIT"
+    assert criteria["C3"].criterion_type == "COST"
     assert criteria["C3"].weight == Decimal("0.25")
 
     assert criteria["C4"].criterion_type == "COST"
@@ -175,6 +175,10 @@ def test_seed_initial_data_creates_criteria():
     c1_crips5 = criteria["C1"].subcriteria.get(crips_value=5)
     assert "500.000" in c1_crips1.label
     assert "500.000" not in c1_crips5.label
+
+    # COST C3 Crips 1 must be Tidak Layak so min(X)/X_ij gives 1.00 to worst housing condition
+    c3_crips1 = criteria["C3"].subcriteria.get(crips_value=1)
+    assert "Tidak Layak" in c3_crips1.label
 
 
 def test_security_audit_unicode_nik_and_tampered_ciphertext_rejected():
@@ -365,7 +369,7 @@ def test_adversarial_orm_queryset_aliases_and_null_tms_reason():
 
     # 1. Criteria.objects.filter(attribute_type=...) and save(update_fields=["attribute_type"])
     cost_criteria = Criteria.objects.filter(attribute_type="COST")
-    assert cost_criteria.count() == 2
+    assert cost_criteria.count() == 3
     c1 = cost_criteria.get(code="C1")
     c1.attribute_type = "COST"
     c1.save(update_fields=["attribute_type"])
