@@ -38,20 +38,22 @@ Setelah Fase 1 meletakkan fondasi kriptografi NIK dan Fase 2 mengimplementasikan
   - Penanganan khusus kandidat batas kuota (*borderline*): Jika seluruh $\Delta_j \le 0$ tetapi tidak lolos kuota karena *tie-breaker*, menghasilkan narasi spesifik mengenai kompetisi batas ambang kuota (*cutoff*).
   - Menyusun narasi resmi terstandarisasi untuk status `LOLOS` dan `TIDAK_LOLOS`.
 - **Gemini Flash XAI Client & Validator ([`backend/core/services/xai_explainer.py`](./backend/core/services/xai_explainer.py)):**
-  - `generate_xai_for_evaluation(evaluation_id, gemini_client, backoff_seconds)`: Mengintegrasikan SDK resmi `google-genai` (`genai.Client`, `GenerateContentConfig`, `temperature: 0.15`, `response_mime_type: "application/json"`).
-  - `validate_xai_output(data, allowed_criteria_codes)`: Validasi ketat struktur JSON (`ringkasan_keputusan`, `faktor_penentu_utama`, `narasi_lengkap`, `rekomendasi_tindak_lanjut`) dan pencegahan halusinasi kode kriteria non-aktif (seperti $C_5$, $C_{99}$, atau parameter usang seperti Daya Listrik).
+  - `generate_xai_for_evaluation(evaluation_id, gemini_client, backoff_seconds)`: Mengintegrasikan SDK resmi `google-genai` (`genai.Client`, `GenerateContentConfig`, `temperature: 0.15`, `response_mime_type: "application/json"`), mendukung *duck-typed client* (baik `client.models.generate_content` maupun `client.generate`) serta penanganan *response object/string/dict*.
+  - `validate_xai_output(data, allowed_criteria_codes, payload)`: Validasi ketat struktur JSON (`ringkasan_keputusan`, `faktor_penentu_utama`, `narasi_lengkap`, `rekomendasi_tindak_lanjut`), pembersihan otomatis blok kode markdown (` ```json `), pencegahan halusinasi kode kriteria non-aktif di seluruh 4 field, pencegahan halusinasi nilai numerik (*rank*, *quota*, dan angka skor desimal tak berdasar per PRD Bagian 11.2), serta ekstraksi otomatis `primary_criterion_code` untuk evaluasi *Fidelity Score*.
   - Mekanisme *retry* maksimal 2 kali dengan *exponential backoff*, berpindah otomatis ke `generate_deterministic_fallback()` jika gagal tanpa melempar pengecualian HTTP 500.
-  - `map_explanation_to_public_schema(ai_payload)`: Memetakan kunci internal ke kontrak skema publik (`ringkasan`, `faktor_utama`, `narasi_lengkap`, `rekomendasi`).
+  - `map_explanation_to_public_schema(ai_payload)`: Memetakan kunci internal ke kontrak skema publik (`ringkasan`, `faktor_utama`, `narasi_lengkap`, `rekomendasi`) secara idempoten.
 - **Asynchronous Task Worker ([`backend/core/tasks.py`](./backend/core/tasks.py)):**
-  - `process_batch_xai_task(batch_id, gemini_client)`: Memproses narasi seluruh kandidat `ELIGIBLE` dalam batch.
-  - *State Transition Gate*: Memperbarui status batch ke `"Narrated"` dan mencatat `AuditLog` (`XAI_GENERATED`) **hanya jika seluruh** kandidat berhak telah memiliki narasi lengkap.
+  - `process_batch_xai_task(batch_id, gemini_client, evaluation_id, force)`: Memproses narasi seluruh kandidat `ELIGIBLE` dalam batch atau mode pemohon tunggal (`?evaluation_id=45`).
+  - *Idempotent Resume*: Secara cerdas melewati kandidat yang sudah memiliki narasi (`force=False`) sehingga pemrosesan ulang hemat kuota API dan aman dari interupsi.
+  - *Concurrency Protection*: Menggunakan row lock `select_for_update()` dalam transaksi database atomik untuk mencegah *race condition* antar worker paralel.
+  - *State Transition Gate*: Memperbarui status batch ke `"Narrated"` dan mencatat `AuditLog` (`XAI_GENERATED`) **hanya jika 100%** kandidat berhak telah memiliki narasi lengkap.
   - Menolak eksekusi pada batch yang belum berstatus `Calculated`.
 - **Suite Pengujian TDD & Security Audit ([`backend/tests/test_xai_and_fallback.py`](./backend/tests/test_xai_and_fallback.py)):**
-  - 15 pengujian menyeluruh mencakup Zero-PII, isolasi bobot beku, resolusi $\Delta_j \cdot w_j$, kandidat batas kuota (*borderline*), retry/fallback, anti-halusinasi, *state machine*, dan audit PII pada payload jaringan LLM.
+  - 27 pengujian menyeluruh mencakup Zero-PII, isolasi bobot beku, resolusi $\Delta_j \cdot w_j$, kandidat batas kuota (*borderline*), retry/fallback, anti-halusinasi kriteria & angka, pembersihan blok markdown, *state machine*, mode evaluasi tunggal, resume idempoten, dan audit PII pada payload jaringan LLM.
 
 #### Security
 - **OWASP LLM02 Sensitive Information Disclosure & UU PDP Kepatuhan Penuh:** Tidak ada data identitas warga yang pernah disentuh atau dikirimkan ke model LLM. Terverifikasi secara otomatis oleh `test_security_audit_zero_pii_in_llm_prompt_and_network_payload`.
-- **Anti-Hallucination Filtering:** Respons LLM diperiksa terhadap daftar kriteria aktif; upaya memunculkan kriteria di luar $C_1–C_4$ memicu penolakan dan fallback ke aturan deterministik kelurahan.
+- **Anti-Hallucination Filtering (Criteria & Numbers):** Respons LLM diperiksa terhadap kriteria aktif serta konsistensi angka terhadap payload JSON (ranking, kuota, skor); manipulasi atau halusinasi angka/kriteria memicu penolakan dan fallback ke aturan deterministik kelurahan.
 - **Fail-Safe Robustness:** Pemadaman API eksternal atau *rate limiting* tidak pernah mengakibatkan *crash* atau kesalahan sistem 500 ke pengguna.
 
 #### Changed
@@ -160,12 +162,24 @@ backend\tests\test_xai_and_fallback.py::test_xai_explainer_rejects_malformed_jso
 backend\tests\test_xai_and_fallback.py::test_process_batch_xai_task_transitions_to_narrated PASSED
 backend\tests\test_xai_and_fallback.py::test_process_batch_xai_task_rejects_invalid_batch_status PASSED
 backend\tests\test_xai_and_fallback.py::test_security_audit_zero_pii_in_llm_prompt_and_network_payload PASSED
+backend\tests\test_xai_and_fallback.py::test_validate_xai_output_strips_markdown_code_fences PASSED
+backend\tests\test_xai_and_fallback.py::test_validate_xai_output_rejects_hallucinated_code_in_summary_or_recommendation PASSED
+backend\tests\test_xai_and_fallback.py::test_validate_xai_output_rejects_hallucinated_numbers_rank_and_quota PASSED
+backend\tests\test_xai_and_fallback.py::test_validate_xai_output_rejects_hallucinated_decimal_score PASSED
+backend\tests\test_xai_and_fallback.py::test_validate_xai_output_extracts_primary_criterion_code_for_fidelity PASSED
+backend\tests\test_xai_and_fallback.py::test_map_explanation_to_public_schema_handles_existing_public_keys_and_edge_cases PASSED
+backend\tests\test_xai_and_fallback.py::test_sanitizer_rejects_incomplete_evaluation_details PASSED
+backend\tests\test_xai_and_fallback.py::test_sanitizer_falls_back_to_batch_cutoff_score PASSED
+backend\tests\test_xai_and_fallback.py::test_process_batch_xai_task_with_single_evaluation_id PASSED
+backend\tests\test_xai_and_fallback.py::test_process_batch_xai_task_skips_already_narrated_candidates_idempotently PASSED
+backend\tests\test_xai_and_fallback.py::test_process_batch_xai_task_blocks_narrated_status_when_generation_fails_partially PASSED
+backend\tests\test_xai_and_fallback.py::test_generate_xai_for_evaluation_duck_typed_client_support PASSED
 
-======================== 15 passed in 5.76s ========================
+======================== 27 passed in 22.67s ========================
 
 # Verifikasi Regresi Keseluruhan (Fase 1 + Fase 2 + Fase 3 + Security Guardrails):
 $ backend/.venv/Scripts/python.exe -m pytest backend/tests/ -v
-======================= 62 passed in 16.79s =======================
+======================= 74 passed in 34.13s =======================
 ```
 
 ---

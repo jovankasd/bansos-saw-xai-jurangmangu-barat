@@ -721,3 +721,305 @@ def test_security_audit_zero_pii_in_llm_prompt_and_network_payload(calculated_ba
         if pii:
             assert pii not in call_contents, f"PII leak detected in LLM prompt: {pii}"
             assert pii not in call_config, f"PII leak detected in LLM config: {pii}"
+
+
+# ---------------------------------------------------------------------------
+# Tests: Hardened Edge Cases, Anti-Hallucination, & Task Worker Modes
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_validate_xai_output_strips_markdown_code_fences():
+    """
+    LLM output wrapped in markdown ```json ... ``` code blocks must be cleanly stripped and parsed.
+    """
+    raw_markdown = """```json
+{
+  "ringkasan_keputusan": "Pemohon memenuhi prioritas bantuan sosial.",
+  "faktor_penentu_utama": ["Pendapatan Keluarga (C1)"],
+  "narasi_lengkap": "Berdasarkan evaluasi objektif, berkas disetujui.",
+  "rekomendasi_tindak_lanjut": "Menunggu verifikasi fisik."
+}
+```"""
+    parsed = validate_xai_output(raw_markdown, allowed_criteria_codes={"C1", "C2", "C3", "C4"})
+    assert parsed["ringkasan_keputusan"] == "Pemohon memenuhi prioritas bantuan sosial."
+    assert parsed["primary_criterion_code"] == "C1"
+
+
+@pytest.mark.django_db
+def test_validate_xai_output_rejects_hallucinated_code_in_summary_or_recommendation():
+    """
+    Hallucinated criterion codes must be caught even when they appear in ringkasan_keputusan
+    or rekomendasi_tindak_lanjut (full field coverage).
+    """
+    # 1. Hallucinated in summary
+    bad_summary_json = {
+        "ringkasan_keputusan": "Pemohon ditolak akibat kriteria C99 tidak memenuhi syarat.",
+        "faktor_penentu_utama": ["Pendapatan Keluarga (C1)"],
+        "narasi_lengkap": "Keluarga memiliki pendapatan cukup.",
+        "rekomendasi_tindak_lanjut": "Konsultasi RT.",
+    }
+    with pytest.raises(ValueError, match="Halusinasi kode kriteria terdeteksi.*C99"):
+        validate_xai_output(bad_summary_json, allowed_criteria_codes={"C1", "C2", "C3", "C4"})
+
+    # 2. Hallucinated 'daya listrik' in recommendation
+    bad_rec_json = {
+        "ringkasan_keputusan": "Pemohon tidak lolos.",
+        "faktor_penentu_utama": ["Pendapatan Keluarga (C1)"],
+        "narasi_lengkap": "Keluarga memiliki pendapatan cukup.",
+        "rekomendasi_tindak_lanjut": "Turunkan daya listrik rumah tangga ke 450 VA.",
+    }
+    with pytest.raises(ValueError, match="Daya Listrik"):
+        validate_xai_output(bad_rec_json, allowed_criteria_codes={"C1", "C2", "C3", "C4"})
+
+
+@pytest.mark.django_db
+def test_validate_xai_output_rejects_hallucinated_numbers_rank_and_quota():
+    """
+    PRD Section 11.2 & Task 3: Text mentioning fabricated rank or quota numbers
+    must be rejected to ensure numeric fidelity.
+    """
+    payload = {
+        "applicant_code": "KPM-010",
+        "rank": 35,
+        "quota": 30,
+        "status": "TIDAK_LOLOS",
+        "final_score": 0.6840,
+        "cutoff_score": 0.7250,
+        "criteria_data": [
+            {"code": "C1", "name": "Pendapatan Keluarga", "weight": 0.30, "normalized_score": 0.60, "avg_passed_score": 0.85},
+        ],
+    }
+
+    # Wrong rank: mentions peringkat 99 instead of 35
+    hallucinated_rank = {
+        "ringkasan_keputusan": "Pemohon berada di peringkat 99 dari kuota 30.",
+        "faktor_penentu_utama": ["Pendapatan Keluarga (C1)"],
+        "narasi_lengkap": "Berdasarkan seleksi, pemohon berada di peringkat 99.",
+        "rekomendasi_tindak_lanjut": "Konsultasi ke RT.",
+    }
+    with pytest.raises(ValueError, match="Halusinasi angka terdeteksi.*peringkat 99.*35"):
+        validate_xai_output(hallucinated_rank, allowed_criteria_codes={"C1"}, payload=payload)
+
+    # Wrong quota: mentions kuota 10 instead of 30
+    hallucinated_quota = {
+        "ringkasan_keputusan": "Pemohon belum masuk kuota.",
+        "faktor_penentu_utama": ["Pendapatan Keluarga (C1)"],
+        "narasi_lengkap": "Pemohon berada di peringkat 35 dari kuota 10 penerima.",
+        "rekomendasi_tindak_lanjut": "Konsultasi ke RT.",
+    }
+    with pytest.raises(ValueError, match="Halusinasi angka terdeteksi.*kuota 10.*30"):
+        validate_xai_output(hallucinated_quota, allowed_criteria_codes={"C1"}, payload=payload)
+
+
+@pytest.mark.django_db
+def test_validate_xai_output_rejects_hallucinated_decimal_score():
+    """
+    PRD Section 11.2: Fabricated decimal scores (e.g. 0.9999) that do not correspond
+    to any score in the payload must trigger numeric hallucination rejection.
+    """
+    payload = {
+        "applicant_code": "KPM-010",
+        "rank": 35,
+        "quota": 30,
+        "status": "TIDAK_LOLOS",
+        "final_score": 0.6840,
+        "cutoff_score": 0.7250,
+        "criteria_data": [
+            {"code": "C1", "name": "Pendapatan", "weight": 0.30, "normalized_score": 0.60, "avg_passed_score": 0.85},
+        ],
+    }
+
+    hallucinated_score = {
+        "ringkasan_keputusan": "Pemohon belum masuk kuota.",
+        "faktor_penentu_utama": ["Pendapatan (C1)"],
+        "narasi_lengkap": "Pemohon memperoleh skor 0.9999 yang tidak sesuai dengan kalkulasi.",
+        "rekomendasi_tindak_lanjut": "Konsultasi ke RT.",
+    }
+    with pytest.raises(ValueError, match="Halusinasi nilai numerik terdeteksi.*0.9999"):
+        validate_xai_output(hallucinated_score, allowed_criteria_codes={"C1"}, payload=payload)
+
+
+@pytest.mark.django_db
+def test_validate_xai_output_extracts_primary_criterion_code_for_fidelity():
+    """
+    PRD Section 11.2 Fidelity Score: Output dictionary must include primary_criterion_code
+    extracted from faktor_penentu_utama.
+    """
+    data = {
+        "ringkasan_keputusan": "Keputusan SAW sah.",
+        "faktor_penentu_utama": ["Kondisi Tempat Tinggal (C3)", "Pendapatan Keluarga (C1)"],
+        "narasi_lengkap": "Evaluasi menunjukkan kriteria C3 menjadi faktor utama.",
+        "rekomendasi_tindak_lanjut": "Konsultasi ke RT.",
+    }
+    validated = validate_xai_output(data, allowed_criteria_codes={"C1", "C2", "C3", "C4"})
+    assert validated["primary_criterion_code"] == "C3"
+
+
+@pytest.mark.django_db
+def test_map_explanation_to_public_schema_handles_existing_public_keys_and_edge_cases():
+    """
+    map_explanation_to_public_schema must handle internal keys, existing public keys,
+    and non-dict inputs idempotently.
+    """
+    # Non-dict input
+    assert map_explanation_to_public_schema(None) == {
+        "ringkasan": "",
+        "faktor_utama": [],
+        "narasi_lengkap": "",
+        "rekomendasi": "",
+    }
+
+    # Already mapped public keys
+    already_mapped = {
+        "ringkasan": "Sudah dalam skema publik.",
+        "faktor_utama": ["C1"],
+        "narasi_lengkap": "Narasi publik.",
+        "rekomendasi": "Rekomendasi publik.",
+    }
+    mapped = map_explanation_to_public_schema(already_mapped)
+    assert mapped["ringkasan"] == "Sudah dalam skema publik."
+    assert mapped["faktor_utama"] == ["C1"]
+    assert mapped["rekomendasi"] == "Rekomendasi publik."
+
+
+@pytest.mark.django_db
+def test_sanitizer_rejects_incomplete_evaluation_details(calculated_batch_with_evaluations):
+    """
+    If an evaluation is missing an EvaluationDetail for an active criterion,
+    build_anonymous_payload must raise ValidationError instead of silently dropping it.
+    """
+    batch = calculated_batch_with_evaluations
+    eval_obj = batch.evaluations.filter(eligibility_status="ELIGIBLE").first()
+
+    # Delete one detail (e.g. C4)
+    detail_c4 = eval_obj.details.filter(criteria__code="C4").first()
+    assert detail_c4 is not None
+    detail_c4.delete()
+
+    with pytest.raises(ValidationError, match="Detail kriteria 'C4'"):
+        build_anonymous_payload(eval_obj.id)
+
+
+@pytest.mark.django_db
+def test_sanitizer_falls_back_to_batch_cutoff_score(calculated_batch_with_evaluations):
+    """
+    If SelectionResult.cutoff_score is None, sanitizer should fallback to batch.cutoff_score.
+    """
+    batch = calculated_batch_with_evaluations
+    eval_obj = batch.evaluations.filter(eligibility_status="ELIGIBLE").first()
+    res = eval_obj.result
+    res.cutoff_score = None
+    res.save()
+
+    batch.cutoff_score = Decimal("0.7500")
+    batch.save()
+
+    payload = build_anonymous_payload(eval_obj.id)
+    assert payload["cutoff_score"] == 0.75
+
+
+@pytest.mark.django_db
+def test_process_batch_xai_task_with_single_evaluation_id(calculated_batch_with_evaluations):
+    """
+    PRD Section 10.4: POST /api/selection/{batch_id}/generate-xai/?evaluation_id=45
+    Worker can process a single targeted evaluation. In this case, batch status remains Calculated
+    until all candidates are narrated.
+    """
+    batch = calculated_batch_with_evaluations
+    eligible_evals = list(batch.evaluations.filter(eligibility_status="ELIGIBLE"))
+    target = eligible_evals[0]
+
+    valid_json = json.dumps({
+        "ringkasan_keputusan": "Evaluasi spesifik berhasil diproses.",
+        "faktor_penentu_utama": ["Pendapatan Keluarga (C1)"],
+        "narasi_lengkap": "Narasi tunggal selesai.",
+        "rekomendasi_tindak_lanjut": "Menunggu instruksi.",
+    })
+    client = MockGeminiClient(response_text=valid_json)
+
+    summary = process_batch_xai_task(batch.id, gemini_client=client, evaluation_id=target.id)
+
+    target.refresh_from_db()
+    assert target.result.ai_narrative == "Narasi tunggal selesai."
+    assert summary["narrated_count"] == 1
+    assert summary["all_narrated"] is False
+    # Batch status should NOT transition to Narrated because only 1 of 4 is narrated
+    batch.refresh_from_db()
+    assert batch.status == SelectionBatch.Status.CALCULATED
+
+
+@pytest.mark.django_db
+def test_process_batch_xai_task_skips_already_narrated_candidates_idempotently(calculated_batch_with_evaluations):
+    """
+    When re-running process_batch_xai_task, candidates that already have narratives
+    must be skipped (unless force=True), preventing redundant API consumption.
+    """
+    batch = calculated_batch_with_evaluations
+    valid_json = json.dumps({
+        "ringkasan_keputusan": "Narasi valid.",
+        "faktor_penentu_utama": ["Pendapatan Keluarga (C1)"],
+        "narasi_lengkap": "Narasi lengkap.",
+        "rekomendasi_tindak_lanjut": "Rekomendasi tindak lanjut.",
+    })
+    client1 = MockGeminiClient(response_text=valid_json)
+
+    # First run processes all 4 candidates
+    process_batch_xai_task(batch.id, gemini_client=client1)
+    assert client1.call_count == 4
+
+    # Second run with force=False must skip all 4 candidates
+    client2 = MockGeminiClient(response_text=valid_json)
+    summary2 = process_batch_xai_task(batch.id, gemini_client=client2, force=False)
+    assert client2.call_count == 0  # 0 calls made because all 4 were skipped
+    assert summary2["all_narrated"] is True
+    assert summary2["gemini_success"] == 4
+
+
+@pytest.mark.django_db
+def test_process_batch_xai_task_blocks_narrated_status_when_generation_fails_partially(calculated_batch_with_evaluations):
+    """
+    If generation fails for any candidate, batch status MUST NOT transition to Narrated.
+    """
+    batch = calculated_batch_with_evaluations
+    eval_obj = batch.evaluations.filter(eligibility_status="ELIGIBLE").first()
+
+    # Simulate missing SelectionResult for this evaluation to simulate an unresolvable failure
+    eval_obj.result.delete()
+
+    summary = process_batch_xai_task(batch.id, gemini_client=None)
+
+    batch.refresh_from_db()
+    assert summary["all_narrated"] is False
+    assert batch.status == SelectionBatch.Status.CALCULATED
+
+
+@pytest.mark.django_db
+def test_generate_xai_for_evaluation_duck_typed_client_support(calculated_batch_with_evaluations):
+    """
+    generate_xai_for_evaluation must support custom duck-typed clients that implement
+    either client.models.generate_content or client.generate(user_prompt).
+    """
+    batch = calculated_batch_with_evaluations
+    eval_obj = batch.evaluations.filter(result__status="LOLOS").first()
+
+    class CustomDuckClient:
+        def __init__(self):
+            self.calls = 0
+
+        def generate(self, user_prompt: str) -> str:
+            self.calls += 1
+            return json.dumps({
+                "ringkasan_keputusan": "Duck-typed client success.",
+                "faktor_penentu_utama": ["Pendapatan Keluarga (C1)"],
+                "narasi_lengkap": "Duck-typed client output validated.",
+                "rekomendasi_tindak_lanjut": "Menunggu instruksi.",
+            })
+
+    duck_client = CustomDuckClient()
+    result = generate_xai_for_evaluation(eval_obj.id, gemini_client=duck_client, backoff_seconds=0)
+
+    assert duck_client.calls == 1
+    assert result.explanation_source == SelectionResult.ExplanationSource.GEMINI_API
+    assert "Duck-typed client" in result.ai_narrative
+

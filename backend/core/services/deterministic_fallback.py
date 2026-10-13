@@ -84,11 +84,11 @@ def _generate_tidak_lolos_narrative(
     # Compute gaps Δ_j and weighted gaps Δ_j * w_j
     gaps: list[dict[str, Any]] = []
     for item in criteria_data:
-        code = item["code"]
-        name = item["name"]
-        w = float(item["weight"])
-        norm = float(item["normalized_score"])
-        avg_pass = float(item["avg_passed_score"])
+        code = str(item.get("code", "C1"))
+        name = str(item.get("name", "Kriteria"))
+        w = float(item.get("weight", 0.0))
+        norm = float(item.get("normalized_score", 0.0))
+        avg_pass = float(item.get("avg_passed_score", norm))
         delta = avg_pass - norm
         weighted_gap = round(delta * w, 6)
 
@@ -200,10 +200,10 @@ def _generate_lolos_narrative(
     # For LOLOS candidates, find the highest positive weighted contributor: normalized_score * weight
     contributions = []
     for item in criteria_data:
-        code = item["code"]
-        name = item["name"]
-        w = float(item["weight"])
-        norm = float(item["normalized_score"])
+        code = str(item.get("code", "C1"))
+        name = str(item.get("name", "Kriteria"))
+        w = float(item.get("weight", 0.0))
+        norm = float(item.get("normalized_score", 0.0))
         contrib = round(norm * w, 6)
         contributions.append({
             "code": code,

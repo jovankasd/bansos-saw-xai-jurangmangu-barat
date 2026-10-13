@@ -120,7 +120,10 @@ def build_anonymous_payload(evaluation_id: int) -> dict[str, Any]:
         cid = bc.criteria_id
         detail = detail_by_criteria_id.get(cid)
         if not detail:
-            continue
+            raise ValidationError(
+                f"Detail kriteria '{bc.code}' ({bc.name}) tidak ditemukan untuk evaluasi #{eval_obj.id}.",
+                code="missing_criteria_detail",
+            )
 
         raw_crips = detail.raw_crips_value
         label = subcriteria_map.get((cid, raw_crips), f"Crips {raw_crips}")
@@ -140,7 +143,12 @@ def build_anonymous_payload(evaluation_id: int) -> dict[str, Any]:
         })
 
     # 4. Construct anonymous payload (zero PII)
-    cutoff = float(result.cutoff_score) if result.cutoff_score is not None else 0.0
+    if result.cutoff_score is not None:
+        cutoff = float(result.cutoff_score)
+    elif batch.cutoff_score is not None:
+        cutoff = float(batch.cutoff_score)
+    else:
+        cutoff = 0.0
 
     payload: dict[str, Any] = {
         "applicant_code": f"KPM-{eval_obj.id:03d}",

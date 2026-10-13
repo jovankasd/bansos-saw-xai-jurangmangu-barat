@@ -51,23 +51,35 @@ CRITERION_CODE_PATTERN = re.compile(r"\bC\d+\b", re.IGNORECASE)
 def validate_xai_output(
     data: Any,
     allowed_criteria_codes: set[str] | None = None,
+    payload: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
-    Validate Gemini Flash JSON output against required fields and active criteria codes.
+    Validate Gemini Flash JSON output against required fields, active criteria codes,
+    and payload numeric consistency (preventing hallucination per PRD Section 11.2).
 
     Args:
         data: Parsed dict or raw JSON string from Gemini response.
         allowed_criteria_codes: Set of active criteria codes (e.g. {'C1', 'C2', 'C3', 'C4'}).
+        payload: Optional anonymous payload dict for verifying numeric fidelity (rank, quota, scores).
 
     Returns:
         dict: Validated explanation dictionary.
 
     Raises:
-        ValueError: If JSON is invalid, fields are missing/empty, or hallucinated codes appear.
+        ValueError: If JSON is invalid, fields are missing/empty, or hallucinated codes/numbers appear.
     """
     if isinstance(data, str):
+        cleaned = data.strip()
+        # Strip markdown code blocks (e.g. ```json ... ```) if present
+        if cleaned.startswith("```"):
+            lines = cleaned.splitlines()
+            if lines and lines[0].startswith("```"):
+                lines = lines[1:]
+            if lines and lines[-1].startswith("```"):
+                lines = lines[:-1]
+            cleaned = "\n".join(lines).strip()
         try:
-            data = json.loads(data)
+            data = json.loads(cleaned)
         except Exception as exc:
             raise ValueError(f"Output bukan JSON valid: {exc}") from exc
 
@@ -92,11 +104,13 @@ def validate_xai_output(
         if expected_type is list and not val:
             raise ValueError(f"Field list '{key}' tidak boleh kosong.")
 
+    # Compose full text from all 4 fields to prevent partial validation evasion
+    factors_text = " ".join(str(f) for f in data["faktor_penentu_utama"])
+    all_text = f"{data['ringkasan_keputusan']} {factors_text} {data['narasi_lengkap']} {data['rekomendasi_tindak_lanjut']}"
+
     # Anti-hallucination check for criteria codes
     if allowed_criteria_codes:
         normalized_allowed = {code.upper() for code in allowed_criteria_codes}
-        factors_text = " ".join(str(f) for f in data["faktor_penentu_utama"])
-        all_text = f"{factors_text} {data['narasi_lengkap']}"
 
         # Extract all criterion codes mentioned (e.g., C99, C5)
         found_codes = {c.upper() for c in CRITERION_CODE_PATTERN.findall(all_text)}
@@ -110,6 +124,59 @@ def validate_xai_output(
         # Anti-hallucination check for deprecated Crips/Criteria labels (e.g. 'Daya Listrik')
         if "daya listrik" in all_text.lower():
             raise ValueError("Halusinasi kriteria terdeteksi: 'Daya Listrik' bukan kriteria bansos aktif.")
+
+    # Anti-hallucination check for numbers against payload (PRD Section 11.2)
+    if payload:
+        # Check rank fidelity if explicitly mentioned
+        rank_matches = re.findall(r"peringkat\s+(\d+)", all_text, re.IGNORECASE)
+        expected_rank = payload.get("rank")
+        if expected_rank is not None:
+            for rm in rank_matches:
+                if int(rm) != int(expected_rank):
+                    raise ValueError(
+                        f"Halusinasi angka terdeteksi: teks menyebutkan peringkat {rm}, "
+                        f"padahal peringkat pemohon adalah {expected_rank}."
+                    )
+
+        # Check quota fidelity if explicitly mentioned
+        quota_matches = re.findall(r"kuota\s+(\d+)", all_text, re.IGNORECASE)
+        expected_quota = payload.get("quota")
+        if expected_quota is not None:
+            for qm in quota_matches:
+                if int(qm) != int(expected_quota):
+                    raise ValueError(
+                        f"Halusinasi angka terdeteksi: teks menyebutkan kuota {qm}, "
+                        f"padahal kuota alokasi adalah {expected_quota}."
+                    )
+
+        # Check floating score decimals (e.g. 0.xxxx) against valid payload values
+        valid_decimals: set[float] = set()
+        for k in ("final_score", "cutoff_score"):
+            if payload.get(k) is not None:
+                valid_decimals.add(round(float(payload[k]), 4))
+                valid_decimals.add(round(float(payload[k]), 2))
+        for c in payload.get("criteria_data", []):
+            for ck in ("weight", "normalized_score", "avg_passed_score"):
+                if c.get(ck) is not None:
+                    valid_decimals.add(round(float(c[ck]), 4))
+                    valid_decimals.add(round(float(c[ck]), 2))
+
+        found_decimals = re.findall(r"\b0\.\d+\b", all_text)
+        for dec_str in found_decimals:
+            dec_val = float(dec_str)
+            if not any(abs(dec_val - vd) <= 0.01 for vd in valid_decimals):
+                raise ValueError(
+                    f"Halusinasi nilai numerik terdeteksi: angka desimal {dec_str} "
+                    "tidak ditemukan pada parameter skor payload."
+                )
+
+    # Extract primary_criterion_code for academic thesis Fidelity Score evaluation (PRD Section 11.2)
+    if "primary_criterion_code" not in data:
+        factors = data.get("faktor_penentu_utama", [])
+        if factors and isinstance(factors, list):
+            match = CRITERION_CODE_PATTERN.search(str(factors[0]))
+            if match:
+                data["primary_criterion_code"] = match.group(0).upper()
 
     return data
 
@@ -139,10 +206,10 @@ def map_explanation_to_public_schema(ai_payload: dict[str, Any]) -> dict[str, An
         }
 
     return {
-        "ringkasan": ai_payload.get("ringkasan_keputusan", ""),
-        "faktor_utama": ai_payload.get("faktor_penentu_utama", []),
+        "ringkasan": ai_payload.get("ringkasan_keputusan") or ai_payload.get("ringkasan", ""),
+        "faktor_utama": ai_payload.get("faktor_penentu_utama") or ai_payload.get("faktor_utama", []),
         "narasi_lengkap": ai_payload.get("narasi_lengkap", ""),
-        "rekomendasi": ai_payload.get("rekomendasi_tindak_lanjut", ""),
+        "rekomendasi": ai_payload.get("rekomendasi_tindak_lanjut") or ai_payload.get("rekomendasi", ""),
     }
 
 
@@ -201,31 +268,48 @@ def generate_xai_for_evaluation(
     attempts = 1 + max_retries
     for attempt in range(attempts):
         try:
+            temperature = float(getattr(settings, "GEMINI_TEMPERATURE", 0.15))
             # Build config using google.genai.types if available
             try:
                 from google.genai import types
 
                 config = types.GenerateContentConfig(
                     system_instruction=SYSTEM_INSTRUCTION,
-                    temperature=0.15,
+                    temperature=temperature,
                     response_mime_type="application/json",
                 )
             except ImportError:
                 config = {
                     "system_instruction": SYSTEM_INSTRUCTION,
-                    "temperature": 0.15,
+                    "temperature": temperature,
                     "response_mime_type": "application/json",
                 }
 
             user_prompt = json.dumps(payload, ensure_ascii=False)
-            response = client.models.generate_content(
-                model=model_name,
-                contents=user_prompt,
-                config=config,
-            )
 
-            response_text = getattr(response, "text", "")
-            validated = validate_xai_output(response_text, allowed_criteria_codes=allowed_codes)
+            if hasattr(client, "models") and hasattr(client.models, "generate_content"):
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=user_prompt,
+                    config=config,
+                )
+            elif hasattr(client, "generate"):
+                response = client.generate(user_prompt)
+            else:
+                raise AttributeError("Client Gemini tidak memiliki metode 'models.generate_content' atau 'generate'.")
+
+            if isinstance(response, str):
+                response_text = response
+            elif isinstance(response, dict):
+                response_text = json.dumps(response)
+            else:
+                response_text = getattr(response, "text", "")
+
+            validated = validate_xai_output(
+                response_text,
+                allowed_criteria_codes=allowed_codes,
+                payload=payload,
+            )
 
             # Success
             result.ai_payload_response = validated
