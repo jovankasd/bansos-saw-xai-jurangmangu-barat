@@ -4,228 +4,197 @@ Platform **Explainable Decision Support System (EDSS)** berbasis web untuk selek
 
 ---
 
-## Dokumentasi Branch: `feat/m2-saw-tiebreaker` (Fase 2 / Task 2 — SAW Engine, Criteria Snapshot Freeze, TMS Filter, & 4-Level Tie-Breaker)
+## Dokumentasi Branch: `feat/m3-xai-fallback` (Fase 3 / Task 3 — Zero-PII Sanitizer, Gemini Flash XAI Explainer, Deterministic Fallback, & Async Worker)
 
 ### Mengapa Fase Ini Dibutuhkan (*Context & Why*)
 
-Fase 1 meletakkan pondasi kriptografi dan skema basis data. Fase 2 mengimplementasikan **inti algoritma keputusan** sesuai **PRD FR-01 hingga FR-03** dan **[ADR-003](./docs/decisions/ADR-003-immutable-criteria-snapshot-tms-gate-and-tie-breaker.md)**:
+Setelah Fase 1 meletakkan fondasi kriptografi NIK dan Fase 2 mengimplementasikan engine deterministik Simple Additive Weighting (SAW), Fase 3 menghadirkan **lapisan penjelasan (Explainer Layer)** sesuai **PRD Bagian 8**, **[ADR-001](./docs/decisions/ADR-001-hybrid-saw-xai-with-deterministic-fallback.md)**, **[ADR-002](./docs/decisions/ADR-002-dual-layer-nik-crypto-and-zero-pii-xai.md)**, dan **[ADR-004](./docs/decisions/ADR-004-async-xai-queue-and-passwordless-public-portal.md)**:
 
-1. **Pembekuan bobot kriteria (`BatchCriteria`)** secara idempoten agar perubahan `Criteria.weight` pasca-kalkulasi tidak merusak histori batch yang sudah dihitung.
-2. **Filter TMS (Tidak Memenuhi Syarat)** sebelum menghitung $\min/\max$ normalisasi SAW, sehingga warga `DISQUALIFIED` (ASN/TNI/Polri, PKH Ganda, Pindah, Meninggal) tidak mendistorsi matriks normalisasi.
-3. **Algoritma SAW** dengan presisi `Decimal`, rumus normalisasi Benefit/Cost, skor preferensi $V_i$, dan tie-breaker deterministik 4-level yang menjamin hasil seleksi dapat direproduksi secara konsisten.
+1. **Zero-PII Sanitization (UU PDP No. 27/2022 & OWASP LLM02):**
+   Wajib menjamin tidak ada satupun Data Pribadi (nama asli, NIK, No KK, alamat, RT/RW) yang dikirim ke Google Gemini API. Pemohon diidentifikasi hanya dengan kode anonim (`KPM-042`).
+2. **Kepatuhan Terhadap Snapshot Bobot Beku (`BatchCriteria.frozen_weight`):**
+   Seluruh kalkulasi kesenjangan dan pembentukan prompt XAI wajib membaca bobot beku batch (`frozen_weight`), bukan master `Criteria.weight` yang dinamis, menjaga integritas historis batch.
+3. **Penjelasan Kontrafaktual & Transparansi Algoritmik:**
+   Memberikan narasi bahasa alami yang menjelaskan faktor pembeda utama dan saran edukatif bagi warga yang tidak lolos kuota, serta konfirmasi verifikasi bagi warga yang lolos.
+4. **Resiliensi Tinggi & Fallback Deterministik Bebas HTTP 500:**
+   Jika kuota API habis (HTTP 429), jaringan terputus, atau output LLM mengalami halusinasi kriteria setelah 2 kali *retry* dengan *exponential backoff*, sistem secara otomatis beralih ke generator deterministik berbasis penalti kesenjangan terbobot $\Delta_j \cdot w_j$ tanpa menghentikan batch.
+5. **State Machine Asinkron:**
+   Batch hanya dapat berpindah dari status `Calculated` ke `Narrated` apabila 100% kandidat `ELIGIBLE` telah memiliki narasi penjelasan yang tersimpan di basis data.
 
 ---
 
-### Changelog Fase 2 (Task 2)
+### Changelog Fase 3 (Task 3)
 
 #### Added
-- **SAW Engine ([`backend/core/services/saw_engine.py`](./backend/core/services/saw_engine.py)):**
-  - `validate_criteria_weights()`: Menolak kalkulasi jika $\sum w_j \neq \text{Decimal}("1.00")$ dengan `ValidationError` bertanda `invalid_weight_sum`.
-  - `freeze_batch_criteria(batch)`: Snapshot idempoten (`update_or_create`) ke tabel `BatchCriteria`; mutasi `Criteria.weight` pasca-kalkulasi tidak mengubah `frozen_weight` batch lama.
-  - `calculate_batch_saw(batch_id, performed_by)`: Pipeline atomik (`transaction.atomic`) mencakup validasi → freeze → filter TMS → normalisasi → tie-breaker → tulis `SelectionResult` → transisi status → `AuditLog`.
-- **4-Level Tie-Breaker ([`backend/core/services/tie_breaker.py`](./backend/core/services/tie_breaker.py)):**
-  - `resolve_rankings_with_tie_breaker(candidates, quota)`: Pengurutan deterministik dengan kunci `(-V_i, -r_{C1}, -r_{C2}, -real\_dependents\_count, created\_at, id)` — tanpa `IndexError` pada `quota=0` atau `quota≥len(eligible)`.
-- **Suite Pengujian TDD + Edge-Case ([`backend/tests/test_saw_and_tiebreaker.py`](./backend/tests/test_saw_and_tiebreaker.py)):**
-  - 27 pengujian otomatis mencakup seluruh aturan bisnis FR-01–FR-03 beserta kasus batas (termasuk pengujian eksplisit Level 1 $C_1$, Level 2 $C_2$, Level 3 Tanggungan Riil, Level 4 Timestamp + `id` ASC, kuota $\le 0$, batch kosong tanpa evaluasi `empty_batch_evaluations`, `raw_crips_value <= 0`, batch ID tidak ditemukan, kandidat kosong, dan penanganan nilai `None`/tipe non-desimal).
+- **Sanitizer Zero-PII ([`backend/core/services/sanitizer.py`](./backend/core/services/sanitizer.py)):**
+  - `build_anonymous_payload(evaluation_id)`: Membangun payload anonim sesuai PRD Bagian 8.1 (`applicant_code`, `rank`, `quota`, `status`, `final_score`, `cutoff_score`, `criteria_data`).
+  - Isolasi PII 100%: Menyaring nama, NIK (hash/masked/encrypted), No KK, dan alamat.
+  - Snapshot Enforced: Membaca `BatchCriteria.frozen_weight` per batch secara eksklusif.
+  - Menghitung rata-rata skor normalisasi penerima lolos ($\bar{r}_j^{\text{lolos}}$) dengan penanganan aman untuk kasus ekstrem (`quota = 0` dan `quota >= eligible`).
+  - Menolak kandidat `DISQUALIFIED` (TMS) karena warga TMS diarahkan ke `INELIGIBLE_NOTICE` administratif, bukan modul XAI.
+- **Generator Fallback Deterministik ([`backend/core/services/deterministic_fallback.py`](./backend/core/services/deterministic_fallback.py)):**
+  - `generate_deterministic_fallback(payload)`: Menghitung penalti kesenjangan terbobot $\Delta_j \cdot w_j = (\bar{r}_j^{\text{lolos}} - r_{ij}) \cdot w_j$.
+  - Menerapkan resolusi kriteria kembar kanonik: $C_1 \rightarrow C_2 \rightarrow C_3 \rightarrow C_4$.
+  - Penanganan khusus kandidat batas kuota (*borderline*): Jika seluruh $\Delta_j \le 0$ tetapi tidak lolos kuota karena *tie-breaker*, menghasilkan narasi spesifik mengenai kompetisi batas ambang kuota (*cutoff*).
+  - Menyusun narasi resmi terstandarisasi untuk status `LOLOS` dan `TIDAK_LOLOS`.
+- **Gemini Flash XAI Client & Validator ([`backend/core/services/xai_explainer.py`](./backend/core/services/xai_explainer.py)):**
+  - `generate_xai_for_evaluation(evaluation_id, gemini_client, backoff_seconds)`: Mengintegrasikan SDK resmi `google-genai` (`genai.Client`, `GenerateContentConfig`, `temperature: 0.15`, `response_mime_type: "application/json"`).
+  - `validate_xai_output(data, allowed_criteria_codes)`: Validasi ketat struktur JSON (`ringkasan_keputusan`, `faktor_penentu_utama`, `narasi_lengkap`, `rekomendasi_tindak_lanjut`) dan pencegahan halusinasi kode kriteria non-aktif (seperti $C_5$, $C_{99}$, atau parameter usang seperti Daya Listrik).
+  - Mekanisme *retry* maksimal 2 kali dengan *exponential backoff*, berpindah otomatis ke `generate_deterministic_fallback()` jika gagal tanpa melempar pengecualian HTTP 500.
+  - `map_explanation_to_public_schema(ai_payload)`: Memetakan kunci internal ke kontrak skema publik (`ringkasan`, `faktor_utama`, `narasi_lengkap`, `rekomendasi`).
+- **Asynchronous Task Worker ([`backend/core/tasks.py`](./backend/core/tasks.py)):**
+  - `process_batch_xai_task(batch_id, gemini_client)`: Memproses narasi seluruh kandidat `ELIGIBLE` dalam batch.
+  - *State Transition Gate*: Memperbarui status batch ke `"Narrated"` dan mencatat `AuditLog` (`XAI_GENERATED`) **hanya jika seluruh** kandidat berhak telah memiliki narasi lengkap.
+  - Menolak eksekusi pada batch yang belum berstatus `Calculated`.
+- **Suite Pengujian TDD & Security Audit ([`backend/tests/test_xai_and_fallback.py`](./backend/tests/test_xai_and_fallback.py)):**
+  - 15 pengujian menyeluruh mencakup Zero-PII, isolasi bobot beku, resolusi $\Delta_j \cdot w_j$, kandidat batas kuota (*borderline*), retry/fallback, anti-halusinasi, *state machine*, dan audit PII pada payload jaringan LLM.
 
 #### Security
-- **Snapshot Freeze Immutability:** `BatchCriteria.frozen_weight` tidak dapat berubah setelah kalkulasi meski `Criteria.weight` diubah oleh admin — terbukti oleh `test_post_calculation_weight_mutation_does_not_alter_frozen_snapshot`.
-- **State Machine Guard:** Kalkulasi ulang pada batch `Approved` atau `Published` langsung ditolak (`ValidationError`) — terbukti oleh `test_approved_batch_rejects_recalculation`.
+- **OWASP LLM02 Sensitive Information Disclosure & UU PDP Kepatuhan Penuh:** Tidak ada data identitas warga yang pernah disentuh atau dikirimkan ke model LLM. Terverifikasi secara otomatis oleh `test_security_audit_zero_pii_in_llm_prompt_and_network_payload`.
+- **Anti-Hallucination Filtering:** Respons LLM diperiksa terhadap daftar kriteria aktif; upaya memunculkan kriteria di luar $C_1–C_4$ memicu penolakan dan fallback ke aturan deterministik kelurahan.
+- **Fail-Safe Robustness:** Pemadaman API eksternal atau *rate limiting* tidak pernah mengakibatkan *crash* atau kesalahan sistem 500 ke pengguna.
 
 #### Changed
-- Dibangun di atas `feat/m1-crypto-models` — seluruh 20 pengujian Fase 1 & Security tetap lulus tanpa modifikasi.
+- Modul layanan `core.services` diperluas dan diekspos melalui [`backend/core/services/__init__.py`](./backend/core/services/__init__.py).
+- Seluruh 47 pengujian dari Fase 1 (Kriptografi & Model) dan Fase 2 (SAW & Tie-Breaker) tetap 100% lulus tanpa regresi.
 
 ---
 
-### Rumus Normalisasi SAW & 4-Level Tie-Breaker
+### Skema Payload Zero-PII & Fallback Deterministik $\Delta_j \cdot w_j$
 
-#### Normalisasi Matriks $R_{ij}$
+#### 1. Payload Anonim ke Gemini API (PRD Bagian 8.1)
+```json
+{
+  "applicant_code": "KPM-042",
+  "rank": 35,
+  "quota": 30,
+  "status": "TIDAK_LOLOS",
+  "final_score": 0.684,
+  "cutoff_score": 0.725,
+  "criteria_data": [
+    {
+      "code": "C1",
+      "name": "Pendapatan Keluarga",
+      "type": "COST",
+      "weight": 0.30,
+      "raw_crips_label": "Rp 1.500.001 - Rp 2.500.000/bln",
+      "normalized_score": 0.60,
+      "avg_passed_score": 0.85
+    },
+    {
+      "code": "C2",
+      "name": "Jumlah Tanggungan",
+      "type": "BENEFIT",
+      "weight": 0.25,
+      "raw_crips_label": "1-2 orang tanggungan",
+      "normalized_score": 0.50,
+      "avg_passed_score": 0.80
+    },
+    {
+      "code": "C3",
+      "name": "Kondisi Tempat Tinggal",
+      "type": "COST",
+      "weight": 0.25,
+      "raw_crips_label": "Cukup (Semi-permanen, fasilitas terbatas)",
+      "normalized_score": 0.75,
+      "avg_passed_score": 0.75
+    },
+    {
+      "code": "C4",
+      "name": "Kepemilikan Aset",
+      "type": "COST",
+      "weight": 0.20,
+      "raw_crips_label": "Memiliki aset menengah (motor/elektronik)",
+      "normalized_score": 0.70,
+      "avg_passed_score": 0.70
+    }
+  ]
+}
+```
 
-| Tipe Kriteria | Rumus Normalisasi |
-| :--- | :--- |
-| **Benefit** (C2: semakin tinggi semakin baik) | $r_{ij} = \dfrac{x_{ij}}{\max_i x_{ij}}$ |
-| **Cost** (C1, C3, C4: semakin rendah semakin baik) | $r_{ij} = \dfrac{\min_i x_{ij}}{x_{ij}}$ |
+#### 2. Formulasi Kesenjangan Terbobot Fallback Deterministik
+Untuk setiap kriteria $j$:
 
-#### Skor Preferensi $V_i$
+$$\Delta_j = \bar{r}_j^{\text{lolos}} - r_{ij}$$
 
-$$V_i = \sum_{j=1}^{4} w_j \cdot r_{ij}$$
+$$\text{Penalti Terbobot}_j = \Delta_j \cdot w_j$$
 
-dimana $w_j$ adalah bobot beku dari `BatchCriteria.frozen_weight` (bukan `Criteria.weight` yang bisa berubah).
+Kriteria penentu utama dipilih melalui:
 
-#### 4-Level Tie-Breaker (FR-03)
+$$j^* = \operatorname{argmax}_j (\Delta_j \cdot w_j)$$
 
-Ketika dua kandidat memiliki $V_i$ yang identik di batas kuota, urutan pemenang ditentukan secara deterministik bertingkat:
-
-| Level | Kriteria Tie-Break | Arah |
-| :---: | :--- | :--- |
-| **1** | Nilai normalisasi $r_{i, C1}$ (Pendapatan Keluarga) | ↑ Terbesar menang |
-| **2** | Nilai normalisasi $r_{i, C2}$ (Jumlah Tanggungan) | ↑ Terbesar menang |
-| **3** | `Evaluation.real_dependents_count` (Jumlah Tanggungan Riil) | ↑ Terbesar menang |
-| **4** | `Evaluation.created_at` (Timestamp pengusulan) + `id` ASC | ↓ Terlama menang |
+Jika terdapat nilai penalti terbobot kembar, pemecahan dilakukan dengan prioritas kriteria kanonik $C_1 \succ C_2 \succ C_3 \succ C_4$.
 
 ---
 
-### Daftar File Fase 2
+### Daftar File Fase 3
 
 | File | Tanggung Jawab |
 | :--- | :--- |
-| [`./backend/core/services/__init__.py`](./backend/core/services/__init__.py) | Package marker untuk modul layanan |
-| [`./backend/core/services/saw_engine.py`](./backend/core/services/saw_engine.py) | Pipeline SAW atomik (validasi → freeze → guard batch kosong → filter TMS → normalisasi R_ij/V_i → tie-breaker → tulis hasil) |
-| [`./backend/core/services/tie_breaker.py`](./backend/core/services/tie_breaker.py) | Tie-breaker deterministik 4-level defensif terhadap None dengan penanganan `quota<=0` dan `quota>=eligible` |
-| [`./backend/tests/test_saw_and_tiebreaker.py`](./backend/tests/test_saw_and_tiebreaker.py) | 27 pengujian TDD mencakup semua aturan bisnis FR-01–FR-03 dan kasus batas |
+| [`./backend/core/services/sanitizer.py`](./backend/core/services/sanitizer.py) | Membangun payload anonim Zero-PII, membaca `BatchCriteria.frozen_weight`, menghitung $\bar{r}_j^{\text{lolos}}$ |
+| [`./backend/core/services/deterministic_fallback.py`](./backend/core/services/deterministic_fallback.py) | Generator narasi deterministik berbasis aturan ($\Delta_j \cdot w_j$, tie-breaker $C_1–C_4$, & kasus batas kuota) |
+| [`./backend/core/services/xai_explainer.py`](./backend/core/services/xai_explainer.py) | Klien Gemini Flash API, validasi anti-halusinasi, *retry exponential backoff*, pemetaan skema publik |
+| [`./backend/core/tasks.py`](./backend/core/tasks.py) | Worker asinkron batch XAI dengan *state transition guard* ke status `"Narrated"` |
+| [`./backend/core/services/__init__.py`](./backend/core/services/__init__.py) | Ekspor publik modul layanan SAW & XAI |
+| [`./backend/tests/test_xai_and_fallback.py`](./backend/tests/test_xai_and_fallback.py) | 15 pengujian TDD, kasus batas, simulasi kegagalan Gemini, dan audit keamanan Zero-PII |
 
 ---
 
-### Hasil Verifikasi Fase 2
+### Hasil Verifikasi Test
 
 ```text
-$ cd backend ; .\.venv\Scripts\python.exe -m pytest tests/test_saw_and_tiebreaker.py -v
+$ backend/.venv/Scripts/python.exe -m pytest backend/tests/test_xai_and_fallback.py -v
 
-tests/test_saw_and_tiebreaker.py::test_saw_rejects_invalid_weight_sum PASSED
-tests/test_saw_and_tiebreaker.py::test_saw_accepts_valid_weight_sum PASSED
-tests/test_saw_and_tiebreaker.py::test_freeze_batch_criteria_is_idempotent PASSED
-tests/test_saw_and_tiebreaker.py::test_freeze_batch_criteria_captures_current_weights PASSED
-tests/test_saw_and_tiebreaker.py::test_post_calculation_weight_mutation_does_not_alter_frozen_snapshot PASSED
-tests/test_saw_and_tiebreaker.py::test_tms_disqualified_excluded_from_normalization PASSED
-tests/test_saw_and_tiebreaker.py::test_all_tms_batch_raises_validation_error PASSED
-tests/test_saw_and_tiebreaker.py::test_incomplete_criteria_raises_validation_error PASSED
-tests/test_saw_and_tiebreaker.py::test_saw_normalization_benefit_and_cost_formulas PASSED
-tests/test_saw_and_tiebreaker.py::test_saw_excludes_tms_freezes_weights_and_resolves_tie_breaks PASSED
-tests/test_saw_and_tiebreaker.py::test_tie_breaker_uses_real_dependents_count_at_level_3 PASSED
-tests/test_saw_and_tiebreaker.py::test_tie_breaker_uses_created_at_at_level_4 PASSED
-tests/test_saw_and_tiebreaker.py::test_quota_zero_no_index_error PASSED
-tests/test_saw_and_tiebreaker.py::test_quota_exceeds_eligible_all_pass PASSED
-tests/test_saw_and_tiebreaker.py::test_approved_batch_rejects_recalculation PASSED
-tests/test_saw_and_tiebreaker.py::test_published_batch_rejects_recalculation PASSED
-tests/test_saw_and_tiebreaker.py::test_calculate_batch_saw_transitions_status_to_calculated PASSED
-tests/test_saw_and_tiebreaker.py::test_calculate_batch_saw_creates_audit_log PASSED
-tests/test_saw_and_tiebreaker.py::test_tie_breaker_uses_c1_at_level_1 PASSED
-tests/test_saw_and_tiebreaker.py::test_tie_breaker_uses_c2_at_level_2 PASSED
-tests/test_saw_and_tiebreaker.py::test_tie_breaker_uses_evaluation_id_as_final_tie_breaker PASSED
-tests/test_saw_and_tiebreaker.py::test_quota_negative_no_index_error PASSED
-tests/test_saw_and_tiebreaker.py::test_empty_batch_evaluations_raises_validation_error PASSED
-tests/test_saw_and_tiebreaker.py::test_nonexistent_batch_id_raises_does_not_exist PASSED
-tests/test_saw_and_tiebreaker.py::test_invalid_crips_value_nonpositive_raises_validation_error PASSED
-tests/test_saw_and_tiebreaker.py::test_tie_breaker_empty_candidates_returns_empty PASSED
-tests/test_saw_and_tiebreaker.py::test_tie_breaker_none_and_missing_keys_handled_robustly PASSED
+backend\tests\test_xai_and_fallback.py::test_anonymous_payload_contains_zero_pii_and_uses_frozen_weights PASSED
+backend\tests\test_xai_and_fallback.py::test_anonymous_payload_criteria_data_fields_and_avg_passed_score PASSED
+backend\tests\test_xai_and_fallback.py::test_anonymous_payload_zero_passed_or_all_passed PASSED
+backend\tests\test_xai_and_fallback.py::test_anonymous_payload_rejects_disqualified_or_uncalculated PASSED
+backend\tests\test_xai_and_fallback.py::test_fallback_selects_highest_weighted_gap_and_maps_public_keys PASSED
+backend\tests\test_xai_and_fallback.py::test_fallback_canonical_tie_break_order_c1_to_c4 PASSED
+backend\tests\test_xai_and_fallback.py::test_fallback_borderline_tie_break_when_all_gaps_non_positive PASSED
+backend\tests\test_xai_and_fallback.py::test_fallback_for_status_lolos PASSED
+backend\tests\test_xai_and_fallback.py::test_xai_explainer_with_mocked_gemini_success PASSED
+backend\tests\test_xai_and_fallback.py::test_xai_explainer_retries_and_falls_back_on_error PASSED
+backend\tests\test_xai_and_fallback.py::test_xai_explainer_rejects_hallucinated_criteria_and_falls_back PASSED
+backend\tests\test_xai_and_fallback.py::test_xai_explainer_rejects_malformed_json_and_falls_back PASSED
+backend\tests\test_xai_and_fallback.py::test_process_batch_xai_task_transitions_to_narrated PASSED
+backend\tests\test_xai_and_fallback.py::test_process_batch_xai_task_rejects_invalid_batch_status PASSED
+backend\tests\test_xai_and_fallback.py::test_security_audit_zero_pii_in_llm_prompt_and_network_payload PASSED
 
-27 passed in 15.42s
+======================== 15 passed in 5.76s ========================
 
-# Full suite (Fase 1 + Fase 2 + Security Guardrails):
-$ .\.venv\Scripts\python.exe -m pytest tests/ -v
-47 passed in 15.27s
+# Verifikasi Regresi Keseluruhan (Fase 1 + Fase 2 + Fase 3 + Security Guardrails):
+$ backend/.venv/Scripts/python.exe -m pytest backend/tests/ -v
+======================= 62 passed in 16.79s =======================
 ```
 
 ---
 
-## Dokumentasi Branch: `feat/m1-crypto-models` (Fase 1 / Milestone 1 — Database Schema & UU PDP Cryptographic Layer)
+## Dokumentasi Branch Sebelumnya
 
-### Mengapa Fase Ini Dibutuhkan (*Context & Why*)
-Sesuai **UU PDP No. 27 Tahun 2022** dan **[ADR-002](./docs/decisions/ADR-002-dual-layer-nik-crypto-and-zero-pii-xai.md)**, Nomor Induk Kependudukan (NIK) adalah data pribadi spesifik yang dilarang disimpan dalam bentuk *plaintext* di basis data maupun dikirim ke API eksternal. Namun, sistem tetap membutuhkan:
-1. **Pencarian warga instan ($O(1)$)** saat verifikasi di Portal Publik dan deduplikasi import Excel tanpa mendekripsi seluruh baris tabel (`HMAC-SHA256` di kolom `nik_hash`).
-2. **Dekripsi terkontrol** khusus saat pencetakan PDF Berita Acara resmi kelurahan (`AES-256-GCM` di kolom `nik_encrypted`).
-3. **Pembekuan bobot kriteria per batch** ([ADR-003](./docs/decisions/ADR-003-immutable-criteria-snapshot-tms-gate-and-tie-breaker.md)) pada tabel `BATCH_CRITERIA` agar perubahan bobot di masa depan tidak merusak histori seleksi lama.
+<details>
+<summary><strong>Fase 2: feat/m2-saw-tiebreaker (SAW Engine & 4-Level Tie-Breaker)</strong></summary>
 
----
+### Mengapa Fase Ini Dibutuhkan
+Fase 2 mengimplementasikan inti matematis Simple Additive Weighting (SAW) sesuai PRD FR-01–FR-03:
+- Normalisasi Benefit ($r_{ij} = x_{ij}/\max x$) dan Cost ($r_{ij} = \min x/x_{ij}$)
+- Pembekuan bobot ke `BatchCriteria.frozen_weight`
+- Pengecualian warga TMS dari matriks normalisasi
+- Tie-breaker deterministik 4-level ($C_1 \rightarrow C_2 \rightarrow \text{real\_dependents} \rightarrow \text{created\_at}$)
 
-### Changelog Fase 1 (Milestone 1)
+</details>
 
-#### Added
-- **Layanan Kriptografi UU PDP ([`backend/core/crypto.py`](./backend/core/crypto.py)):**
-  - `encrypt_nik()` & `decrypt_nik()`: Enkripsi *at-rest* `AES-256-GCM` dengan *assertion* ketat kunci 32-byte, *nonce* CSPRNG 12-byte (`os.urandom(12)`), dan validasi *canonical base64url* 60 karakter (44 byte: `12B nonce + 16B NIK + 16B GCM tag`).
-  - `hash_nik()`: Indeks pencarian deterministik 64 karakter hex berbasis `HMAC-SHA256` dengan *server-side pepper* (`NIK_HMAC_PEPPER`).
-  - `mask_nik()` & `mask_name()`: Masking visual identitas (`367403******0002`, `"Ahmad S******"` untuk nama multi-kata, `"Su*****"` untuk mononim).
-  - `sign_pdf_download_token()` & `verify_pdf_download_token()`: Token unduhan PDF individual bertanda tangan `TimestampSigner` dengan masa berlaku 15 menit (`max_age=900`).
-- **Model Basis Data 9 Tabel PRD + `StaffUser` ([`backend/core/models.py`](./backend/core/models.py)):**
-  - Implementasi penuh skema relasional PRD Bagian 9 beserta `UniqueConstraint` dan `AliasQuerySet` untuk kompatibilitas nama kolom PRD.
-- **Management Command Seeder ([`backend/core/management/commands/seed_initial_data.py`](./backend/core/management/commands/seed_initial_data.py)):**
-  - Pengisian idempoten kriteria `C1–C4`, sub-kriteria Crips `1–5`, akun staf demo (`SUPER_ADMIN`, `SURVEYOR`, `VIEWER`), dan periode awal.
-- **Suite Pengujian TDD & Adversarial ([`backend/tests/test_crypto_and_models.py`](./backend/tests/test_crypto_and_models.py)):**
-  - 15 pengujian otomatis yang mencakup roundtrip kriptografi, *tampered/malleable ciphertext*, digit Unicode non-ASCII, idempotensi upsert, dan proteksi ORM.
+<details>
+<summary><strong>Fase 1: feat/m1-crypto-models (Database Schema & UU PDP Cryptography)</strong></summary>
 
-#### Security
-- **Proteksi At-Rest Menyeluruh pada ORM (`Citizen.clean()` & `CitizenQuerySet`):** Menolak penyimpanan 16 digit NIK *plaintext* atau *ciphertext* tidak valid baik melalui `.save()`, `.bulk_create()`, maupun `QuerySet.update()`.
-- **Audit Trail Zero-PII (`AuditLog.clean()`):** Mencegah pencatatan NIK *plaintext* ke tabel `audit_log`.
-- **Audit Subagent `security-auditor`:** Lulus pemeriksaan kepatuhan UU PDP No. 27/2022 dengan **0 temuan Critical/High/Medium**.
+### Mengapa Fase Ini Dibutuhkan
+Fase 1 membangun fondasi kepatuhan UU PDP No. 27/2022:
+- Enkripsi at-rest NIK dengan AES-256-GCM
+- Indexing pencarian $O(1)$ dengan HMAC-SHA256
+- Masking visual `367403******0002` dan `Ahmad S******`
+- Skema 9 tabel PRD + StaffUser
 
-#### Changed
-- **Penyelarasan Atribut `C3` (Kondisi Tempat Tinggal):** Ditetapkan sebagai `COST` (bobot `0.25`) sesuai PRD Bagian 8.1, dengan urutan Crips `1` (*Tidak Layak/Darurat* $\rightarrow r = 1.00$) hingga Crips `5` (*Sangat Layak/Permanen* $\rightarrow r = 0.20$).
-
----
-
-### Arsitektur Skema Basis Data (9 Tabel PRD + `StaffUser`)
-
-| Model / Tabel | Tanggung Jawab Utama & Constraint |
-| :--- | :--- |
-| `StaffUser` (`staff_user`) | Akun internal kelurahan dengan RBAC (`SUPER_ADMIN`, `SURVEYOR` per RT, `VIEWER`). |
-| `Criteria` (`criteria`) | Master kriteria `C1–C4` (`COST` / `BENEFIT`) dan bobot aktif (`weight`). |
-| `SubCriteria` (`subcriteria`) | Definisi skala Crips `1..5` per kriteria (`uq_subcriteria_criteria_value`). |
-| `BatchCriteria` (`batch_criteria`) | Snapshot bobot beku (`frozen_weight`) per batch seleksi (`uq_batch_criteria`). |
-| `Citizen` (`citizen`) | Data warga terenkripsi (`nik_hash`, `nik_encrypted`, `nik_masked`, `kk_last4`, `full_name_masked`). |
-| `Period` (`period`) | Periode pelaksanaan seleksi bansos (Semester/Tahun). |
-| `SelectionBatch` (`selection_batch`) | *State machine* batch (`Draft -> Collecting -> Calculated -> Narrated -> Approved -> Published`). |
-| `Evaluation` (`evaluation`) | Penilaian warga per batch (`uq_evaluation_batch_citizen`), status TMS, & `real_dependents_count` (Tie-Breaker Level 3). |
-| `EvaluationDetail` (`evaluation_detail`) | Nilai mentah Crips (`1..5`) dan skor normalisasi `normalized_value` (`uq_evaluation_detail`). |
-| `SelectionResult` (`selection_result`) | Skor akhir SAW (`final_score_v`), `ranking`, `tie_break_level`, dan narasi XAI (`ai_narrative`). |
-| `AuditLog` (`audit_log`) | Jejak audit operasi sensitif (dekripsi PDF, kalkulasi SAW, pengesahan batch) bebas PII. |
-
-### Konfigurasi Awal Kriteria (`seed_initial_data.py`)
-
-| Kode | Nama Kriteria | Tipe Atribut | Bobot (`w_j`) | Skala Crips `1` (Nilai Terendah) | Skala Crips `5` (Nilai Tertinggi) |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **`C1`** | Pendapatan Keluarga | `COST` | `0.30` | Sangat Rendah (`<= Rp 500.000/bln`) | Sangat Tinggi (`> Rp 4.000.000/bln`) |
-| **`C2`** | Jumlah Tanggungan | `BENEFIT` | `0.25` | Tidak ada tanggungan | `>= 7` orang tanggungan |
-| **`C3`** | Kondisi Tempat Tinggal | `COST` | `0.25` | Tidak Layak (Darurat / tanpa fasilitas) | Sangat Layak (Permanen, fasilitas lengkap) |
-| **`C4`** | Kepemilikan Aset | `COST` | `0.20` | Tidak memiliki aset produktif | Memiliki aset besar (mobil/usaha/properti) |
-
----
-
-### Hasil Verifikasi Fase 1
-
-```text
-$ backend\.venv\Scripts\pytest.exe backend/tests/test_crypto_and_models.py backend/tests/test_security_guardrails.py -v
-
-backend/tests/test_crypto_and_models.py::test_nik_crypto_roundtrip_and_no_plaintext_at_rest PASSED
-backend/tests/test_crypto_and_models.py::test_invalid_nik_rejected PASSED
-backend/tests/test_crypto_and_models.py::test_citizen_upsert_idempotency PASSED
-backend/tests/test_crypto_and_models.py::test_seed_initial_data_creates_criteria PASSED
-backend/tests/test_crypto_and_models.py::test_citizen_blocks_plaintext_nik_at_rest_and_enforces_prd_schema_constraints PASSED
-backend/tests/test_crypto_and_models.py::test_adversarial_crypto_base64_malleability_and_override_settings PASSED
-backend/tests/test_crypto_and_models.py::test_adversarial_orm_queryset_aliases_and_null_tms_reason PASSED
-backend/tests/test_crypto_and_models.py::test_adversarial_citizen_at_rest_guards_on_hash_mask_update_and_bulk_create PASSED
-backend/tests/test_crypto_and_models.py::test_mask_nik_format PASSED
-backend/tests/test_crypto_and_models.py::test_mask_name_single_word PASSED
-backend/tests/test_crypto_and_models.py::test_mask_name_multi_word PASSED
-backend/tests/test_crypto_and_models.py::test_encrypt_nik_32byte_key_enforcement PASSED
-backend/tests/test_crypto_and_models.py::test_nik_hash_is_deterministic PASSED
-backend/tests/test_crypto_and_models.py::test_pdf_token_expired_raises PASSED
-backend/tests/test_crypto_and_models.py::test_security_audit_unicode_nik_and_tampered_ciphertext_rejected PASSED
-backend/tests/test_security_guardrails.py::test_env_example_files_exist_and_contain_required_placeholders PASSED
-backend/tests/test_security_guardrails.py::test_parse_aes_256_key_strictly_enforces_32_bytes PASSED
-backend/tests/test_security_guardrails.py::test_secret_management_enforces_key_separation_and_blocks_wildcard_cors PASSED
-backend/tests/test_security_guardrails.py::test_auth_guardrails_reject_allow_any_and_unbounded_jwt PASSED
-backend/tests/test_security_guardrails.py::test_zero_pii_log_filter_redacts_16_digit_nik_and_bearer_jwt PASSED
-
-20 passed in 1.56s
-```
-
----
-
-## Quick Start (Fase 1)
-
-```powershell
-cd backend
-.\.venv\Scripts\Activate.ps1
-
-# Jalankan migrasi skema 9 tabel PRD + StaffUser
-python manage.py migrate
-
-# Isi data awal kriteria C1-C4, sub-kriteria Crips 1-5, dan akun staf demo
-python manage.py seed_initial_data
-
-# Jalankan pengujian kriptografi & model
-pytest tests/test_crypto_and_models.py -v
-```
+</details>
 
 ---
 
@@ -245,5 +214,6 @@ pytest tests/test_crypto_and_models.py -v
 
 ## Catatan Penting (Known Gotchas)
 
-- **Jangan Pernah Menyimpan NIK Plaintext:** Gunakan `Citizen.objects.create_or_update_with_nik(raw_nik=..., ...)` yang otomatis mengisi `nik_hash`, `nik_encrypted`, dan `nik_masked`.
-- **Gunakan Bobot Beku Setelah Kalkulasi:** Setelah status batch mencapai `Calculated`, seluruh modul hilir wajib membaca `BatchCriteria.frozen_weight` milik batch tersebut.
+- **Jangan Pernah Mengirim PII ke LLM:** Modul XAI hanya boleh menerima payload anonim yang telah disanitasi melalui `build_anonymous_payload()`.
+- **Gunakan Bobot Beku Setelah Kalkulasi:** Setelah status batch mencapai `Calculated`, seluruh modul hilir wajib membaca `BatchCriteria.frozen_weight` milik batch tersebut, bukan `Criteria.weight`.
+- **Fallback Otomatis Anti-500:** Modul penjelasan XAI tidak boleh melempar HTTP 500 jika API Gemini offline; sistem wajib selalu menyediakan narasi fallback deterministik.
