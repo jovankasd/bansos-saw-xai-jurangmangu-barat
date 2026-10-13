@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { ShieldCheck, AlertCircle, User, Lock, Eye, EyeOff, LogIn, ArrowLeft } from "lucide-react";
 import { api } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -27,13 +28,13 @@ export const LoginPage: React.FC = () => {
       const { access, refresh, role, name, rt_number } = response.data;
       login(access, refresh, { name, role, rt_number });
 
-      // Role-based navigation
+      // Role-based navigation to actual registered routes
       if (role === "SUPER_ADMIN") {
         navigate("/admin/dashboard");
       } else if (role === "SURVEYOR") {
-        navigate("/admin/surveyor");
+        navigate("/admin/citizens");
       } else if (role === "VIEWER") {
-        navigate("/admin/approval");
+        navigate("/admin/berita-acara");
       } else {
         navigate("/admin/dashboard");
       }
@@ -60,7 +61,7 @@ export const LoginPage: React.FC = () => {
         {/* Civic Logo & Branding Header */}
         <div className="text-center space-y-2">
           <div className="mx-auto w-14 h-14 rounded-2xl bg-primary text-on-primary flex items-center justify-center shadow-md">
-            <span className="material-symbols-outlined text-[32px]">shield_person</span>
+            <ShieldCheck className="w-8 h-8 text-on-primary" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-primary">
             Panel Adjudikasi Bansos
@@ -82,7 +83,7 @@ export const LoginPage: React.FC = () => {
 
           {errorMsg && (
             <div className="p-3.5 rounded-xl bg-status-rejected-bg border border-red-200 text-status-rejected-fg text-xs sm:text-sm flex items-start gap-2.5">
-              <span className="material-symbols-outlined text-[18px] shrink-0 mt-0.5">error</span>
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-status-rejected-fg" />
               <span>{errorMsg}</span>
             </div>
           )}
@@ -98,7 +99,7 @@ export const LoginPage: React.FC = () => {
               </label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-secondary">
-                  <span className="material-symbols-outlined text-[18px]">person</span>
+                  <User className="w-4 h-4 text-secondary" />
                 </span>
                 <input
                   id="username"
@@ -123,7 +124,7 @@ export const LoginPage: React.FC = () => {
               </label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-secondary">
-                  <span className="material-symbols-outlined text-[18px]">lock</span>
+                  <Lock className="w-4 h-4 text-secondary" />
                 </span>
                 <input
                   id="password"
@@ -140,10 +141,13 @@ export const LoginPage: React.FC = () => {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-secondary hover:text-primary"
                   tabIndex={-1}
+                  aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
                 >
-                  <span className="material-symbols-outlined text-[18px]">
-                    {showPassword ? "visibility_off" : "visibility"}
-                  </span>
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </div>
@@ -162,7 +166,7 @@ export const LoginPage: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    <span className="material-symbols-outlined text-[18px]">login</span>
+                    <LogIn className="w-4 h-4" />
                     <span>Masuk ke Panel Adjudikasi</span>
                   </>
                 )}
@@ -176,7 +180,7 @@ export const LoginPage: React.FC = () => {
               to="/cek-bansos"
               className="inline-flex items-center gap-1.5 text-xs text-primary font-medium hover:underline"
             >
-              <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+              <ArrowLeft className="w-4 h-4" />
               <span>Kembali ke Portal Publik Cek Bansos</span>
             </Link>
           </div>
@@ -190,3 +194,5 @@ export const LoginPage: React.FC = () => {
     </div>
   );
 };
+
+export default LoginPage;

@@ -19,6 +19,17 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          "vendor-ui": ["lucide-react", "clsx", "tailwind-merge"],
+          "vendor-net": ["axios"],
+        },
+      },
+    },
+  },
   test: {
     globals: true,
     environment: "jsdom",

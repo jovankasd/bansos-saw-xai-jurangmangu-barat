@@ -34,14 +34,16 @@ Fase 9 melengkapi seluruh spektrum antarmuka pengguna pada sistem pendukung kepu
 - **Komponen Layar Pengesahan & Evaluasi:**
   - [`frontend/src/pages/dashboard/LurahApprovalPage.tsx`](./frontend/src/pages/dashboard/LurahApprovalPage.tsx): Halaman pengesahan Berita Acara resmi oleh Lurah dengan format kertas A4, kop surat Pemkot Tangerang Selatan, QR Code keabsahan ber-digest kriptografis, tanda tangan TTE digital ganda, pembatas kuota 50 KPM, lampiran diskualifikasi TMS, dan panel interaktif uji petik XAI 3 tab (Top, Cutoff, Cadangan).
   - [`frontend/src/pages/dashboard/ThesisEvaluationPage.tsx`](./frontend/src/pages/dashboard/ThesisEvaluationPage.tsx): Modul evaluasi empiris Bab 4 & 5 skripsi dengan visualisasi kartu KPI rumus matematis Fidelity Score, Hallucination Rate, Uji Akurasi White-Box SAW, hasil stress test asinkron, tabel 10 butir instrumen baku System Usability Scale (SUS), serta tombol ekspor dataset Excel multi-sheet.
+  - [`frontend/src/components/auth/ProtectedRoute.tsx`](./frontend/src/components/auth/ProtectedRoute.tsx): Wrapper pengaman rute client-side berbasis status autentikasi JWT dan pengecekan peran RBAC (`SUPER_ADMIN`, `SURVEYOR`, `VIEWER`) yang mengarahkan akses tanpa izin ke landing page sah masing-masing peran.
 - **Suite Pengujian Vitest TDD:**
   - [`frontend/src/__tests__/ApprovalAndEvaluation.test.tsx`](./frontend/src/__tests__/ApprovalAndEvaluation.test.tsx): 7 skenario pengujian unit & integrasi memverifikasi rendering dokumen A4, proteksi RBAC Viewer (Lurah), alur penandatanganan TTE, pergantian tab studi kasus XAI spot-check, verifikasi metrik Fidelity/Hallucination, dan tabel instrumen SUS.
+  - [`frontend/src/__tests__/ProtectedRoute.test.tsx`](./frontend/src/__tests__/ProtectedRoute.test.tsx): 5 skenario pengujian unit memverifikasi pencegahan bypass rute tak terautentikasi dan pengalihan dinamis berbasis peran pengguna.
 
 #### Changed
-- **Penyelesaian Seluruh Rute Dashboard ([`frontend/src/App.tsx`](./frontend/src/App.tsx)):**
-  - Mendaftarkan rute `/admin/berita-acara` ke `<LurahApprovalPage />`.
-  - Mendaftarkan rute `/admin/evaluation` ke `<ThesisEvaluationPage />`.
-  - Menghubungkan 100% rute aplikasi ke komponen operasional final, menuntaskan milestone frontend seluruh peran (Admin Kesos, Surveyor RT, dan Lurah).
+- **Penyelesaian Seluruh Rute Dashboard & Optimasi Bundling ([`frontend/src/App.tsx`](./frontend/src/App.tsx) & [`frontend/vite.config.ts`](./frontend/vite.config.ts)):**
+  - Mendaftarkan rute `/admin/berita-acara`, `/admin/evaluation`, dan `/admin/audit` dengan pembagian kode dinamis (`React.lazy` + `Suspense`) sehingga payload JS awal warga di `/cek-bansos` terisolasi dari kode admin internal.
+  - Mengonfigurasi Rollup `manualChunks` (`vendor-react`, `vendor-ui`, `vendor-net`) pada `vite.config.ts` untuk caching jangka panjang.
+  - Memperbaiki pengalihan pasca-login di `LoginPage.tsx` agar peran `SURVEYOR` langsung menuju `/admin/citizens` dan `VIEWER` menuju `/admin/berita-acara`, serta mengganti ikon Material Symbols dengan SVG murni `lucide-react`.
 
 ---
 
@@ -66,8 +68,12 @@ Fase 9 melengkapi seluruh spektrum antarmuka pengguna pada sistem pendukung kepu
 | :--- | :--- |
 | [`./frontend/src/pages/dashboard/LurahApprovalPage.tsx`](./frontend/src/pages/dashboard/LurahApprovalPage.tsx) | Antarmuka pengesahan Berita Acara Lurah (dokumen A4 resmi, stempel QR BSrE, dan uji petik narasi XAI) |
 | [`./frontend/src/pages/dashboard/ThesisEvaluationPage.tsx`](./frontend/src/pages/dashboard/ThesisEvaluationPage.tsx) | Modul evaluasi skripsi Bab 4 & 5 (Akurasi SAW, rumus Fidelity, Hallucination, tabel SUS, dan ekspor dataset) |
-| [`./frontend/src/App.tsx`](./frontend/src/App.tsx) | Pendaftaran rute final `/admin/berita-acara` dan `/admin/evaluation` pada React Router |
+| [`./frontend/src/components/auth/ProtectedRoute.tsx`](./frontend/src/components/auth/ProtectedRoute.tsx) | Wrapper proteksi autentikasi & RBAC client-side untuk seluruh rute internal admin kelurahan |
+| [`./frontend/src/pages/LoginPage.tsx`](./frontend/src/pages/LoginPage.tsx) | Form autentikasi staf dengan ikon Lucide React dan routing presisi sesuai peran |
+| [`./frontend/src/App.tsx`](./frontend/src/App.tsx) | Pendaftaran rute final dengan lazy loading, RBAC ProtectedRoute, dan PageLoader |
+| [`./frontend/vite.config.ts`](./frontend/vite.config.ts) | Konfigurasi Vite dengan Rollup vendor manualChunks untuk optimasi caching & bundle |
 | [`./frontend/src/__tests__/ApprovalAndEvaluation.test.tsx`](./frontend/src/__tests__/ApprovalAndEvaluation.test.tsx) | Suite pengujian TDD Vitest untuk layar pengesahan Berita Acara dan evaluasi empiris skripsi |
+| [`./frontend/src/__tests__/ProtectedRoute.test.tsx`](./frontend/src/__tests__/ProtectedRoute.test.tsx) | Suite pengujian TDD Vitest untuk verifikasi pengaman autentikasi dan otorisasi RBAC |
 
 ---
 
@@ -77,33 +83,50 @@ Fase 9 melengkapi seluruh spektrum antarmuka pengguna pada sistem pendukung kepu
 # 1. Verifikasi Suite Backend (Pytest):
 $ backend\.venv\Scripts\pytest.exe backend/ -v
 
-============================== 99 passed in 75.72s ==============================
+============================== 99 passed in 71.41s ==============================
 
 # 2. Verifikasi Seluruh Suite Frontend (Vitest):
 $ npm --prefix frontend test -- --run
 
  RUN  v2.1.9 D:/Kuliah/SKRIPSI/BANSOS_SAW+LLM/frontend
 
- ✓ src/__tests__/AppShell.responsive.test.tsx (4 tests) 325ms
- ✓ src/__tests__/PublicPortalPage.test.tsx (6 tests) 429ms
- ✓ src/__tests__/ApprovalAndEvaluation.test.tsx (7 tests) 482ms
- ✓ src/__tests__/DashboardScreens.test.tsx (11 tests) 503ms
+ ✓ src/__tests__/ProtectedRoute.test.tsx (5 tests) 46ms
+ ✓ src/__tests__/AppShell.responsive.test.tsx (4 tests) 457ms
+ ✓ src/__tests__/PublicPortalPage.test.tsx (6 tests) 598ms
+ ✓ src/__tests__/ApprovalAndEvaluation.test.tsx (7 tests) 666ms
+ ✓ src/__tests__/DashboardScreens.test.tsx (11 tests) 658ms
 
- Test Files  4 passed (4)
-      Tests  28 passed (28)
-   Duration  2.09s
+ Test Files  5 passed (5)
+      Tests  33 passed (33)
+   Duration  2.48s
 
-# 3. Verifikasi Kompilasi TypeScript & Build Produksi (Vite):
+# 3. Verifikasi Kompilasi TypeScript & Build Produksi (Vite Code-Splitting):
 $ npm --prefix frontend run build
 
 vite v6.4.4 building for production...
 transforming...
-✓ 1651 modules transformed.
+✓ 1653 modules transformed.
 rendering chunks...
-dist/index.html                   0.99 kB │ gzip:   0.55 kB
-dist/assets/index-D72Ab-zY.css   34.65 kB │ gzip:   6.44 kB
-dist/assets/index-CRrIsU69.js   393.40 kB │ gzip: 108.30 kB
-✓ built in 2.81s (Zero TypeScript errors)
+computing gzip size...
+dist/index.html                                   1.07 kB │ gzip:  0.58 kB
+dist/assets/index-D72Ab-zY.css                   34.65 kB │ gzip:  6.44 kB
+dist/assets/api-D5q-dUhD.js                       1.36 kB │ gzip:  0.64 kB
+dist/assets/CriteriaGapChart-CyJBNv-Q.js          2.65 kB │ gzip:  1.01 kB
+dist/assets/LoginPage-Cis9lqFc.js                 5.74 kB │ gzip:  2.07 kB
+dist/assets/index-BCpWPPx3.js                     7.74 kB │ gzip:  3.01 kB
+dist/assets/AppShell-DcLv7oLY.js                  9.71 kB │ gzip:  3.06 kB
+dist/assets/SawRankingPage-BLqzLs7v.js           12.59 kB │ gzip:  3.30 kB
+dist/assets/ExecutiveDashboardPage-ChTkZ8F7.js   12.80 kB │ gzip:  3.36 kB
+dist/assets/ThesisEvaluationPage-DRqsbDKs.js     13.01 kB │ gzip:  3.39 kB
+dist/assets/XaiGeneratorPage-CvgJfORp.js         13.56 kB │ gzip:  3.40 kB
+dist/assets/SurveyorInputPage-DnxBqqUW.js        15.90 kB │ gzip:  4.05 kB
+dist/assets/CriteriaManagementPage-BlQYThV7.js   19.16 kB │ gzip:  3.54 kB
+dist/assets/LurahApprovalPage-B4UceMti.js        20.60 kB │ gzip:  5.47 kB
+dist/assets/vendor-ui-Ca4FpVUg.js                22.39 kB │ gzip:  4.67 kB
+dist/assets/PublicPortalPage-4T64ib-x.js         30.16 kB │ gzip:  7.07 kB
+dist/assets/vendor-net-BCn5QfZZ.js               51.44 kB │ gzip: 19.49 kB
+dist/assets/vendor-react-CnLEhXSR.js            163.17 kB │ gzip: 53.35 kB
+✓ built in 2.73s (Zero TypeScript errors)
 ```
 
 ---
