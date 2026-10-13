@@ -32,6 +32,7 @@ import logging
 import time
 import uuid
 from decimal import Decimal
+from django.core.signing import BadSignature, SignatureExpired
 from django.contrib.auth import authenticate
 from django.http import HttpResponse
 from django.utils import timezone
@@ -43,7 +44,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from core.crypto import hash_nik, sign_pdf_download_token, validate_nik
+from core.crypto import hash_nik, sign_pdf_download_token, validate_nik, verify_pdf_download_token
 from core.models import (
     AuditLog,
     Citizen,
@@ -85,6 +86,14 @@ from core.services.rate_limiter import (
     verify_turnstile_captcha,
 )
 from core.services.saw_engine import calculate_batch_saw
+from core.services.pdf_generator import (
+    generate_berita_acara_pdf,
+    generate_individual_result_pdf,
+)
+from core.services.evaluation_metrics import (
+    compute_batch_evaluation_metrics,
+    export_thesis_evaluation_dataset_xlsx,
+)
 from core.services.xai_explainer import map_explanation_to_public_schema
 from core.tasks import process_batch_xai_task
 
@@ -741,3 +750,98 @@ class PublicCheckStatusView(APIView):
         }
 
         return Response(payload, status=status.HTTP_200_OK)
+
+
+# ---------------------------------------------------------------------------
+# 7. Berita Acara & Individual PDF Reporting + Thesis Metrics (Milestone 5 & 6)
+# ---------------------------------------------------------------------------
+
+class SelectionBeritaAcaraPdfView(APIView):
+    """
+    GET /api/selection/{batch_id}/berita-acara-pdf/
+    Download official Berita Acara PDF with Kop Surat, QR verification, and TMS Appendix.
+    Accessible by SuperAdmin and Viewer (Lurah).
+    """
+    permission_classes = [IsAuthenticated, IsSuperAdminOrViewer]
+
+    def get(self, request, batch_id: int):
+        batch = SelectionBatch.objects.filter(pk=batch_id).first()
+        if not batch:
+            return Response({"error": "Batch seleksi tidak ditemukan."}, status=status.HTTP_404_NOT_FOUND)
+
+        pdf_bytes = generate_berita_acara_pdf(batch.id, performed_by=request.user.username)
+
+        AuditLog.objects.create(
+            batch=batch,
+            action=AuditLog.Action.PDF_DOWNLOADED,
+            performed_by=request.user.username,
+            detail=f"Staf {request.user.username} mengunduh dokumen Berita Acara PDF resmi (Batch #{batch_id})",
+        )
+
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="Berita_Acara_Seleksi_Batch_{batch_id}.pdf"'
+        return response
+
+
+class PublicResultPdfView(APIView):
+    """
+    GET /api/public/result-pdf/?token=<signed_token>
+    Public endpoint to download individual citizen result notification PDF.
+    Requires a tamper-proof signed token, and the batch must be Published.
+    Masks all PII strictly (nik_masked, full_name_masked).
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        token = request.query_params.get("token")
+        if not token:
+            return Response({"error": "Parameter token unduhan PDF wajib disertakan."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            evaluation_id = verify_pdf_download_token(token)
+        except (BadSignature, SignatureExpired, ValueError):
+            return Response({"error": "Token unduhan PDF tidak valid atau telah kedaluwarsa."}, status=status.HTTP_403_FORBIDDEN)
+
+        eval_obj = (
+            Evaluation.objects.select_related("batch")
+            .filter(pk=evaluation_id)
+            .first()
+        )
+        if not eval_obj:
+            return Response({"error": "Data evaluasi calon penerima tidak ditemukan."}, status=status.HTTP_404_NOT_FOUND)
+
+        if eval_obj.batch.status != SelectionBatch.Status.PUBLISHED:
+            return Response({"error": "Hasil seleksi belum dipublikasikan resmi oleh kelurahan."}, status=status.HTTP_403_FORBIDDEN)
+
+        pdf_bytes = generate_individual_result_pdf(eval_obj.id)
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = f'inline; filename="Bukti_Seleksi_Bansos_KPM_{eval_obj.id:04d}.pdf"'
+        return response
+
+
+class SelectionEvaluationMetricsView(APIView):
+    """
+    GET /api/selection/{batch_id}/evaluation-metrics/
+    Thesis Evaluation Metrics endpoint (PRD Section 11):
+    Fidelity Score, Hallucination Rate, candidate counts, and SUS questionnaire template.
+    Supports ?format=xlsx to download the research testing workbook.
+    """
+    permission_classes = [IsAuthenticated, IsSuperAdminOrViewer]
+
+    def get(self, request, batch_id: int):
+        batch = SelectionBatch.objects.filter(pk=batch_id).first()
+        if not batch:
+            return Response({"error": "Batch seleksi tidak ditemukan."}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.query_params.get("format") == "xlsx":
+            xlsx_bytes = export_thesis_evaluation_dataset_xlsx(batch.id)
+            response = HttpResponse(
+                xlsx_bytes,
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+            response["Content-Disposition"] = f'attachment; filename="Dataset_Evaluasi_Skripsi_Batch_{batch_id}.xlsx"'
+            return response
+
+        metrics = compute_batch_evaluation_metrics(batch.id)
+        return Response(metrics, status=status.HTTP_200_OK)
+

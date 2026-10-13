@@ -12,8 +12,11 @@ from core.views import (
     CriteriaBatchUpdateView,
     CriteriaListView,
     PublicCheckStatusView,
+    PublicResultPdfView,
     SelectionApproveView,
+    SelectionBeritaAcaraPdfView,
     SelectionCalculateView,
+    SelectionEvaluationMetricsView,
     SelectionExportExcelView,
     SelectionGenerateXaiView,
     SelectionMarkRtSubmittedView,
@@ -47,7 +50,10 @@ urlpatterns = [
     path("selection/<int:batch_id>/approve/", SelectionApproveView.as_view(), name="selection-approve"),
     path("selection/<int:batch_id>/publish/", SelectionPublishView.as_view(), name="selection-publish"),
     path("selection/<int:batch_id>/export-excel/", SelectionExportExcelView.as_view(), name="selection-export-excel"),
+    path("selection/<int:batch_id>/berita-acara-pdf/", SelectionBeritaAcaraPdfView.as_view(), name="selection-berita-acara-pdf"),
+    path("selection/<int:batch_id>/evaluation-metrics/", SelectionEvaluationMetricsView.as_view(), name="selection-evaluation-metrics"),
 
     # Public Citizen Portal
     path("public/check-status/", PublicCheckStatusView.as_view(), name="public-check-status"),
+    path("public/result-pdf/", PublicResultPdfView.as_view(), name="public-result-pdf"),
 ]

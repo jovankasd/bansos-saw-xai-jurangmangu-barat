@@ -4,206 +4,163 @@ Platform **Explainable Decision Support System (EDSS)** berbasis web untuk selek
 
 ---
 
-## Dokumentasi Branch: `feat/m4-api-responsive-ui` (Fase 4 / Task 4 — REST API Endpoints, RBAC Guards, Excel Ingest/Export, & Public Portal Shield)
+## Dokumentasi Branch: `feat/m5-pdf-reporting` (Fase 5 / Task 5 — PDF Berita Acara Generator with QR & TMS Appendix & Thesis Evaluation Metrics)
 
 ### Mengapa Fase Ini Dibutuhkan (*Context & Why*)
 
-Setelah Fase 1 (Kriptografi & Model), Fase 2 (Engine SAW & Tie-Breaker), dan Fase 3 (Sanitasi Zero-PII & Explainer XAI Gemini), Fase 4 menghubungkan seluruh inti komputasi dengan antarmuka web melalui **lapisan REST API standar Django REST Framework (DRF)** sesuai **PRD Bagian 10**, **[ADR-004](./docs/decisions/ADR-004-async-xai-queue-and-passwordless-public-portal.md)**, dan **[ADR-005](./docs/decisions/ADR-005-responsive-ui-architecture-and-stitch-review-gate.md)**:
+Fase 5 merealisasikan lapisan pelaporan resmi (*Official Reporting Layer*) dan instrumen pengujian skripsi (*Academic Evaluation Instruments*) sesuai **PRD Bagian 1, 10, dan 11**, **[ADR-002](./docs/decisions/ADR-002-dual-layer-nik-crypto-and-zero-pii-xai.md)**, dan **[ADR-006](./docs/decisions/ADR-006-controlled-nik-decryption-pdf-and-thesis-metrics.md)**:
 
-1. **Role-Based Access Control (RBAC) Ketat & Scoping Wilayah (OWASP A01):**
-   - **Super Admin (Kasi Kesos):** Akses penuh untuk pembaruan kriteria, pembuatan batch, eksekusi kalkulasi SAW, penjadwalan narasi XAI, dan publikasi batch ke publik.
-   - **Surveyor (Ketua RT):** Akses dibatasi ketat (*hard-scoped*) hanya pada nomor RT wilayahnya sendiri (`request.user.rt_number`). Dilarang keras membaca, menambah, atau mengimpor data warga RT lain, serta dilarang mengakses mutasi alur seleksi.
-   - **Viewer (Lurah):** Akses *read-only* terhadap seluruh metrik, peringkat, dan narasi, dengan hak mutasi eksklusif hanya untuk menyetujui (*Approve*) batch yang telah berstatus `Narrated`.
-2. **Ingest Massal & Ekspor Rekapitulasi Excel Berstandar UU PDP:**
-   - Menyediakan endpoint import berkas `.xlsx` dengan pelaporan error baris granular, penolakan baris RT silang, deduplikasi instan via `nik_hash` $O(1)$, pembatasan ukuran berkas (maksimal 5 MB / 1.000 baris), serta penjagaan status batch (`Draft` atau `Collecting`).
-   - Menyediakan endpoint ekspor rekapitulasi hasil seleksi dalam format `.xlsx` resmi kelurahan.
-3. **Perisai Anti-Bot & Anti-Enumerasi Portal Publik (`/api/public/check-status/`):**
-   - Mengimplementasikan alur verifikasi berlapis tanpa login (passwordless) menggunakan 16 digit NIK + 4 digit terakhir No KK + Cloudflare Turnstile CAPTCHA.
-   - Mengatur urutan evaluasi pertahanan (*defense ordering*) presisi: verifikasi CAPTCHA terlebih dahulu sebelum menaikkan penghitung kegagalan NIK guna mencegah serangan DoS/Lockout massal oleh bot.
-   - Pembatasan laju IP (5 permintaan/menit/IP) dan *lockout* 15 menit setelah 5 kali salah input KK berturut-turut pada NIK yang sama (bahkan jika penyerang berganti-ganti alamat IP).
-   - Mengembalikan HTTP 404 generik jika data tidak cocok atau batch belum berstatus `Published` demi mencegah kebocoran informasi (*zero-enumeration*).
+1. **Pelaporan Hukum Administrasi Pemerintahan (Berita Acara Resmi):**
+   - Penetapan bantuan sosial membutuhkan berkas fisik berkekuatan hukum yang ditandatangani oleh **Lurah Jurangmangu Barat** dan **Kasi Kesejahteraan Sosial**.
+   - Berkas ini memuat Kop Surat resmi Pemerintah Kota Tangerang Selatan, tabel penetapan penerima yang lolos kuota, tanda tangan basah/stempel kelurahan, lampiran terpisah warga yang berstatus Tidak Memenuhi Syarat (TMS / `DISQUALIFIED`), serta **QR Code** untuk validasi integritas dan keaslian dokumen secara daring.
+2. **Dekripsi NIK Terkontrol Ketat (Kepatuhan UU PDP No. 27/2022):**
+   - Penyaluran bantuan sosial secara administratif mewajibkan 16-digit NIK asli pada lembar Berita Acara resmi kelurahan.
+   - Sistem menetapkan aturan ketat: **dekripsi `nik_encrypted` (AES-256-GCM) HANYA dan HANYA diizinkan pada saat pencetakan Berita Acara PDF ini**.
+   - Setiap operasi dekripsi dicatat secara permanen ke tabel `AuditLog` (`action=NIK_DECRYPT`) tanpa pernah membocorkan NIK plaintext ke dalam catatan audit.
+3. **Pemberitahuan Transparansi Warga (Zero-PII Public Document):**
+   - Warga yang memeriksa status bantuan di portal publik (`/cek-bansos`) dapat mengunduh surat pemberitahuan hasil seleksi mandiri.
+   - Dokumen publik ini menerapkan **penyamaran visual 100% (`nik_masked` dan `full_name_masked`)**, memuat penjelasan transparansi XAI Gemini, matriks perbandingan nilai terhadap rata-rata lolos, serta dilindungi token unduhan kriptografis yang hanya aktif jika batch telah berstatus resmi `Published`.
+4. **Instrumen Pengujian Skripsi Otomatis (Bab 4 & Bab 5):**
+   - **Fidelity Score (PRD Bagian 11.2):** Mengukur kesetiaan narasi LLM terhadap kriteria penentu dengan kesenjangan terbobot terbesar $\operatorname{argmax}_j (\Delta_{i,j} \cdot w_j)$ berbasis snapshot bobot beku `BatchCriteria.frozen_weight`. Sistem menangani kondisi batas $|K_{\text{TL}}| == 0$ (seluruh peserta lolos) dengan nilai `100.0%` secara aman tanpa `ZeroDivisionError`.
+   - **Hallucination Rate (PRD Bagian 11.2):** Mendeteksi kriteria fiktif (seperti `C99` atau `Daya Listrik 900 VA`) dan angka desimal palsu, dengan normalisasi cerdas terhadap format desimal koma Bahasa Indonesia (`0,684` $\rightarrow$ `0.684`) dan persentase (`60%` $\rightarrow$ `0.60`).
+   - **Instrumen Kuesioner SUS & Ekspor Dataset:** Menyediakan template 10 butir pertanyaan *System Usability Scale* (SUS) standar berbahasa Indonesia serta fungsi ekspor multi-sheet dataset pengujian ke lembar kerja Excel (`.xlsx`).
 
 ---
 
-### Changelog Fase 4 (Task 4)
+### Changelog Fase 5 (Task 5)
 
 #### Added
-- **RBAC & RT-Scoping Permissions ([`backend/core/permissions.py`](./backend/core/permissions.py)):**
-  - `IsSuperAdmin`, `IsSurveyor`, `IsViewer`, `IsSuperAdminOrViewer`, `IsSuperAdminOrSurveyor`, `IsStaff`.
-  - Helper validasi dan normalisasi RT: `normalize_rt()` dan `check_surveyor_rt_scope(request, rt_number)`.
-- **Layanan Ingest & Ekspor Excel ([`backend/core/services/excel_ingest.py`](./backend/core/services/excel_ingest.py)):**
-  - `import_citizens_from_excel(batch_id, file_obj, user)`: Parsing `.xlsx` aman dengan openpyxl, validasi header kanonik, pelaporan baris error, pencegahan duplikasi NIK via `nik_hash`, kepatuhan enkripsi AES-256-GCM, guard batas status batch (`Draft`/`Collecting`), batas file 5 MB / 1.000 baris, dan penegakan RT surveyor.
-  - `export_batch_results_xlsx(batch_id)`: Ekspor ringkasan hasil kalkulasi dan pemeringkatan SAW ke lembar kerja Excel berformat rapi.
-- **Perisai Portal Publik & Rate Limiter ([`backend/core/services/rate_limiter.py`](./backend/core/services/rate_limiter.py)):**
-  - `verify_turnstile_captcha(token, remote_ip)`: Verifikasi Cloudflare Turnstile CAPTCHA dengan mode fail-closed di produksi dan bypass aman saat testing/debug.
-  - `check_ip_rate_limit(ip_address)`: Throttle 5 req/menit per IP via Django Cache.
-  - `check_nik_lockout(nik_hash)`: Cek status lockout 15 menit per `nik_hash`.
-  - `record_nik_failed_attempt(nik_hash)` & `reset_nik_failed_attempts(nik_hash)`: Penghitung kegagalan berturut-turut lintas IP.
-- **REST API Serializers ([`backend/core/serializers.py`](./backend/core/serializers.py)):**
-  - `LoginSerializer`, `StaffUserSerializer`, `CriteriaSerializer`, `CriteriaBatchUpdateSerializer` (dengan validasi jumlah bobot tepat 1.0000 dan rentang 0.0001–1.0000), `PeriodSerializer`, `SelectionBatchSerializer`, `CitizenCreateSerializer`, `SelectionResultItemSerializer`, `PublicCheckStatusRequestSerializer`.
-- **REST API Views ([`backend/core/views.py`](./backend/core/views.py)):**
-  - `StaffLoginRateThrottle` & `StaffLoginView`: Login staf dengan JWT token, informasi role, dan scoping RT.
-  - `CriteriaListView` & `CriteriaBatchUpdateView`: Pengelolaan master kriteria dan pembaharuan bobot.
-  - `BatchListCreateView`: Daftar periode/batch dan pembuatan batch baru.
-  - `CitizenCreateView` & `CitizenImportExcelView`: Registrasi pemohon bansos individual dan impor massal Excel.
-  - `SelectionMarkRtSubmittedView`: Penguncian pengumpulan data tingkat RT (`is_rt_submitted = True`).
-  - `SelectionCalculateView`: Pemicu engine SAW dan pembekuan bobot kriteria.
-  - `SelectionResultsListView`: Pengambilan hasil perangkingan, skor preferensi, dan status kuota.
-  - `SelectionGenerateXaiView` & `SelectionXaiProgressView`: Pemicu antrean tugas asinkron XAI dan pemantauan progres narasi.
-  - `SelectionApproveView`: Persetujuan batch eksklusif oleh Lurah (`VIEWER`).
-  - `SelectionPublishView`: Publikasi batch ke publik eksklusif oleh Super Admin (`SUPER_ADMIN`).
-  - `SelectionExportExcelView`: Pengunduhan rekapitulasi Excel.
-  - `PublicCheckStatusView`: Pemeriksaan status bantuan sosial transparan oleh masyarakat dengan perlindungan anti-bot berlapis.
-- **Routing URL ([`backend/core/urls.py`](./backend/core/urls.py) & [`backend/config/urls.py`](./backend/config/urls.py)):**
-  - Pendaftaran prefix `/api/` terpadu untuk seluruh rute internal dan publik.
-- **Suite Pengujian TDD & Audit RBAC/Security ([`backend/tests/test_api_endpoints.py`](./backend/tests/test_api_endpoints.py)):**
-  - 15 pengujian integrasi end-to-end yang menguji autentikasi JWT, hak akses RBAC, isolasi RT, alur state machine seleksi, impor/ekspor Excel, dan ketahanan pertahanan portal publik.
+- **Generator Dokumen PDF Resmi ([`backend/core/services/pdf_generator.py`](./backend/core/services/pdf_generator.py)):**
+  - `generate_berita_acara_pdf(batch_id, performed_by)`: Menghasilkan Berita Acara legal format A4 menggunakan ReportLab v5.0.1, lengkap dengan Kop Surat Kelurahan Jurangmangu Barat, garis ganda pembatas, tabel perangkingan KPM lolos kuota, pencatatan otomatis `AuditLog` dekripsi NIK, blok tanda tangan formal Kasi Kesos & Lurah, lampiran khusus warga TMS (`DISQUALIFIED`), dan QR Code verifikasi dokumen.
+  - `generate_individual_result_pdf(evaluation_id)`: Menghasilkan lembar bukti pengumuman kelayakan mandiri untuk warga via portal publik dengan penegakan masking visual PII 100%, status keputusan, skor cutoff, narasi XAI, matriks kriteria terbobot, dan QR Code verifikasi.
+- **Layanan Metrik Evaluasi Skripsi ([`backend/core/services/evaluation_metrics.py`](./backend/core/services/evaluation_metrics.py)):**
+  - `compute_batch_evaluation_metrics(batch_id)`: Perhitungan kuantitatif otomatis untuk *Fidelity Score*, *Hallucination Rate*, rincian kandidat lolos/tidak lolos/TMS, serta penjagaan pembagian nol saat $|K_{\text{TL}}| == 0$.
+  - `detect_narrative_hallucinations(...)`: Filter deteksi halusinasi kode kriteria asing, istilah kriteria terlarang, rekayasa angka peringkat/kuota, dan angka desimal di luar payload input dengan normalisasi koma desimal Indonesia.
+  - `get_sus_questionnaire_template()`: Template kuesioner baku 10 pertanyaan System Usability Scale (Brooke, 1996) berbahasa Indonesia dengan polaritas bergantian (+ / -) dan skala Likert 1–5.
+  - `export_thesis_evaluation_dataset(batch_id)` & `export_thesis_evaluation_dataset_xlsx(batch_id)`: Ekspor dataset evaluasi akademik lengkap ke lembar kerja Excel multi-sheet (Sheet 1: Data Uji & Evaluasi, Sheet 2: Ringkasan Metrik, Sheet 3: Instrumen SUS).
+- **REST API Endpoints ([`backend/core/views.py`](./backend/core/views.py) & [`backend/core/urls.py`](./backend/core/urls.py)):**
+  - `GET /api/selection/{batch_id}/berita-acara-pdf/`: Unduh PDF Berita Acara resmi (hak akses `SUPER_ADMIN` dan `VIEWER` / Lurah).
+  - `GET /api/public/result-pdf/?token=<signed_token>`: Unduh surat bukti seleksi warga portal publik dengan verifikasi token berstempel waktu (TTL 15 menit) pada batch berstatus `Published`.
+  - `GET /api/selection/{batch_id}/evaluation-metrics/`: Ringkasan metrik evaluasi skripsi dalam format JSON atau format workbook Excel (`?format=xlsx`).
+- **Suite Pengujian TDD ([`backend/tests/test_pdf_and_evaluation.py`](./backend/tests/test_pdf_and_evaluation.py)):**
+  - 9 pengujian komprehensif menguji formula Fidelity, normalisasi desimal Hallucination, penanganan $|K_{\text{TL}}| == 0$, Berita Acara PDF, masking PII dokumen publik warga, perizinan RBAC, dan validasi token kedaluwarsa.
+- **Architecture Decision Record ([`docs/decisions/ADR-006-controlled-nik-decryption-pdf-and-thesis-metrics.md`](./docs/decisions/ADR-006-controlled-nik-decryption-pdf-and-thesis-metrics.md)):**
+  - Dokumentasi keputusan arsitektur dekripsi terkontrol Berita Acara PDF, perlindungan zero-PII publik, dan metrik skripsi.
 
 #### Security
-- **OWASP A01 (Broken Access Control) & IDOR Mitigation:** Surveyor terisolasi pada wilayah RT miliknya sendiri; Lurah tidak dapat mengubah kriteria atau mengeksekusi kalkulasi SAW; Super Admin adalah satu-satunya peran yang berhak memublikasikan hasil seleksi.
-- **Pertahanan Berlapis Anti-Bot & Anti-Enumerasi NIK:**
-  1. *Turnstile CAPTCHA Guard*: Gagalkan bot secara instan tanpa membebani penghitung NIK (mencegah DoS lockout terhadap warga sah).
-  2. *IP Rate Limiting*: Maksimal 5 permintaan per menit per alamat IP.
-  3. *Per-NIK Distributed Lockout*: 15 menit penguncian setelah 5 kegagalan validasi No KK pada NIK yang sama.
-  4. *Generic 404 Response*: Merespons dengan pesan seragam tanpa membocorkan apakah NIK terdaftar pada sistem jika batch belum `Published` atau data tidak cocok.
-- **UU PDP No. 27/2022 Kepatuhan At-Rest & Transit:** NIK selalu disimpan dalam bentuk terenkripsi (`nik_encrypted`) dan ter-hash (`nik_hash`); respons publik portal hanya menampilkan penyamaran visual (`367403******0002` dan `Ahmad S******`).
-- **Hardening Hasil Audit `security-auditor`:** Pembatasan ukuran unggah Excel 5 MB, batas 1.000 baris, pemblokiran token CAPTCHA dummy di lingkungan produksi (fail-closed jika `TURNSTILE_SECRET_KEY` tidak dikonfigurasi), serta pencegahan penimpaan data warga RT lain.
+- **UU PDP No. 27/2022 (Dekripsi NIK Terkontrol):** Dekripsi ciphertext `nik_encrypted` menggunakan AES-256-GCM hanya terjadi pada saat eksekusi `generate_berita_acara_pdf()`. Setiap dekripsi memicu pembuatan entri `AuditLog` dengan aksi `action=AuditLog.Action.NIK_DECRYPT`. Kolom `detail` dan `performed_by` divalidasi tidak boleh memuat NIK plaintext 16 digit.
+- **Zero-PII Public Download:** Endpoint `/api/public/result-pdf/` tidak pernah mendekripsi NIK. Dokumen yang dihasilkan selalu menggunakan `nik_masked` (`367403******0002`) dan `full_name_masked` (`Ahmad S******`).
+- **Cryptographic Token Verification:** Endpoint publik mewajibkan query parameter `token` yang divalidasi melalui `verify_pdf_download_token(token)` (Django TimestampSigner dengan salt `bansos.pdf_download` dan TTL 15 menit). Unduhan ditolak dengan HTTP 403 jika token tidak sah, kedaluwarsa, atau batch belum berstatus `Published`.
 
 #### Changed
-- [`backend/core/models.py`](./backend/core/models.py): Menambahkan properti alias ORM (`batch_number` pada `SelectionBatch`, `crips_value` pada `EvaluationDetail`, `actor`/`notes` pada `AuditLog`) untuk keseragaman pemanggilan API.
-- [`backend/config/settings.py`](./backend/config/settings.py): Mengonfigurasi throttling default `auth_login` menjadi `10/min` dengan dukungan fallback parser cerdas `StaffLoginRateThrottle` untuk durasi interval format kustom (`10/15m`).
+- [`backend/core/views.py`](./backend/core/views.py): Mengintegrasikan penanganan token unduhan PDF, layanan pembuatan PDF, dan ekspor metrik evaluasi.
+- [`backend/core/urls.py`](./backend/core/urls.py): Menambahkan rute `/api/selection/{batch_id}/berita-acara-pdf/`, `/api/selection/{batch_id}/evaluation-metrics/`, dan `/api/public/result-pdf/`.
 
 ---
 
-### Direktori REST API Endpoints (PRD Bagian 10)
-
-| Endpoint | Method | Role Akses | Deskripsi & Guard |
-| :--- | :--- | :--- | :--- |
-| `/api/auth/login/` | `POST` | Public / All | Otentikasi staf, pengembalian token JWT, role, & RT scope |
-| `/api/criteria/` | `GET` | `IsStaff` | Melihat daftar kriteria aktif & bobot master |
-| `/api/criteria/batch-update/` | `PUT` | `SUPER_ADMIN` | Pembaharuan bobot kriteria ($\sum w_j = 1.0000$) |
-| `/api/batches/` | `GET`, `POST` | `GET`: `IsStaff`<br>`POST`: `SUPER_ADMIN` | Melihat daftar batch atau membuat batch seleksi baru |
-| `/api/citizens/` | `POST` | `SUPER_ADMIN`, `SURVEYOR` | Menambahkan data warga (Surveyor dibatasi pada RT-nya) |
-| `/api/citizens/import-excel/` | `POST` | `SUPER_ADMIN`, `SURVEYOR` | Impor massal berkas `.xlsx` pemohon bansos (max 5 MB, 1.000 baris) |
-| `/api/selection/{id}/mark-rt-submitted/` | `POST` | `SUPER_ADMIN`, `SURVEYOR` | Mengunci status submit pengumpulan data RT |
-| `/api/selection/{id}/calculate/` | `POST` | `SUPER_ADMIN` | Eksekusi engine SAW, pembekuan bobot, & status `Calculated` |
-| `/api/selection/{id}/results/` | `GET` | `IsStaff` | Mengambil hasil ranking, nilai preferensi, & status kuota |
-| `/api/selection/{id}/generate-xai/` | `POST` | `SUPER_ADMIN` | Memicu worker asinkron penjelasan XAI Gemini & fallback |
-| `/api/selection/{id}/xai-progress/` | `GET` | `IsStaff` | Memantau progres narasi XAI & status transisi `Narrated` |
-| `/api/selection/{id}/approve/` | `PATCH` | `VIEWER` (Lurah) | Pengesahan/persetujuan batch oleh Lurah (status `Narrated` $\rightarrow$ `Approved`) |
-| `/api/selection/{id}/publish/` | `PATCH` | `SUPER_ADMIN` | Publikasi batch ke portal publik (status `Approved` $\rightarrow$ `Published`) |
-| `/api/selection/{id}/export-excel/` | `GET` | `IsStaff` | Mengunduh lembar rekapitulasi hasil seleksi dalam format `.xlsx` |
-| `/api/public/check-status/` | `POST` | Public | Pengecekan mandiri status bansos warga dengan perisai anti-bot |
-
----
-
-### Matriks Role-Based Access Control (RBAC)
+### Mekanisme Dekripsi Terkontrol Berita Acara PDF & QR Code & Lampiran TMS
 
 ```
-+------------------------------------+-------------+--------------------+----------------+--------+
-| Operasi / Endpoint                 | Super Admin | Surveyor (Ketua RT)| Viewer (Lurah) | Publik |
-+------------------------------------+-------------+--------------------+----------------+--------+
-| Login & Dapatkan Token JWT         |      V      |         V          |       V        |   -    |
-| Kelola & Edit Bobot Kriteria       |      V      |         -          |       -        |   -    |
-| Buat Periode / Batch Baru          |      V      |         -          |       -        |   -    |
-| Entri & Impor Warga (.xlsx)        |      V      |  V (Scoped RT-nya) |       -        |   -    |
-| Kunci Pengumpulan Data RT          |      V      |  V (Scoped RT-nya) |       -        |   -    |
-| Eksekusi Kalkulasi SAW             |      V      |         -          |       -        |   -    |
-| Lihat Hasil Ranking & Matriks      |      V      |         V          |       V        |   -    |
-| Generate Narasi XAI Gemini         |      V      |         -          |       -        |   -    |
-| Approve Batch Seleksi              |      -      |         -          |       V        |   -    |
-| Publish Batch ke Publik            |      V      |         -          |       -        |   -    |
-| Ekspor Rekapitulasi Excel          |      V      |         V          |       V        |   -    |
-| Cek Status Mandiri (/cek-bansos)   |      -      |         -          |       -        |   V    |
-+------------------------------------+-------------+--------------------+----------------+--------+
+  Staf Berwenang (Lurah / Kasi Kesos)
+                 │
+                 ▼
+ [ GET /api/selection/{id}/berita-acara-pdf/ ]
+                 │
+                 ├─► [ 1. Verifikasi RBAC: SUPER_ADMIN / VIEWER ]
+                 │
+                 ▼
+ [ 2. Query Batch, KPM Lolos, & Warga TMS ]
+                 │
+                 ▼
+ [ 3. Dekripsi Terkontrol NIK (AES-256-GCM) ]
+      citizen.decrypt_nik() khusus untuk baris Berita Acara
+                 │
+                 ▼
+ [ 4. Catat AuditLog Mutasi Legal ]
+      action: NIK_DECRYPT, actor: username, detail: zero-PII
+                 │
+                 ▼
+ [ 5. Render ReportLab PDF Engine (In-Memory io.BytesIO) ]
+      ├─ Kop Surat Pemkot Tangerang Selatan & Kelurahan Jurangmangu Barat
+      ├─ Tabel Penetapan KPM Lolos Kuota (Peringkat, NIK, Nama, Skor V)
+      ├─ Tanda Tangan Resmi Kasi Kesos & Lurah Jurangmangu Barat
+      ├─ QR Code Verifikasi Keaslian Dokumen
+      └─ [ PageBreak ] ──► Lampiran I: Warga TMS (DISQUALIFIED & Alasan)
+                 │
+                 ▼
+ [ 6. Response Stream: application/pdf ]
+      Content-Disposition: attachment; filename="Berita_Acara_Seleksi_Batch_...pdf"
 ```
 
 ---
 
-### Arsitektur Perisai Portal Publik (`/api/public/check-status/`)
+### Formula Evaluasi Skripsi (PRD Bagian 11.2)
 
-```
-   Permintaan Publik (NIK, No KK 4-digit, CAPTCHA Token)
-                         │
-                         ▼
-        [ 1. Verifikasi Turnstile CAPTCHA ]
-       Gagal ──► HTTP 403 Forbidden (Counter NIK TIDAK naik)
-                         │ Lolos
-                         ▼
-        [ 2. Throttle IP (5 req/menit/IP) ]
-       Batas Tercapai ──► HTTP 429 Too Many Requests
-                         │ Lolos
-                         ▼
-        [ 3. Cek Lockout NIK (15 Menit) ]
-       Sedang Lockout ──► HTTP 429 Too Many Requests
-                         │ Lolos
-                         ▼
-        [ 4. Validasi Format NIK (16-Digit) ]
-       Tidak Valid ──► HTTP 400 Bad Request
-                         │ Lolos
-                         ▼
-     [ 5. Hash NIK (HMAC-SHA256) & Pencarian DB ]
-       Tidak Ditemukan / KK Salah ──► Catat Gagal (+1) ──► HTTP 404 Not Found
-                         │                                 (Jika 5x ──► Lockout 15m)
-                         ▼
-     [ 6. Periksa Status Batch Seleksi ]
-       Batch Belum "Published" ──► HTTP 404 Not Found (Zero-Enumeration)
-                         │
-                         ▼
-     [ 7. Kembalikan Payload Publik Zero-PII ]
-       (Masked NIK/Nama, Status, Skor, Narasi XAI, & Download Token PDF)
-```
+1. **Fidelity Score ($F_{\text{score}}$):**
+   $$\text{Fidelity Score} = \frac{1}{|K_{\text{TL}}|} \sum_{i \in K_{\text{TL}}} \mathbb{I}\left( C_{\text{AI\_primary}}(i) == \operatorname{argmax}_j (\Delta_{i,j} \cdot w_j) \right)$$
+   - $K_{\text{TL}}$: Himpunan calon KPM berstatus Tidak Lolos.
+   - $\Delta_{i,j} = \bar{r}_j^{\text{lolos}} - r_{ij}$: Kesenjangan nilai normalisasi terhadap rata-rata penerima lolos pada kriteria $j$.
+   - $w_j$: Bobot kriteria beku dari `BatchCriteria.frozen_weight`.
+   - *Zero-Division Guard*: Jika $|K_{\text{TL}}| == 0$ (seluruh peserta lolos), sistem mengembalikan `100.0%` secara deterministik.
+   - **Target PRD:** $F_{\text{score}} \ge 95.0\%$.
+
+2. **Hallucination Rate ($H_{\text{rate}}$):**
+   $$H_{\text{rate}} = \frac{N_{\text{invalid}}}{N_{\text{total}}} \times 100\%$$
+   - $N_{\text{invalid}}$: Jumlah narasi yang menyebutkan kriteria di luar $\{C_1, \dots, C_n\}$, istilah terlarang, atau angka desimal fiktif di luar payload input.
+   - *Normalisasi Format Indonesia*: Desimal koma `0,684` dinormalisasi ke `0.684` dan persentase `60%` dinormalisasi ke `0.60` agar tidak memicu deteksi salah (false-positive).
+   - **Target PRD:** $H_{\text{rate}} = 0.0\%$.
 
 ---
 
-### Daftar File Fase 4
+### Daftar File Fase 5
 
 | File | Tanggung Jawab |
 | :--- | :--- |
-| [`./backend/core/permissions.py`](./backend/core/permissions.py) | Definisi perizinan RBAC DRF dan validasi lingkup nomor RT surveyor |
-| [`./backend/core/services/excel_ingest.py`](./backend/core/services/excel_ingest.py) | Ingest berkas Excel pemohon bansos, deduplikasi `nik_hash`, dan ekspor rekapitulasi |
-| [`./backend/core/services/rate_limiter.py`](./backend/core/services/rate_limiter.py) | Verifikasi Cloudflare Turnstile, throttle IP, dan penguncian NIK 15 menit |
-| [`./backend/core/serializers.py`](./backend/core/serializers.py) | Serializer DRF untuk autentikasi, kriteria, batch, warga, hasil, dan portal publik |
-| [`./backend/core/views.py`](./backend/core/views.py) | Kontroller endpoint REST API lengkap PRD Bagian 10 |
-| [`./backend/core/urls.py`](./backend/core/urls.py) | Pemetaan rute URL API internal dan publik |
-| [`./backend/config/urls.py`](./backend/config/urls.py) | Integrasi rute `/api/` pada konfigurasi utama Django |
-| [`./backend/config/settings.py`](./backend/config/settings.py) | Konfigurasi throttling DRF dan integrasi SimpleJWT |
-| [`./backend/core/models.py`](./backend/core/models.py) | Penambahan properti alias model ORM |
-| [`./backend/tests/test_api_endpoints.py`](./backend/tests/test_api_endpoints.py) | 15 unit dan integration test REST API, RBAC, Excel, dan perisai publik |
+| [`./backend/core/services/pdf_generator.py`](./backend/core/services/pdf_generator.py) | Generator ReportLab untuk Berita Acara resmi (Kop, QR, TMS) dan dokumen publik warga |
+| [`./backend/core/services/evaluation_metrics.py`](./backend/core/services/evaluation_metrics.py) | Perhitungan Fidelity Score, deteksi Hallucination, kuesioner SUS, & ekspor Excel |
+| [`./backend/core/views.py`](./backend/core/views.py) | View controller untuk Berita Acara PDF, hasil publik PDF, dan metrik skripsi |
+| [`./backend/core/urls.py`](./backend/core/urls.py) | Pendaftaran rute endpoint PDF pelaporan dan metrik skripsi |
+| [`./backend/tests/test_pdf_and_evaluation.py`](./backend/tests/test_pdf_and_evaluation.py) | 9 unit & integration tests untuk PDF generator, token publik, dan metrik skripsi |
+| [`./docs/decisions/ADR-006-controlled-nik-decryption-pdf-and-thesis-metrics.md`](./docs/decisions/ADR-006-controlled-nik-decryption-pdf-and-thesis-metrics.md) | Catatan keputusan arsitektur dekripsi Berita Acara dan evaluasi akademik |
 
 ---
 
 ### Hasil Verifikasi Test
 
 ```text
-$ backend/.venv/Scripts/python.exe -m pytest backend/tests/test_api_endpoints.py -v
+$ backend/.venv/Scripts/python.exe -m pytest backend/tests/test_pdf_and_evaluation.py -v
 
-backend\tests\test_api_endpoints.py::test_staff_login_success_and_jwt_payload PASSED [  6%]
-backend\tests\test_api_endpoints.py::test_staff_login_invalid_credentials PASSED [ 13%]
-backend\tests\test_api_endpoints.py::test_criteria_list_and_batch_update_rbac PASSED [ 20%]
-backend\tests\test_api_endpoints.py::test_batches_list_and_create_rbac PASSED [ 26%]
-backend\tests\test_api_endpoints.py::test_citizen_single_create_surveyor_rt_scope PASSED [ 33%]
-backend\tests\test_api_endpoints.py::test_citizens_import_excel_deduplication_and_surveyor_scoping PASSED [ 40%]
-backend\tests\test_api_endpoints.py::test_selection_calculate_and_results_rbac PASSED [ 46%]
-backend\tests\test_api_endpoints.py::test_selection_generate_xai_and_progress PASSED [ 53%]
-backend\tests\test_api_endpoints.py::test_selection_approval_and_publish_state_machine_rbac PASSED [ 60%]
-backend\tests\test_api_endpoints.py::test_export_batch_results_excel PASSED [ 66%]
-backend\tests\test_api_endpoints.py::test_public_check_status_blocks_unpublished_batch PASSED [ 73%]
-backend\tests\test_api_endpoints.py::test_public_check_status_captcha_fail_does_not_increment_lockout PASSED [ 80%]
-backend\tests\test_api_endpoints.py::test_public_check_status_ip_rate_limit PASSED [ 86%]
-backend\tests\test_api_endpoints.py::test_public_check_status_nik_lockout_across_ips PASSED [ 93%]
-backend\tests\test_api_endpoints.py::test_public_check_status_success_payload_structure PASSED [100%]
+backend\tests\test_pdf_and_evaluation.py::test_fidelity_hallucination_metrics_and_signed_pdf_download PASSED [ 11%]
+backend\tests\test_pdf_and_evaluation.py::test_fidelity_score_formula_and_zero_division_guard PASSED [ 22%]
+backend\tests\test_pdf_and_evaluation.py::test_hallucination_rate_normalizes_indonesian_decimals_and_percentages PASSED [ 33%]
+backend\tests\test_pdf_and_evaluation.py::test_sus_questionnaire_template_and_export_dataset PASSED [ 44%]
+backend\tests\test_pdf_and_evaluation.py::test_berita_acara_pdf_generation_content_and_audit_log PASSED [ 55%]
+backend\tests\test_pdf_and_evaluation.py::test_individual_result_pdf_generation_masks_pii PASSED [ 66%]
+backend\tests\test_pdf_and_evaluation.py::test_berita_acara_pdf_api_endpoint_rbac PASSED [ 77%]
+backend\tests\test_pdf_and_evaluation.py::test_public_individual_pdf_endpoint_guards PASSED [ 88%]
+backend\tests\test_pdf_and_evaluation.py::test_evaluation_metrics_api_endpoint PASSED [100%]
 
-======================= 15 passed, 1 warning in 46.75s =======================
+============================= 9 passed in 12.44s ==============================
 
-# Verifikasi Regresi Keseluruhan Seluruh Suite Pengujian Backend:
-$ backend/.venv/Scripts/python.exe -m pytest backend/tests/ -v
-================== 89 passed, 1 warning in 67.57s (0:01:07) ==================
+# Verifikasi Regresi Keseluruhan Seluruh Suite Pengujian Backend (Task 1 s/d Task 5):
+$ backend/.venv/Scripts/python.exe -m pytest backend/ -v
+================== 98 passed, 1 warning in 90.44s (0:01:30) ===================
 ```
 
 ---
 
 ## Dokumentasi Branch Sebelumnya
+
+<details>
+<summary><strong>Fase 4: feat/m4-api-responsive-ui (REST API Endpoints, RBAC Guards, Excel Ingest/Export, & Public Portal Shield)</strong></summary>
+
+### Mengapa Fase Ini Dibutuhkan
+Fase 4 menghubungkan inti komputasi dengan antarmuka web melalui REST API standar Django REST Framework (DRF):
+- Role-Based Access Control (RBAC) ketat: Super Admin (Kasi Kesos), Surveyor (Ketua RT dengan pembatasan wilayah RT), dan Viewer (Lurah).
+- Ingest massal data warga via Excel `.xlsx` dengan deduplikasi instan $O(1)$ via `nik_hash`.
+- Perisai anti-bot portal publik `/api/public/check-status/`: Cloudflare Turnstile CAPTCHA, throttle 5 req/menit/IP, penguncian 15 menit per NIK, dan zero-enumeration 404 response.
+
+</details>
 
 <details>
 <summary><strong>Fase 3: feat/m3-xai-fallback (Zero-PII Sanitizer, Gemini Flash XAI Explainer, Deterministic Fallback, & Async Worker)</strong></summary>
@@ -248,18 +205,10 @@ Fase 1 membangun fondasi kepatuhan UU PDP No. 27/2022:
 - **Spesifikasi Utama (PRD Final v3.0):** [`PRD_Sistem_Bansos_Jurangmangu_Barat_Final.md`](./PRD_Sistem_Bansos_Jurangmangu_Barat_Final.md)
 - **Aturan Konteks Agen & Protokol UI (`.stitch`):** [`AGENTS.md`](./AGENTS.md)
 - **Rencana Implementasi:** [`docs/superpowers/plans/2026-10-13-sistem-bansos-saw-xai-implementation.md`](./docs/superpowers/plans/2026-10-13-sistem-bansos-saw-xai-implementation.md)
-- **Daftar ADR:**
-  1. [ADR-001: Hybrid SAW + XAI & Deterministic Fallback](./docs/decisions/ADR-001-hybrid-saw-xai-with-deterministic-fallback.md)
-  2. [ADR-002: Dual-Layer NIK Crypto & Zero-PII XAI](./docs/decisions/ADR-002-dual-layer-nik-crypto-and-zero-pii-xai.md)
-  3. [ADR-003: Immutable Criteria Snapshot, TMS Gate, & Tie-Breaker](./docs/decisions/ADR-003-immutable-criteria-snapshot-tms-gate-and-tie-breaker.md)
-  4. [ADR-004: Async XAI Queue & Passwordless Public Portal](./docs/decisions/ADR-004-async-xai-queue-and-passwordless-public-portal.md)
-  5. [ADR-005: Responsive UI Architecture & Stitch Review Gate](./docs/decisions/ADR-005-responsive-ui-architecture-and-stitch-review-gate.md)
-
----
-
-## Catatan Penting (Known Gotchas)
-
-- **Isolasi Wilayah RT Surveyor:** Jangan mengizinkan pengguna ber-role `SURVEYOR` membaca atau memodifikasi data warga selain RT wilayahnya sendiri.
-- **Urutan Perisai Portal Publik:** Selalu validasi CAPTCHA Turnstile sebelum menaikkan counter lockout NIK untuk mencegah serangan DoS terhadap warga sah.
-- **Format Durasi Throttling DRF:** DRF throttle parser standar hanya memeriksa karakter pertama satuan waktu (`s`, `m`, `h`, `d`). Gunakan subclass `StaffLoginRateThrottle` untuk menangani string interval seperti `10/15m`.
-- **Zero-Enumeration pada Portal Publik:** Batch yang belum berstatus `Published` wajib mengembalikan HTTP 404 generik persis sama seperti data warga yang tidak ditemukan.
+- **Daftar ADR Arsitektur:**
+  - [`ADR-001: Hybrid SAW + XAI Gemini dengan Fallback Deterministik`](./docs/decisions/ADR-001-hybrid-saw-xai-with-deterministic-fallback.md)
+  - [`ADR-002: Dual-Layer Kriptografi NIK (UU PDP) & Sanitasi Zero-PII`](./docs/decisions/ADR-002-dual-layer-nik-crypto-and-zero-pii-xai.md)
+  - [`ADR-003: Pembekuan Bobot Kriteria, Gate TMS, & Tie-Breaker 4-Level`](./docs/decisions/ADR-003-immutable-criteria-snapshot-tms-gate-and-tie-breaker.md)
+  - [`ADR-004: Antrean Tugas Asinkron XAI & Portal Publik Passwordless`](./docs/decisions/ADR-004-async-xai-queue-and-passwordless-public-portal.md)
+  - [`ADR-005: Arsitektur UI Responsif 3-Tier & Gerbang Review .stitch`](./docs/decisions/ADR-005-responsive-ui-architecture-and-stitch-review-gate.md)
+  - [`ADR-006: Dekripsi Terkontrol NIK pada Berita Acara PDF, Zero-PII Publik, & Metrik Evaluasi Skripsi`](./docs/decisions/ADR-006-controlled-nik-decryption-pdf-and-thesis-metrics.md)
