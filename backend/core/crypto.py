@@ -26,18 +26,58 @@ from django.core.exceptions import ValidationError
 from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
 
 # ---------------------------------------------------------------------------
-# Key material — loaded once at module import time.
-# settings.NIK_AES_KEY_BYTES is already validated as exactly 32 bytes by
-# config.security.validate_secret_management() at Django startup.
+# Key material — loaded at module import time with dynamic @override_settings
+# support while preserving monkeypatch compatibility on _AES_KEY / _HMAC_PEPPER.
 # ---------------------------------------------------------------------------
-_AES_KEY: bytes = settings.NIK_AES_KEY_BYTES
-_HMAC_PEPPER: str = settings.NIK_HMAC_PEPPER
+_DEFAULT_AES_KEY: bytes = settings.NIK_AES_KEY_BYTES
+_AES_KEY: bytes = _DEFAULT_AES_KEY
+
+_DEFAULT_HMAC_PEPPER: str = settings.NIK_HMAC_PEPPER
+_HMAC_PEPPER: str = _DEFAULT_HMAC_PEPPER
 
 _NIK_PATTERN = re.compile(r"^[0-9]{16}$", re.ASCII)
-_NIK_SUBSTRING_PATTERN = re.compile(r"[0-9]{16}", re.ASCII)
+_NIK_SUBSTRING_PATTERN = re.compile(r"(?<![0-9a-fA-F])[0-9]{16}(?![0-9a-fA-F])", re.ASCII)
 
-# 12-byte GCM nonce + 16-byte NIK plaintext + 16-byte GCM tag = 44 bytes
-_MIN_GCM_BLOB_LEN = 12 + 16 + 16
+# 12-byte GCM nonce + 16-byte NIK plaintext + 16-byte GCM tag = 44 bytes (60 base64url chars)
+_GCM_BLOB_LEN = 12 + 16 + 16
+_B64URL_GCM_TOKEN_PATTERN = re.compile(r"^[A-Za-z0-9_-]{59}=$", re.ASCII)
+_PDF_SIGNER_SALT = "bansos.pdf_download"
+
+
+def _resolve_aes_key() -> bytes:
+    """Resolve the active 32-byte AES-256-GCM key, honoring monkeypatch and @override_settings."""
+    if _AES_KEY is not _DEFAULT_AES_KEY:
+        key = _AES_KEY
+    else:
+        settings_bytes = getattr(settings, "NIK_AES_KEY_BYTES", _DEFAULT_AES_KEY)
+        if settings_bytes is not _DEFAULT_AES_KEY:
+            key = settings_bytes
+        else:
+            raw_override = getattr(settings, "NIK_AES_KEY", None)
+            if raw_override is not None:
+                from config.security import parse_aes_256_key
+                key = parse_aes_256_key(raw_override)
+            else:
+                key = _AES_KEY
+
+    if not isinstance(key, (bytes, bytearray)) or len(key) != 32:
+        actual_len = len(key) if isinstance(key, (bytes, bytearray)) else 0
+        raise ValueError(
+            f"NIK_AES_KEY wajib tepat 32 byte untuk AES-256-GCM, "
+            f"tetapi ditemukan {actual_len} byte."
+        )
+    return bytes(key)
+
+
+def _resolve_hmac_pepper() -> str:
+    """Resolve the active HMAC-SHA256 pepper, honoring monkeypatch and @override_settings."""
+    if _HMAC_PEPPER is not _DEFAULT_HMAC_PEPPER:
+        pepper = _HMAC_PEPPER
+    else:
+        pepper = getattr(settings, "NIK_HMAC_PEPPER", _DEFAULT_HMAC_PEPPER)
+    if not isinstance(pepper, str) or not pepper.strip():
+        raise ValueError("NIK_HMAC_PEPPER tidak boleh kosong.")
+    return pepper
 
 
 # ---------------------------------------------------------------------------
@@ -60,7 +100,7 @@ def validate_nik(nik: str) -> str:
 
 
 def contains_plaintext_nik(value: str) -> bool:
-    """Return True if *value* contains any 16-digit contiguous ASCII number."""
+    """Return True if *value* contains any 16-digit ASCII NIK (excluding 64-char hex hashes)."""
     if not isinstance(value, str):
         return False
     return bool(_NIK_SUBSTRING_PATTERN.search(value))
@@ -76,18 +116,14 @@ def encrypt_nik(nik: str) -> str:
 
     Enforces that the key is exactly 32 bytes (raises ValueError otherwise).
 
-    Returns a base64url-encoded string: nonce (12 bytes) + ciphertext + tag.
+    Returns a canonical base64url-encoded string: nonce (12 bytes) + ciphertext + tag.
     The raw NIK never appears in the returned value.
     """
-    if len(_AES_KEY) != 32:
-        raise ValueError(
-            f"NIK_AES_KEY wajib tepat 32 byte untuk AES-256-GCM, "
-            f"tetapi ditemukan {len(_AES_KEY)} byte."
-        )
+    aes_key = _resolve_aes_key()
     validate_nik(nik)
 
     nonce = os.urandom(12)  # 96-bit nonce — recommended for GCM
-    aesgcm = AESGCM(_AES_KEY)
+    aesgcm = AESGCM(aes_key)
     ciphertext_with_tag = aesgcm.encrypt(nonce, nik.encode("utf-8"), None)
 
     blob = nonce + ciphertext_with_tag
@@ -99,28 +135,24 @@ def decrypt_nik(token: str) -> str:
     Decrypt an AES-256-GCM-encrypted NIK token produced by encrypt_nik().
 
     Returns the original plaintext NIK string.
-    Raises ValueError if the token is malformed or authentication fails.
+    Raises ValueError if the token is malformed, non-canonical, or authentication fails.
     """
-    if len(_AES_KEY) != 32:
-        raise ValueError(
-            f"NIK_AES_KEY wajib tepat 32 byte untuk AES-256-GCM, "
-            f"tetapi ditemukan {len(_AES_KEY)} byte."
-        )
-    if not isinstance(token, str) or not token.strip():
-        raise ValueError("Gagal mendekripsi NIK: token kosong atau bukan string.")
+    aes_key = _resolve_aes_key()
+    if not isinstance(token, str) or not _B64URL_GCM_TOKEN_PATTERN.match(token):
+        raise ValueError("Gagal mendekripsi NIK: format base64url token tidak valid atau telah dimodifikasi.")
 
     try:
         blob = base64.urlsafe_b64decode(token.encode("ascii"))
     except (binascii.Error, UnicodeError, ValueError) as exc:
         raise ValueError("Gagal mendekripsi NIK: format base64 token tidak valid.") from exc
 
-    if len(blob) < _MIN_GCM_BLOB_LEN:
-        raise ValueError("Gagal mendekripsi NIK: panjang token tidak memenuhi standar AES-256-GCM.")
+    if len(blob) != _GCM_BLOB_LEN or base64.urlsafe_b64encode(blob).decode("ascii") != token:
+        raise ValueError("Gagal mendekripsi NIK: panjang atau kanonikalisasi token tidak memenuhi standar AES-256-GCM.")
 
     nonce = blob[:12]
     ciphertext_with_tag = blob[12:]
 
-    aesgcm = AESGCM(_AES_KEY)
+    aesgcm = AESGCM(aes_key)
     try:
         plaintext_bytes = aesgcm.decrypt(nonce, ciphertext_with_tag, None)
         plaintext = plaintext_bytes.decode("utf-8")
@@ -148,8 +180,9 @@ def hash_nik(nik: str) -> str:
     storing plaintext NIK.
     """
     validate_nik(nik)
+    pepper = _resolve_hmac_pepper()
     digest = hmac.new(
-        _HMAC_PEPPER.encode("utf-8"),
+        pepper.encode("utf-8"),
         nik.encode("utf-8"),
         hashlib.sha256,
     ).hexdigest()
@@ -212,9 +245,6 @@ def mask_name(full_name: str) -> str:
 # Signed PDF download tokens (Django TimestampSigner)
 # ---------------------------------------------------------------------------
 
-_PDF_SIGNER = TimestampSigner(salt="bansos.pdf_download")
-
-
 def sign_pdf_download_token(evaluation_id: int) -> str:
     """
     Produce a tamper-proof, time-limited signed token encoding *evaluation_id*.
@@ -224,7 +254,8 @@ def sign_pdf_download_token(evaluation_id: int) -> str:
     """
     if isinstance(evaluation_id, bool) or not isinstance(evaluation_id, int) or evaluation_id <= 0:
         raise ValueError("evaluation_id harus berupa bilangan bulat positif.")
-    return _PDF_SIGNER.sign(str(evaluation_id))
+    signer = TimestampSigner(salt=_PDF_SIGNER_SALT)
+    return signer.sign(str(evaluation_id))
 
 
 def verify_pdf_download_token(token: str, max_age: int = 900) -> int:
@@ -237,10 +268,14 @@ def verify_pdf_download_token(token: str, max_age: int = 900) -> int:
     """
     if not isinstance(token, str) or not token.strip():
         raise BadSignature("Token unduhan PDF kosong atau tidak valid.")
+    signer = TimestampSigner(salt=_PDF_SIGNER_SALT)
     if max_age is not None and max_age <= 0:
         # First verify signature integrity, then enforce immediate expiration
-        _PDF_SIGNER.unsign(token)
+        signer.unsign(token)
         raise SignatureExpired("Token unduhan PDF telah kedaluwarsa.")
-    unsigned = _PDF_SIGNER.unsign(token, max_age=max_age)
+    unsigned = signer.unsign(token, max_age=max_age)
+    if not unsigned.isascii() or not unsigned.isdigit() or int(unsigned) <= 0:
+        raise BadSignature("Payload token unduhan PDF bukan bilangan bulat positif.")
     return int(unsigned)
+
 
